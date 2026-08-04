@@ -11,6 +11,14 @@
 			<p class="text-[13px] text-zinc-500 mt-1.5 text-center">Ingresa tus credenciales para acceder al sistema</p>
 		</div>
 
+		<!-- Error general del servidor (credenciales inválidas, etc.) -->
+		<p v-if="auth.error" class="text-red-600 text-[12px] mb-4 flex items-center gap-1.5 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+			</svg>
+			{{ auth.error }}
+		</p>
+
 		<!-- Formulario -->
 		<form @submit.prevent="handleSubmit" class="space-y-4">
 			<!-- Input de Correo -->
@@ -28,7 +36,7 @@
 						v-model="form.email"
 						type="email"
 						placeholder="ejemplo@correo.com"
-						@input="errors.email = ''"
+						@input="errors.email = ''; auth.error = null"
 						class="w-full bg-white border text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-colors pl-9 pr-4 h-[38px] rounded-lg"
 						:class="[
 							errors.email
@@ -61,7 +69,7 @@
 						v-model="form.password"
 						:type="showPassword ? 'text' : 'password'"
 						placeholder="••••••••"
-						@input="errors.password = ''"
+						@input="errors.password = ''; auth.error = null"
 						class="w-full bg-white border text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-colors pl-9 pr-10 h-[38px] rounded-lg"
 						:class="[
 							errors.password
@@ -127,10 +135,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const auth = useAuthStore()
+const { loading: isLoading } = toRefs(auth)
 
 const form = reactive({
 	email: '',
@@ -139,11 +150,10 @@ const form = reactive({
 })
 
 const errors = reactive({
-	email: 'El formato del correo electrónico no es válido', // Preloaded validation error to display the feedback styling
+	email: '',
 	password: '',
 })
 
-const isLoading = ref(false)
 const showPassword = ref(false)
 
 const validateForm = () => {
@@ -170,14 +180,14 @@ const validateForm = () => {
 	return isValid
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
 	if (!validateForm()) return
 
-	isLoading.value = true
-	// Simular retraso de llamada API
-	setTimeout(() => {
-		isLoading.value = false
-		router.push('/')
-	}, 1200)
+	try {
+		await auth.login(form.email, form.password)
+		router.push('/dashboard')
+	} catch {
+		// auth.error ya queda seteado en el store y se muestra en el template
+	}
 }
 </script>

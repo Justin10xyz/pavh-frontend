@@ -1,9 +1,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const route = useRoute()
+const auth = useAuthStore()
 const isMobileMenuOpen = ref(false)
 
 const navLinks = [
@@ -16,8 +18,8 @@ const navigateTo = (path) => {
 	isMobileMenuOpen.value = false
 }
 
-const logout = () => {
-	// Enrutamiento simulado al login
+const logout = async () => {
+	await auth.logout()
 	router.push('/login')
 }
 </script>
