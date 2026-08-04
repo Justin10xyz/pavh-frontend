@@ -36,6 +36,7 @@ export default defineConfig([
 				switchCase: 1,
 			}],
 			'vue/html-indent': ['error', 'tab'],
+			'vue/multi-word-component-names': 'off',
 		},
 	},
 ])
