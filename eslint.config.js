@@ -21,4 +21,21 @@ export default defineConfig([
 
 	js.configs.recommended,
 	...pluginVue.configs['flat/essential'],
+
+	{
+		rules: {
+			indent: ['error', 'tab', { SwitchCase: 1 }],
+		},
+	},
+	{
+		files: ['**/*.vue'],
+		rules: {
+			indent: 'off',
+			'vue/script-indent': ['error', 'tab', {
+				baseIndent: 0,
+				switchCase: 1,
+			}],
+			'vue/html-indent': ['error', 'tab'],
+		},
+	},
 ])
