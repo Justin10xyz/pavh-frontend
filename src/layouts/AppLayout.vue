@@ -16,3 +16,7 @@
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 </script>
+
+<style scoped>
+
+</style>

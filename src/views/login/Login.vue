@@ -1,17 +1,17 @@
 <template>
 	<div class="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-8 shadow-sm relative">
-		<!-- Encabezado con Placeholder de Logo y Título -->
+		<!-- Header with logo placeholder and title -->
 		<div class="flex flex-col items-center mb-6">
-			<!-- Placeholder de logo (48x48px, esquina redondeada) -->
+			<!-- Logo placeholder (48x48px, rounded corner) -->
 			<div class="w-12 h-12 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-center text-[15px] font-bold text-zinc-800 select-none mb-4">
 				PV
 			</div>
-			<!-- Jerarquía: título 22px/500, subtítulo 13px gris -->
+			<!-- Hierarchy: title 22px/500, subtitle 13px gray -->
 			<h2 class="text-[22px] font-medium text-zinc-900 tracking-tight leading-7 text-center">¡Bienvenido de nuevo!</h2>
 			<p class="text-[13px] text-zinc-500 mt-1.5 text-center">Ingresa tus credenciales para acceder al sistema</p>
 		</div>
 
-		<!-- Error general del servidor (credenciales inválidas, etc.) -->
+		<!-- General server error (invalid credentials, etc.) -->
 		<p v-if="auth.error" class="text-red-600 text-[12px] mb-4 flex items-center gap-1.5 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
 			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -19,14 +19,14 @@
 			{{ auth.error }}
 		</p>
 
-		<!-- Formulario -->
+		<!-- Form -->
 		<form @submit.prevent="handleSubmit" class="space-y-4">
-			<!-- Input de Correo -->
+			<!-- Email input -->
 			<div class="space-y-1.5">
 				<label for="email" class="text-xs font-medium text-zinc-650 block">Correo Electrónico</label>
 				<div class="relative">
 					<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-						<!-- Icono de sobre a la izquierda -->
+						<!-- Envelope icon on the left -->
 						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
 						</svg>
@@ -45,7 +45,7 @@
 						]"
 					/>
 				</div>
-				<!-- Error cerca del campo relevante -->
+				<!-- Error near the relevant field -->
 				<p v-if="errors.email" class="text-red-600 text-[12px] mt-1.5 flex items-center gap-1.5">
 					<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -54,12 +54,12 @@
 				</p>
 			</div>
 
-			<!-- Input de Contraseña -->
+			<!-- Password input -->
 			<div class="space-y-1.5">
 				<label for="password" class="text-xs font-medium text-zinc-650 block">Contraseña</label>
 				<div class="relative">
 					<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-						<!-- Icono de candado a la izquierda -->
+						<!-- Lock icon on the left -->
 						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
 						</svg>
@@ -77,14 +77,14 @@
 								: 'border-zinc-200 focus:border-zinc-400'
 						]"
 					/>
-					<!-- Toggle mostrar/ocultar contraseña (icono de ojo a la derecha) -->
+					<!-- Show/hide password toggle (eye icon on the right) -->
 					<button
 						type="button"
 						@click="showPassword = !showPassword"
 						class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600 transition-colors"
 						title="Mostrar/Ocultar contraseña"
 					>
-						<!-- Ojo abierto si showPassword es true, de lo contrario ojo cerrado -->
+						<!-- Open eye if showPassword is true, otherwise closed eye -->
 						<svg v-if="showPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.024 10.024 0 014.168-5.33m2.7-1.95A9.97 9.97 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.3" />
 							<path stroke-linecap="round" stroke-linejoin="round" d="M9.88 9.88a3 3 0 104.24 4.24M3 3l18 18" />
@@ -95,7 +95,7 @@
 						</svg>
 					</button>
 				</div>
-				<!-- Error cerca del campo relevante -->
+				<!-- Error near the relevant field -->
 				<p v-if="errors.password" class="text-red-600 text-[12px] mt-1.5 flex items-center gap-1.5">
 					<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -104,7 +104,7 @@
 				</p>
 			</div>
 
-			<!-- Opciones adicionales (Completamente neutras) -->
+			<!-- Additional options (fully neutral) -->
 			<div class="flex items-center justify-between pt-1 text-[12px]">
 				<label class="flex items-center gap-2 cursor-pointer select-none">
 					<input
@@ -117,7 +117,7 @@
 				<a href="#" class="text-zinc-500 hover:text-zinc-700 transition-colors hover:underline">¿Olvidaste tu contraseña?</a>
 			</div>
 
-			<!-- Botón de Envío (Único elemento de acento azul sólido) -->
+			<!-- Submit button (only solid blue accent element) -->
 			<button
 				type="submit"
 				:disabled="isLoading"
@@ -187,7 +187,11 @@ const handleSubmit = async () => {
 		await auth.login(form.email, form.password)
 		router.push('/dashboard')
 	} catch {
-		// auth.error ya queda seteado en el store y se muestra en el template
+		// auth.error is already set in the store and shown in the template
 	}
 }
 </script>
+
+<style scoped>
+
+</style>

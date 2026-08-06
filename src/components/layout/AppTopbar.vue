@@ -33,3 +33,7 @@ const userInitials = computed(() => {
 		.join('')
 })
 </script>
+
+<style scoped>
+
+</style>

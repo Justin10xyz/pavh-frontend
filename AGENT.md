@@ -25,6 +25,25 @@ Este documento es para cualquier agente (Claude Code, Cursor, etc.) que trabaje 
 - Patrón ya establecido en `auth.js`: flag `initialized` para evitar refetch innecesario de sesión en cada navegación — replicar este patrón en stores futuros que dependan de datos de sesión.
 - Layouts en `src/layouts/`, vistas en `src/views/<módulo>/`, componentes reutilizables en `src/components/`.
 - Guards de router centralizados en `src/router/index.js`, no dispersos por vista.
+- **Estructura fija de bloques en todo `.vue`** (existentes y futuros): siempre `template` → `script setup` → `style scoped`, en ese orden, sin excepción, aunque un bloque quede vacío.
+
+```vue
+<template>
+
+</template>
+
+<script setup>
+
+</script>
+
+<style scoped>
+
+</style>
+```
+
+  - Si un componente no necesita estilos propios, el bloque `<style scoped>` se deja vacío — no se omite.
+  - No usar `<script>` sin `setup` en ningún archivo nuevo o existente.
+  - No usar `<style>` global (sin `scoped`) salvo que sea justificado y explícito (no debería ser el caso en este proyecto).
 ## Sistema de diseño
  
 Dirección: **corporativo serio** (banca/legal), no startup ni SaaS "friendly". Consistencia > creatividad — cualquier pantalla nueva debe verse como si viniera del mismo diseñador.

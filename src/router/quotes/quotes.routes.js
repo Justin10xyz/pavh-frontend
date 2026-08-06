@@ -1,8 +1,8 @@
 export default [
 	{
 		path: '/cotizaciones',
-		name: 'cotizaciones',
-		component: () => import('@/views/cotizaciones/CotizacionesView.vue'),
+		name: 'quotes',
+		component: () => import('@/views/quotes/QuotesView.vue'),
 		meta: { layout: 'AppLayout', title: 'Cotizaciones', requiresAuth: true },
 	},
 ]

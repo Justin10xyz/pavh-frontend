@@ -4,3 +4,11 @@
 		<p class="text-text-muted mt-2">Este módulo está en construcción.</p>
 	</div>
 </template>
+
+<script setup>
+
+</script>
+
+<style scoped>
+
+</style>
