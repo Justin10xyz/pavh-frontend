@@ -10,6 +10,9 @@ import '@fontsource/inter/700.css'
 import '@fontsource/source-serif-4/400.css'
 import '@fontsource/source-serif-4/600.css'
 
+// Tabler Icons — íconos del sidebar (self-hosted, sin CDN)
+import '@tabler/icons-webfont/dist/tabler-icons.min.css'
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
