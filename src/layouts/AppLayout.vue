@@ -1,8 +1,3 @@
-<script setup>
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppTopbar from '@/components/layout/AppTopbar.vue'
-</script>
-
 <template>
 	<div class="min-h-screen flex bg-bg font-sans antialiased">
 		<AppSidebar />
@@ -16,3 +11,8 @@ import AppTopbar from '@/components/layout/AppTopbar.vue'
 		</div>
 	</div>
 </template>
+
+<script setup>
+import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppTopbar from '@/components/layout/AppTopbar.vue'
+</script>

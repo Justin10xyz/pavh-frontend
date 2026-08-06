@@ -1,12 +1,3 @@
-<script setup>
-const navLinks = [
-	{ name: 'Dashboard', to: { name: 'dashboard' }, icon: 'ti-layout-dashboard' },
-	{ name: 'Inventario', to: { name: 'inventario' }, icon: 'ti-package' },
-	{ name: 'Cotizaciones', to: { name: 'cotizaciones' }, icon: 'ti-file-description' },
-	{ name: 'Punto de venta', to: { name: 'pos' }, icon: 'ti-shopping-cart' },
-]
-</script>
-
 <template>
 	<aside class="w-[200px] shrink-0 bg-primary flex flex-col h-screen sticky top-0">
 		<!-- Wordmark -->
@@ -36,3 +27,12 @@ const navLinks = [
 		</div>
 	</aside>
 </template>
+
+<script setup>
+const navLinks = [
+	{ name: 'Dashboard', to: { name: 'dashboard' }, icon: 'ti-layout-dashboard' },
+	{ name: 'Inventario', to: { name: 'inventario' }, icon: 'ti-package' },
+	{ name: 'Cotizaciones', to: { name: 'cotizaciones' }, icon: 'ti-file-description' },
+	{ name: 'Punto de venta', to: { name: 'pos' }, icon: 'ti-shopping-cart' },
+]
+</script>

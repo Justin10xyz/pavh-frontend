@@ -1,3 +1,9 @@
+<template>
+	<component :is="currentLayout">
+		<RouterView />
+	</component>
+</template>
+
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -17,11 +23,6 @@ const currentLayout = computed(() => {
 })
 </script>
 
-<template>
-	<component :is="currentLayout">
-		<RouterView />
-	</component>
-</template>
 
 <style>
 /* Estilos globales y transiciones */
