@@ -1,21 +1,29 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppLayout from '@/layouts/AppLayout.vue'
+import AuthLayout from '@/layouts/AuthLayout.vue'
 
+const route = useRoute()
+
+const layouts = {
+	AppLayout,
+	AuthLayout,
+}
+
+const currentLayout = computed(() => {
+	const layoutName = route.meta.layout || 'AppLayout'
+	return layouts[layoutName] || AppLayout
+})
 </script>
 
 <template>
-	<header>
-		<img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-		<div class="wrapper">
-			<HelloWorld msg="You did it!" />
-
-
-		</div>
-	</header>
-
-	<RouterView />
+	<component :is="currentLayout">
+		<RouterView />
+	</component>
 </template>
 
-<style scoped>
-
+<style>
+/* Estilos globales y transiciones */
 </style>
+
