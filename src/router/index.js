@@ -3,15 +3,15 @@ import { useAuthStore } from '@/stores/auth'
 
 import authRoutes from './auth/auth.routes.js'
 import dashboardRoutes from './dashboard/dashboard.routes.js'
-import inventarioRoutes from './inventario/inventario.routes.js'
-import cotizacionesRoutes from './cotizaciones/cotizaciones.routes.js'
+import inventoryRoutes from './inventory/inventory.routes.js'
+import quotesRoutes from './quotes/quotes.routes.js'
 import posRoutes from './pos/pos.routes.js'
 
 const routes = [
 	...authRoutes,
 	...dashboardRoutes,
-	...inventarioRoutes,
-	...cotizacionesRoutes,
+	...inventoryRoutes,
+	...quotesRoutes,
 	...posRoutes,
 ]
 
@@ -25,8 +25,8 @@ router.beforeEach(async (to) => {
 
 	const auth = useAuthStore()
 
-	// Al recargar la página se pierde el estado en memoria: hidrata la sesión
-	// contra /api/user antes de decidir si la ruta requiere login.
+	// Reloading the page loses in-memory state: hydrate the session
+	// against /api/user before deciding whether the route requires login.
 	if (!auth.initialized) {
 		await auth.fetchUser()
 	}

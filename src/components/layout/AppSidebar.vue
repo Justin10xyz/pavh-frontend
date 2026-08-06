@@ -5,7 +5,7 @@
 			<span class="font-serif text-lg text-white tracking-wide">PV</span>
 		</div>
 
-		<!-- Navegación principal -->
+		<!-- Main navigation -->
 		<nav class="flex-1 py-3">
 			<router-link
 				v-for="link in navLinks"
@@ -18,7 +18,7 @@
 			</router-link>
 		</nav>
 
-		<!-- Configuración: sin ruta todavía, placeholder visual -->
+		<!-- Settings: no route yet, visual placeholder -->
 		<div class="border-t border-white/10 py-3 shrink-0">
 			<span class="flex items-center gap-3 px-5 py-2.5 text-sm text-white/40 cursor-default">
 				<i class="ti ti-settings text-base"></i>
@@ -31,8 +31,12 @@
 <script setup>
 const navLinks = [
 	{ name: 'Dashboard', to: { name: 'dashboard' }, icon: 'ti-layout-dashboard' },
-	{ name: 'Inventario', to: { name: 'inventario' }, icon: 'ti-package' },
-	{ name: 'Cotizaciones', to: { name: 'cotizaciones' }, icon: 'ti-file-description' },
+	{ name: 'Inventario', to: { name: 'inventory' }, icon: 'ti-package' },
+	{ name: 'Cotizaciones', to: { name: 'quotes' }, icon: 'ti-file-description' },
 	{ name: 'Punto de venta', to: { name: 'pos' }, icon: 'ti-shopping-cart' },
 ]
 </script>
+
+<style scoped>
+
+</style>

@@ -23,8 +23,6 @@ const currentLayout = computed(() => {
 })
 </script>
 
-
-<style>
-/* Estilos globales y transiciones */
+<style scoped>
+/* Global styles and transitions */
 </style>
-

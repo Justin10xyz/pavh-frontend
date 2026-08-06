@@ -1,8 +1,8 @@
 export default [
 	{
 		path: '/inventario',
-		name: 'inventario',
-		component: () => import('@/views/inventario/InventarioView.vue'),
+		name: 'inventory',
+		component: () => import('@/views/inventory/InventoryView.vue'),
 		meta: { layout: 'AppLayout', title: 'Inventario', requiresAuth: true },
 	},
 ]
