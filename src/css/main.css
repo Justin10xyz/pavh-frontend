@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+@theme {
+	/* Colores — PAVH design system, ver AGENT.md */
+	--color-primary: #14293D;
+	--color-primary-dark: #0B1A29;
+	--color-accent: #A67C3D;
+	--color-bg: #F7F8FA;
+	--color-surface: #FFFFFF;
+	--color-border: #E4E7EC;
+	--color-text: #1D2939;
+	--color-text-muted: #667085;
+	--color-success: #2F6844;
+	--color-danger: #A13D3D;
+
+	/* Tipografía */
+	--font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+	--font-serif: "Source Serif 4", ui-serif, Georgia, serif;
+}
