@@ -65,7 +65,7 @@
 								<span class="text-text">${{ Number(group.price_per_box).toFixed(2) }}/caja</span>
 								<span class="text-text-muted">
 									${{ Number(group.price_per_m2).toFixed(2) }}/m² · {{ group.pieces_per_box }} pzas/caja ·
-									{{ Number(group.m2_per_box).toFixed(2) }} m²/caja
+									{{ Number(group.m2_per_box).toFixed(2) }} m²/caja · {{ group.kilos_per_box }} kg/caja
 								</span>
 								<span class="ml-auto text-text-muted">{{ group.variants.length }} colores</span>
 							</button>
