@@ -1,7 +1,13 @@
 <template>
-	<div class="p-6">
+	<div class="p-2">
 		<div class="flex items-center justify-between mb-4">
 			<h1 class="font-serif text-xl text-primary">Inventario</h1>
+			<RouterLink
+				:to="{ name: 'products.create' }"
+				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors inline-flex items-center select-none"
+			>
+				Nuevo producto
+			</RouterLink>
 		</div>
 
 		<div v-if="inventory.loading" class="text-text-muted text-sm">Cargando productos…</div>
