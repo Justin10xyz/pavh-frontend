@@ -26,5 +26,17 @@ export const useInventoryStore = defineStore('inventory', () => {
 		}
 	}
 
-	return { products, loading, error, initialized, fetchProducts }
+	// Actualiza una sola variante in-place (sin refetch) para no perder el estado de
+	// grupos/filas expandidas que el usuario ya tenía abiertos en la vista.
+	function updateVariantStock(variantId, updates) {
+		for (const product of products.value) {
+			const variant = product.variants.find((v) => v.id === variantId)
+			if (variant) {
+				Object.assign(variant, updates)
+				break
+			}
+		}
+	}
+
+	return { products, loading, error, initialized, fetchProducts, updateVariantStock }
 })

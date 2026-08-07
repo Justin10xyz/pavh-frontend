@@ -101,29 +101,40 @@
 								:key="group.key"
 								class="border border-border rounded-md overflow-hidden bg-surface"
 							>
-								<button
-									type="button"
-									class="group-header"
-									@click="toggleGroup(data.id, group.key)"
-									title="Clic para ver stock por color"
-									:aria-label="isGroupExpanded(data.id, group.key) ? 'Colapsar colores' : 'Expandir colores'"
-								>
-									<span class="toggle-btn" :class="{ 'is-open': isGroupExpanded(data.id, group.key) }">
-										<svg viewBox="0 0 8 8" width="8" height="8">
-											<path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
-										</svg>
-									</span>
-									<span class="font-medium text-text">{{ group.size }}</span>
-									<span class="spec-badge">PEI {{ group.pei }}</span>
-									<span class="spec-badge">ETT {{ group.ett }}</span>
-									<span v-if="group.commission_category" class="spec-badge">{{ group.commission_category.code }}</span>
-									<span class="text-text">${{ Number(group.price_per_box).toFixed(2) }}/caja</span>
-									<span class="text-text-muted">
-										${{ Number(group.price_per_m2).toFixed(2) }}/m² · {{ group.pieces_per_box }} pzas/caja ·
-										{{ Number(group.m2_per_box).toFixed(2) }} m²/caja · {{ group.kilos_per_box }} kg/caja
-									</span>
-									<span class="ml-auto text-text-muted">{{ group.variants.length }} colores</span>
-								</button>
+								<div class="group-header">
+									<button
+										type="button"
+										class="group-header-toggle"
+										@click="toggleGroup(data.id, group.key)"
+										title="Clic para ver stock por color"
+										:aria-label="isGroupExpanded(data.id, group.key) ? 'Colapsar colores' : 'Expandir colores'"
+									>
+										<span class="toggle-btn" :class="{ 'is-open': isGroupExpanded(data.id, group.key) }">
+											<svg viewBox="0 0 8 8" width="8" height="8">
+												<path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
+											</svg>
+										</span>
+										<span class="font-medium text-text">{{ group.size }}</span>
+										<span class="spec-badge">PEI {{ group.pei }}</span>
+										<span class="spec-badge">ETT {{ group.ett }}</span>
+										<span v-if="group.commission_category" class="spec-badge">{{ group.commission_category.code }}</span>
+										<span class="text-text">${{ Number(group.price_per_box).toFixed(2) }}/caja</span>
+										<span class="text-text-muted">
+											${{ Number(group.price_per_m2).toFixed(2) }}/m² · {{ group.pieces_per_box }} pzas/caja ·
+											{{ Number(group.m2_per_box).toFixed(2) }} m²/caja · {{ group.kilos_per_box }} kg/caja
+										</span>
+										<span class="ml-auto text-text-muted">{{ group.variants.length }} colores</span>
+									</button>
+									<button
+										type="button"
+										@click="editProduct(data.id)"
+										class="group-header-edit"
+										aria-label="Editar producto"
+										title="Editar producto"
+									>
+										<i class="ti ti-pencil text-[13px]"></i>
+									</button>
+								</div>
 
 								<table v-if="isGroupExpanded(data.id, group.key)" class="w-full text-xs border-t border-border">
 									<thead>
@@ -144,12 +155,23 @@
 												{{ variant.stock_boxes }} cj
 											</td>
 											<td class="py-1.5 pr-6">
-												<span
-													class="text-[10px] px-2 py-0.5 rounded"
-													:class="variant.low_stock ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'"
-												>
-													{{ variant.low_stock ? 'Stock bajo' : 'OK' }}
-												</span>
+												<div class="flex items-center justify-center gap-1.5">
+													<span
+														class="text-[10px] px-2 py-0.5 rounded"
+														:class="variant.low_stock ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'"
+													>
+														{{ variant.low_stock ? 'Stock bajo' : 'OK' }}
+													</span>
+													<button
+														type="button"
+														@click="openStockDialog(variant)"
+														class="text-text-muted hover:text-accent transition-colors"
+														aria-label="Ajustar stock"
+														title="Ajustar stock"
+													>
+														<i class="ti ti-adjustments-horizontal text-[13px]"></i>
+													</button>
+												</div>
 											</td>
 										</tr>
 									</tbody>
@@ -161,16 +183,138 @@
 			</div>
 		</template>
 	</div>
+
+	<Dialog v-model:visible="stockDialogOpen" modal :pt="{ mask: { class: 'bg-primary/50' } }">
+		<template #container="{ closeCallback }">
+			<div v-if="stockDialogVariant" class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+				<div class="flex items-center justify-between mb-4">
+					<h3 class="font-serif text-base text-primary">Ajustar stock</h3>
+					<button type="button" @click="closeCallback" class="text-text-muted hover:text-text transition-colors" aria-label="Cerrar">
+						<i class="ti ti-x text-base"></i>
+					</button>
+				</div>
+
+				<div class="text-sm text-text mb-4">
+					<span class="text-text-muted">{{ stockDialogVariant.color }} · </span>
+					Stock actual: <span class="font-medium">{{ stockDialogVariant.stock_boxes }} cj</span>
+				</div>
+
+				<div class="flex gap-2 mb-4">
+					<button
+						type="button"
+						@click="stockAdjustType = 'add'"
+						class="flex-1 h-[38px] rounded-md text-sm font-medium border transition-colors"
+						:class="stockAdjustType === 'add' ? 'bg-success/10 border-success text-success' : 'border-border text-text-muted hover:text-text'"
+					>
+						Agregar
+					</button>
+					<button
+						type="button"
+						@click="stockAdjustType = 'subtract'"
+						class="flex-1 h-[38px] rounded-md text-sm font-medium border transition-colors"
+						:class="stockAdjustType === 'subtract' ? 'bg-danger/10 border-danger text-danger' : 'border-border text-text-muted hover:text-text'"
+					>
+						Quitar
+					</button>
+				</div>
+
+				<div class="space-y-1.5 mb-4">
+					<label for="stock_adjust_quantity" class="text-xs font-medium text-text-muted block">Cantidad (cajas)</label>
+					<input
+						id="stock_adjust_quantity"
+						v-model.number="stockAdjustQuantity"
+						type="number"
+						min="1"
+						step="1"
+						placeholder="0"
+						class="w-full bg-surface border border-border text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors px-3 h-[38px] rounded-md"
+					/>
+				</div>
+
+				<p v-if="stockDialogError" class="text-danger text-[12px] mb-4">{{ stockDialogError }}</p>
+
+				<div class="flex items-center justify-end gap-3">
+					<button
+						type="button"
+						@click="closeCallback"
+						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					>
+						Cancelar
+					</button>
+					<button
+						type="button"
+						@click="submitStockAdjust"
+						:disabled="!isStockAdjustValid || stockAdjustSubmitting"
+						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					>
+						{{ stockAdjustSubmitting ? 'Aplicando…' : 'Aplicar' }}
+					</button>
+				</div>
+			</div>
+		</template>
+	</Dialog>
 </template>
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Dialog from 'primevue/dialog'
+import axios from '@/lib/axios'
 import { useInventoryStore } from '@/stores/inventory'
 import { groupVariants } from '@/lib/groupVariants'
 
+const router = useRouter()
 const inventory = useInventoryStore()
+
+function editProduct(productId) {
+	router.push({ name: 'products.edit', params: { id: productId } })
+}
+
+const stockDialogOpen = ref(false)
+const stockDialogVariant = ref(null)
+const stockAdjustType = ref('add')
+const stockAdjustQuantity = ref(null)
+const stockDialogError = ref(null)
+const stockAdjustSubmitting = ref(false)
+
+const isStockAdjustValid = computed(
+	() => Number.isInteger(stockAdjustQuantity.value) && stockAdjustQuantity.value > 0
+)
+
+function openStockDialog(variant) {
+	stockDialogVariant.value = variant
+	stockAdjustType.value = 'add'
+	stockAdjustQuantity.value = null
+	stockDialogError.value = null
+	stockDialogOpen.value = true
+}
+
+async function submitStockAdjust() {
+	if (!isStockAdjustValid.value || !stockDialogVariant.value) return
+
+	stockAdjustSubmitting.value = true
+	stockDialogError.value = null
+
+	try {
+		const { data } = await axios.patch(`/api/product-variants/${stockDialogVariant.value.id}/stock`, {
+			quantity: stockAdjustQuantity.value,
+			type: stockAdjustType.value,
+		})
+
+		inventory.updateVariantStock(stockDialogVariant.value.id, {
+			stock_boxes: data.data.stock_boxes,
+			low_stock: data.data.low_stock,
+		})
+
+		stockDialogOpen.value = false
+	} catch (err) {
+		stockDialogError.value = err.response?.data?.message || 'No se pudo ajustar el stock. Intenta de nuevo.'
+	} finally {
+		stockAdjustSubmitting.value = false
+	}
+}
 
 const expandedRows = ref({})
 const expandedGroups = ref({})
@@ -310,15 +454,33 @@ function isGroupExpanded(productId, groupKey) {
 
 .group-header {
 	display: flex;
+	align-items: stretch;
+}
+.group-header:hover {
+	background: var(--color-bg);
+}
+
+.group-header-toggle {
+	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	width: 100%;
+	flex: 1;
+	min-width: 0;
 	padding: 0.5rem 0.75rem;
 	font-size: 0.75rem;
 	text-align: left;
 }
-.group-header:hover {
-	background: var(--color-bg);
+
+.group-header-edit {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	padding: 0 0.75rem;
+	color: var(--color-text-muted);
+	transition: color 150ms ease;
+}
+.group-header-edit:hover {
+	color: var(--color-accent);
 }
 
 .spec-badge {

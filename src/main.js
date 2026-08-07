@@ -15,6 +15,7 @@ import '@tabler/icons-webfont/dist/tabler-icons.min.css'
 
 //PrimeVue
 import PrimeVue from 'primevue/config'
+import ConfirmationService from 'primevue/confirmationservice'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -30,6 +31,7 @@ app.use(PrimeVue, {
 
 	}
 })
+app.use(ConfirmationService)
 
 app.use(createPinia())
 app.use(router)
