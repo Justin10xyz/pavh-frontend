@@ -44,6 +44,7 @@ Este documento es para cualquier agente (Claude Code, Cursor, etc.) que trabaje 
 - Guards de router centralizados en `src/router/index.js`, no dispersos por vista.
 - **Convención de nombres en inglés aplicada solo al código** (archivos, carpetas, componentes, nombre interno de ruta) — NO al contenido de negocio visible al usuario (labels, placeholders) ni a los paths de URL (esos se quedan en español, ej. `/inventario`, `/cotizaciones`).
 - **Estructura fija de bloques en todo `.vue`** (existentes y futuros): siempre `template` → `script setup` → `style scoped`, en ese orden, sin excepción, aunque un bloque quede vacío.
+- Tablas de datos: PrimeVue 4 (MIT, modo unstyled) — nunca v5, por su cambio a licenciamiento PrimeUI. Estilos vía :deep() sobre elementos HTML nativos, no vía pt (poco confiable entre versiones).
 
 ```vue
 <template>
