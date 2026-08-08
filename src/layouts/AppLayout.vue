@@ -1,12 +1,12 @@
 <template>
-	<div class="min-h-screen flex bg-bg font-sans antialiased">
+	<div class="h-screen flex bg-bg font-sans antialiased overflow-hidden">
 		<AppSidebar />
 
-		<div class="flex flex-col flex-1 min-w-0">
+		<div class="flex flex-col flex-1 min-w-0 h-full">
 			<AppTopbar />
 
-			<main class="flex-1 p-8">
-				<slot></slot>
+			<main class="flex-1 p-8 overflow-y-auto">
+				<slot />
 			</main>
 		</div>
 	</div>
