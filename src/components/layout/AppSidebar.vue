@@ -1,9 +1,10 @@
 <template>
 	<aside class="w-[200px] shrink-0 bg-primary flex flex-col h-screen sticky top-0">
 		<!-- Wordmark -->
-		<div class="h-[52px] flex items-center px-5 border-b border-white/10 shrink-0">
-			<span class="font-serif text-lg text-white tracking-wide">PV</span>
-		</div>
+		<router-link :to="{ name: 'dashboard' }" class="h-[52px] flex items-center gap-2 px-5 border-b border-white/10 shrink-0">
+			<img src="@/assets/logo_pavh.png" class="w-10 h-10" />
+			<span class="font-serif text-lg text-white tracking-wide">PAVH</span>
+		</router-link>
 
 		<!-- Main navigation -->
 		<nav class="flex-1 py-3">
