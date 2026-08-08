@@ -124,7 +124,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import { groupVariants } from '@/lib/groupVariants'
 
-const props = defineProps({
+defineProps({
 	products: {
 		type: Array,
 		required: true,

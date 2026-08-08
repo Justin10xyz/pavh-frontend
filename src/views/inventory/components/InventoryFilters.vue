@@ -48,7 +48,7 @@
 <script setup>
 import { computed } from 'vue'
 
-const props = defineProps({
+defineProps({
 	categoryOptions: {
 		type: Array,
 		required: true,
