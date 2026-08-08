@@ -37,6 +37,9 @@ Este documento es para cualquier agente (Claude Code, Cursor, etc.) que trabaje 
 - **Todo campo nuevo en un modelo necesita regla de validación explícita en AMBOS Form Requests relevantes (Store y Update).** Laravel descarta silenciosamente del `validated()` cualquier campo sin regla definida, sin importar que el cliente sí lo envíe en el body — esto ya causó un bug real (`stock_boxes` nunca llegaba a `create()`/`update()` por faltar la regla). No asumir cobertura por la migración o el Resource; verificar explícitamente los dos Form Requests.
 - **`SoftDeletes`** en cualquier modelo que pueda quedar referenciado desde otro módulo en el futuro (ya aplicado a `Product`/`ProductVariant`, pensando en Cotizaciones/Ventas). Si el modelo tiene un servicio que valida unicidad de algún campo (ej. `code`), esa validación debe usar `withTrashed()` para no reutilizar valores de registros borrados lógicamente.
 - Si una tabla ya está migrada en un ambiente, cambios de estructura (como agregar `SoftDeletes`) van en una **migración nueva**, nunca editando una migración ya ejecutada.
+- **Documentos con folio propio (ej. `Quote`/`Sale`) usan una secuencia de folio independiente por tipo de documento** (ej. `COT-0001`, `V-0001`), generada server-side igual que `code` en `ProductVariant` — nunca aceptada del cliente. No usar el `id` autoincremental como folio visible.
+- **Convertir un documento en otro con efectos reales (ej. cotización → venta) NO es un endpoint que muta y crea de una sola vez.** Patrón establecido: un endpoint de solo lectura (ej. `GET /quotes/{id}/convert`) devuelve los datos prellenados para que el frontend los muestre editables, y la confirmación pasa por el endpoint de creación normal del documento destino (ej. `POST /sales`, el mismo que usa una venta directa), incluyendo la referencia de origen (`quote_id`) en el payload. Evita duplicar lógica de validación/creación entre el flujo directo y el flujo convertido.
+- **Entidades con ciclo de vida y reglas de edición distintas (borrador vs. documento concretado) van en tablas separadas**, no en una sola tabla con `status` genérico — ver `Quote`/`Sale` en `PROJECT.md`. Se acepta duplicar estructura entre tablas de líneas relacionadas (ej. `quote_items`/`sale_items`) en vez de una tabla polimórfica compartida, consistente con "sin indirección extra".
 
 ## Convenciones de código (frontend)
  
@@ -134,5 +137,7 @@ Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif
 - [ ] (Backend) ¿Los identificadores generados por el sistema quedan excluidos de los Form Requests de entrada?
 - [ ] (Backend) ¿Todo campo nuevo tiene regla de validación en AMBOS Form Requests (Store y Update)?
 - [ ] (Backend) ¿Las validaciones que dependen del modelo bindeado por ruta están en el controlador, no forzadas dentro del Form Request?
+- [ ] (Backend) ¿Documentos con folio (`Quote`/`Sale`) generan su folio server-side con secuencia propia, nunca vía `id` ni aceptado del cliente?
+- [ ] (Backend) ¿Una conversión entre documentos (cotización → venta) reutiliza el endpoint de creación normal en vez de mutar/crear todo en un solo paso?
 - [ ] (Frontend) ¿Las mutaciones puntuales actualizan el store in-place en vez de refetch completo?
 - [ ] (Frontend) ¿Las acciones destructivas usan `ConfirmDialog` de PrimeVue, no `confirm()` nativo?
