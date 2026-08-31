@@ -94,6 +94,9 @@ Estructura de catálogo confirmada con datos reales de proveedor (Interceramic):
 - Generar cotización seleccionando productos del catálogo de Inventario
 - Imprimir cotización en tamaño carta/media carta (pendiente, ver módulo 3)
 - **Se puede convertir en una Venta (POS) sin recapturar datos, permitiendo ajustar cantidades/precios antes de confirmar** — la cotización es, en esencia, un borrador de venta. Cotización y Venta comparten la misma estructura de líneas de producto/cantidad/precio, y una Venta puede tener un origen: "directa" o "desde cotización".
+- `GET /api/quotes` soporta `?with=customer,quoteStatus` (whitelist explícita, valores desconocidos se ignoran silenciosamente) — resuelve N+1 detectado en
+QuoteResource (11 queries → 3 queries en listado de 5 registros). Patrón comma+whitelist, extensión del shortcut usado en `ProductController` (que hace match exacto de string) — no unificado entre ambos controllers todavía, queda como decisión pendiente si se quiere consistencia total. 
+- `QuotesView.vue` + `src/stores/quotes.js`: listado funcional, verificado en navegador contra backend real (3 registros de prueba cubriendo los tres status y el caso sin cliente). `fetchQuotes()` usa `?with=customer,quoteStatus` para evitar el N+1 (antes lazy-loaded implícitamente vía QuoteResource).
 
 **Decisión de modelado (resuelta e implementada):** `Quote` y `Sale` son **entidades separadas** (`quotes`/`quote_items` y `sales`/`sale_items`), no una sola tabla con `status`. Razones:
   - Folios independientes por tipo de documento (`COT-0001` vs `V-0001`) — inviable de forma limpia con un solo autoincrement
