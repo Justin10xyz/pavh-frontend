@@ -29,5 +29,15 @@ export const useQuotesStore = defineStore('quotes', () => {
 		}
 	}
 
-	return { quotes, loading, error, initialized, fetchQuotes }
+	// POST /api/quotes crea la cotización junto con sus líneas en un solo request
+	// (folio, status y totales se resuelven server-side). La respuesta ya trae
+	// items.productVariant + customer + quoteStatus cargados, así que se agrega
+	// directo al array in-place en vez de un refetch completo del listado.
+	async function createQuote(payload) {
+		const { data } = await axios.post('/api/quotes', payload)
+		quotes.value.unshift(data.data)
+		return data.data
+	}
+
+	return { quotes, loading, error, initialized, fetchQuotes, createQuote }
 })

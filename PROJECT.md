@@ -96,7 +96,17 @@ Estructura de catálogo confirmada con datos reales de proveedor (Interceramic):
 - **Se puede convertir en una Venta (POS) sin recapturar datos, permitiendo ajustar cantidades/precios antes de confirmar** — la cotización es, en esencia, un borrador de venta. Cotización y Venta comparten la misma estructura de líneas de producto/cantidad/precio, y una Venta puede tener un origen: "directa" o "desde cotización".
 - `GET /api/quotes` soporta `?with=customer,quoteStatus` (whitelist explícita, valores desconocidos se ignoran silenciosamente) — resuelve N+1 detectado en
 QuoteResource (11 queries → 3 queries en listado de 5 registros). Patrón comma+whitelist, extensión del shortcut usado en `ProductController` (que hace match exacto de string) — no unificado entre ambos controllers todavía, queda como decisión pendiente si se quiere consistencia total. 
-- `QuotesView.vue` + `src/stores/quotes.js`: listado funcional, verificado en navegador contra backend real (3 registros de prueba cubriendo los tres status y el caso sin cliente). `fetchQuotes()` usa `?with=customer,quoteStatus` para evitar el N+1 (antes lazy-loaded implícitamente vía QuoteResource).
+
+### Frontend — Cotizaciones 🚧 en progreso
+- Listado (`QuotesView.vue`) ✅ completo y verificado.
+- Creación (`QuoteFormView.vue`) ✅ completo y verificado en navegador: cliente opcional, notas, líneas de producto con autocomplete de variante (búsqueda client-side, reutiliza fetchProducts() de inventory.js — no existe endpoint de búsqueda de variantes por texto libre en el backend), fusión automática de variante duplicada, cantidad en m² con equivalente en cajas informativo, precio siempre server-resolved, aviso no bloqueante de stock insuficiente, totales en vivo.
+- `QuoteDetailView.vue` existe como placeholder (mismo patrón que HomeView.vue) — creado antes de tiempo para resolver el link "Ver" del listado, que ya apuntaba a esa ruta sin vista de destino. La implementación real de detalle sigue pendiente como paso propio.
+- Pendiente: edición de cotización existente (solo permitida en estado  Borrador), vista de detalle real, flujo de conversión a venta.
+
+### Pendiente transversal
+- Pase de UX/UI y estilos, módulo por módulo, una vez cerrada la cobertura
+  funcional completa de todos los módulos (decisión de Justin — evitar
+  pulir vistas que aún pueden cambiar de forma).
 
 **Decisión de modelado (resuelta e implementada):** `Quote` y `Sale` son **entidades separadas** (`quotes`/`quote_items` y `sales`/`sale_items`), no una sola tabla con `status`. Razones:
   - Folios independientes por tipo de documento (`COT-0001` vs `V-0001`) — inviable de forma limpia con un solo autoincrement
