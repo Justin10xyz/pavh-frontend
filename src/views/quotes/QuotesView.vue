@@ -97,6 +97,7 @@ import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import { useQuotesStore } from '@/stores/quotes'
+import { statusClasses } from '@/lib/quoteStatus'
 
 const router = useRouter()
 const quotes = useQuotesStore()
@@ -131,12 +132,6 @@ const filteredQuotes = computed(() => {
 		(quote) => normalize(quote.folio).includes(q) || normalize(quote.customer?.name).includes(q)
 	)
 })
-
-function statusClasses(status) {
-	if (status === 'Convertida') return 'bg-success/10 text-success'
-	if (status === 'Cancelada') return 'bg-danger/10 text-danger'
-	return 'text-text-muted'
-}
 
 const currencyFormatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
