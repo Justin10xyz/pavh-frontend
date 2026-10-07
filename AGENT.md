@@ -1,9 +1,9 @@
 # AGENT.md — Reglas para IA trabajando en PAVH
- 
+
 Este documento es para cualquier agente (Claude Code, Cursor, etc.) que trabaje en `pavh-backend` o `pavh-frontend`. Léelo antes de generar código. El objetivo es que cualquier sesión nueva produzca resultados consistentes con las anteriores.
- 
+
 ## Reglas generales de trabajo
- 
+
 - **Pedir pasos acotados, no tareas abiertas.** Justin prefiere prompts como "crea la instancia de axios" en vez de "conecta todo el frontend con el backend". Si te piden una tarea grande, divídela en pasos nombrados y secuenciales antes de escribir código. Si un paso resulta muy grande, divídelo también (ej. crear vs. editar en pasos separados).
 - **Backend antes que frontend** cuando haya dependencia entre ambos — evita debug en capas cruzadas.
 - **Empezar por lo visible.** Orden de construcción de frontend: UI visible → router → capa de config/servicios → estado (Pinia) → guards.
@@ -14,7 +14,7 @@ Este documento es para cualquier agente (Claude Code, Cursor, etc.) que trabaje 
 - Commits en inglés, Conventional Commits + gitmoji (ver `PROJECT.md` para la sintaxis y ejemplos).
 
 ## Entorno — cosas que rompen si no se respetan
- 
+
 - Usar **`localhost`**, nunca `127.0.0.1` (son orígenes distintos para el navegador y rompen CORS/Sanctum).
 - No usar Laravel Valet por ahora (dominios `.test` rompen cookies `SameSite=Lax`).
 - Antes de cualquier request que modifique estado en Sanctum (`POST`/`PUT`/`DELETE`), debe existir un `GET /sanctum/csrf-cookie` previo — si no, 419.
@@ -44,11 +44,11 @@ Este documento es para cualquier agente (Claude Code, Cursor, etc.) que trabaje 
 - **Guards de negocio reusables entre endpoints (ej. validar/descontar stock) van como método público en el modelo, no duplicados en cada controlador.** Ejemplo: `ProductVariant::hasSufficientStock()`/`decrementStock()`, usados tanto por el ajuste de stock manual como por la creación de ventas — mismo guard, mismo mensaje de error, una sola fuente de verdad.
 - **Cuando una cantidad de línea (`quantity`) está en una unidad de venta distinta a la unidad en la que vive el stock** (ej. `quantity` en m² vía `price_per_m2`, `stock_boxes` en cajas), la conversión se hace explícita en el punto donde se compara/descuenta contra stock — nunca se asume una equivalencia 1:1 silenciosa. Redondear hacia arriba (`ceil`) al convertir a la unidad física de stock (no se puede descontar media caja), pero el monto cobrado (`unit_price`/`line_total`) siempre se calcula sobre la cantidad exacta solicitada, no sobre la cantidad redondeada. Si falta el factor de conversión en el registro (ej. `m2_per_box` null), rechazar la línea con 422 explícito en vez de asumir 1:1.
 - **Shortcut `?with=` para eager loading**: dos variantes coexisten hoy — match exacto de string (`ProductController`, ej. `?with=variants`) y
-comma-separated con whitelist explícita (`QuoteController`, ej. `?with=customer,quoteStatus`). Usar la variante whitelist para cualquier endpoint nuevo que necesite eager-loadear más de una relación a la vez; valores fuera de whitelist se ignoran silenciosamente, nunca error 422.
+  comma-separated con whitelist explícita (`QuoteController`, ej. `?with=customer,quoteStatus`). Usar la variante whitelist para cualquier endpoint nuevo que necesite eager-loadear más de una relación a la vez; valores fuera de whitelist se ignoran silenciosamente, nunca error 422.
 - **Un recurso puede exponer una relación anidada solo cuando está cargada, vía `whenLoaded`**, sin forzar su carga por defecto en todos los endpoints que usan ese Resource. Ejemplo: `ProductVariantResource.product` (id+name de la línea) solo aparece cuando el controller cargó explícitamente `.product` (como hace `QuoteController@show` para el detalle de cotización) — otros endpoints que devuelven el mismo Resource sin esa relación cargada no pagan el costo ni rompen.
 
 ## Convenciones de código (frontend)
- 
+
 - Componentes Vue: `PascalCase.vue`
 - Composables/stores: `camelCase.js`, stores de Pinia con nombre descriptivo (`useAuthStore`, no `useStore`)
 - Patrón ya establecido en `auth.js`: flag `initialized` para evitar refetch innecesario de datos en cada navegación — replicar este patrón en stores futuros que dependan de datos poco cambiantes (ya replicado en `inventory.js`, `catalogs.js` y `quotes.js`).
@@ -62,62 +62,59 @@ comma-separated con whitelist explícita (`QuoteController`, ej. `?with=customer
 - **Convención de nombres en inglés aplicada solo al código** (archivos, carpetas, componentes, nombre interno de ruta) — NO al contenido de negocio visible al usuario (labels, placeholders) ni a los paths de URL (esos se quedan en español, ej. `/inventario`, `/cotizaciones`).
 - **Estructura fija de bloques en todo `.vue`** (existentes y futuros): siempre `template` → `script setup` → `style scoped`, en ese orden, sin excepción, aunque un bloque quede vacío.
 - **Tablas de datos y diálogos: PrimeVue 4 (MIT, modo unstyled)** — nunca v5, por su cambio a licenciamiento PrimeUI (requiere licencia o muestra watermark). Estilos vía `:deep()` sobre elementos HTML nativos o markup propio en slots (ej. `#container`), no vía la prop `pt` salvo para piezas sin markup propio en modo unstyled (ej. el `mask`/overlay de un `Dialog`) — las keys internas del `pt` son poco confiables entre versiones.
+- **Componentes reutilizables van en `src/components/widgets/<tipo>/`** (ej. `autocompletes/`, `inputs/`, `selects/`, `buttons/`, `dialogs/`) — un componente se extrae ahí cuando se va a reusar en un módulo nuevo (no de forma retroactiva en módulos ya cerrados, salvo que se toquen por otra razón). Primera extracción: `VariantAutocomplete.vue` y `CustomerSearch.vue`, sacados de `QuoteFormView.vue` para reusarse en POS.
 
 ```vue
-<template>
+<template></template>
 
-</template>
+<script setup></script>
 
-<script setup>
-
-</script>
-
-<style scoped>
-
-</style>
+<style scoped></style>
 ```
 
-  - Si un componente no necesita estilos propios, el bloque `<style scoped>` se deja vacío — no se omite.
-  - No usar `<script>` sin `setup` en ningún archivo nuevo o existente.
-  - No usar `<style>` global (sin `scoped`) salvo que sea justificado y explícito (no debería ser el caso en este proyecto).
+- Si un componente no necesita estilos propios, el bloque `<style scoped>` se deja vacío — no se omite.
+- No usar `<script>` sin `setup` en ningún archivo nuevo o existente.
+- No usar `<style>` global (sin `scoped`) salvo que sea justificado y explícito (no debería ser el caso en este proyecto).
 
 ## Sistema de diseño
- 
+
 Dirección: **corporativo serio** (banca/legal), no startup ni SaaS "friendly". Consistencia > creatividad — cualquier pantalla nueva debe verse como si viniera del mismo diseñador.
- 
+
 ### Implementación técnica (Tailwind v4)
- 
+
 Este proyecto usa **Tailwind v4** — no hay `tailwind.config.js`. Los tokens de color y tipografía viven en un bloque `@theme` dentro del CSS de entrada (donde está `@import "tailwindcss";`, normalmente `src/style.css` o `src/assets/main.css`). **No crear `tailwind.config.js` para esto** — si algún día se necesita para un plugin específico, se agrega aparte, pero los tokens de diseño quedan siempre en `@theme`.
- 
+
 Fuentes instaladas vía `@fontsource` (self-hosted, no CDN de Google Fonts):
+
 ```
 npm install @fontsource/inter @fontsource/source-serif-4
 ```
+
 Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif 4).
- 
+
 ### Paleta (variables CSS definidas en `@theme`, nunca hex sueltos en componentes)
- 
-| Token | Hex | Uso |
-|---|---|---|
-| `primary` | `#14293D` | Sidebar, headers, botones primarios, texto sobre fondo claro en marca |
-| `primary-dark` | `#0B1A29` | Hover/active de elementos `primary` |
-| `accent` | `#A67C3D` | Focus rings, indicador de sección/nav activa. Uso **limitado** — no decorativo, no botones grandes de este color |
-| `bg` | `#F7F8FA` | Fondo general de la app |
-| `surface` | `#FFFFFF` | Cards, modales, inputs |
-| `border` | `#E4E7EC` | Bordes de cards, tablas, inputs |
-| `text` | `#1D2939` | Texto principal |
-| `text-muted` | `#667085` | Texto secundario, placeholders, labels |
-| `success` | `#2F6844` | Confirmaciones, estados positivos |
-| `danger` | `#A13D3D` | Errores, estados destructivos |
- 
+
+| Token          | Hex       | Uso                                                                                                              |
+| -------------- | --------- | ---------------------------------------------------------------------------------------------------------------- |
+| `primary`      | `#14293D` | Sidebar, headers, botones primarios, texto sobre fondo claro en marca                                            |
+| `primary-dark` | `#0B1A29` | Hover/active de elementos `primary`                                                                              |
+| `accent`       | `#A67C3D` | Focus rings, indicador de sección/nav activa. Uso **limitado** — no decorativo, no botones grandes de este color |
+| `bg`           | `#F7F8FA` | Fondo general de la app                                                                                          |
+| `surface`      | `#FFFFFF` | Cards, modales, inputs                                                                                           |
+| `border`       | `#E4E7EC` | Bordes de cards, tablas, inputs                                                                                  |
+| `text`         | `#1D2939` | Texto principal                                                                                                  |
+| `text-muted`   | `#667085` | Texto secundario, placeholders, labels                                                                           |
+| `success`      | `#2F6844` | Confirmaciones, estados positivos                                                                                |
+| `danger`       | `#A13D3D` | Errores, estados destructivos                                                                                    |
+
 ### Tipografía
- 
+
 - **UI general** (botones, forms, tablas, nav, body): **Inter**. Es la fuente por defecto para todo excepto lo indicado abajo.
 - **Wordmark / títulos de página** (`<h1>` de cada vista, logo "PV"/"PAVH"): **Source Serif 4**. Uso restringido — nunca en botones, labels, ni texto de tabla. Es el único lugar donde aparece un serif.
 - Tamaño base 16px, escala modesta (no tipografía gigante tipo landing page — esto es una herramienta de trabajo).
 
 ### Layout
- 
+
 - Sidebar fijo, fondo `primary`, íconos + labels en blanco/gris claro.
 - Topbar blanco, borde inferior `border` (1px, sin sombra).
 - Contenido sobre fondo `bg`, cards en `surface` con borde `border` de 1px — **no usar `box-shadow` pesado**, rompe la seriedad del diseño.
@@ -132,9 +129,9 @@ Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif
 - **Vista de detalle de un documento** (patrón de `QuoteDetailView.vue`): header con folio/identificador + badge de status + fecha, card de "datos generales", card de tabla de líneas con totales al final, acciones a la derecha del header (algunas pueden existir deshabilitadas con tooltip explicando por qué, en espera de un módulo futuro).
 - **Confirmación de acciones destructivas**: `ConfirmDialog` de PrimeVue unstyled, con markup propio vía slot `#container` y los tokens de color del sistema de diseño.
 - **Diálogos de acción puntual** (ej. ajuste de stock): `Dialog` de PrimeVue unstyled, mismo criterio visual que `ConfirmDialog`.
- 
+
 ## Checklist antes de dar por terminada una tarea
- 
+
 - [ ] ¿Usa los tokens de color definidos arriba (no hex sueltos)?
 - [ ] ¿Usa Inter para UI y Source Serif 4 solo en títulos de página?
 - [ ] ¿Sigue el patrón de layout (sidebar/topbar/cards sin sombra pesada)?
@@ -154,3 +151,4 @@ Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif
 - [ ] (Frontend) ¿Las mutaciones puntuales actualizan el store in-place en vez de refetch completo?
 - [ ] (Frontend) ¿Las acciones destructivas usan `ConfirmDialog` de PrimeVue, no `confirm()` nativo?
 - [ ] (Frontend) ¿Un guard de negocio del backend tiene su contraparte de UX en el frontend (deshabilitar/redirigir), sin duplicar la validación real?
+- [ ] (Frontend) ¿Un componente reutilizado entre módulos vive en `src/components/widgets/<tipo>/`, no duplicado o inline?
