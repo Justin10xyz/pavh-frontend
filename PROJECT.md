@@ -202,7 +202,7 @@ Estructura de catálogo confirmada con datos reales de proveedor (Interceramic):
 ## Roadmap
 
 1. ~~Sistema de diseño~~ ✅ — definido en `AGENT.md` (paleta, tipografía, layout)
-2. Dashboard real (reemplazar `HomeView.vue` placeholder) — 🚧 en progreso (ver módulo 4): store de datos, layout visible y resumen de ventas hechos (pasos 1-3), falta stock bajo y cotizaciones activas (pasos 4-5)
+2. ~~Dashboard real~~ - store de datos, layout visible y resumen de ventas, stock bajo y cotizaciones activas
 3. ~~Limpieza de scaffold sin usar~~ ✅
 4. ~~Navegación principal (sidebar + topbar)~~ ✅
 5. ~~Módulo de Inventario~~ ✅ — backend y frontend completos (catálogo, CRUD de producto y variante, ajuste de stock)
