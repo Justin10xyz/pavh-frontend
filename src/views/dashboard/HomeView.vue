@@ -14,7 +14,11 @@
 		<DashboardShortcuts class="mb-6" />
 
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
-			<LowStockWidget :variants="lowStockVariants" />
+			<LowStockWidget
+				:variants="dashboard.lowStockVariants"
+				:loading="dashboard.lowStockLoading"
+				:error="dashboard.lowStockError"
+			/>
 			<ActiveQuotesWidget :quotes="activeQuotes" />
 		</div>
 	</div>
@@ -36,13 +40,7 @@ onMounted(() => {
 })
 
 // Datos de ejemplo con la misma forma que expone el store dashboard.js; se
-// reemplazan por el store en los pasos 4 (stock bajo) y 5 (cotizaciones).
-const lowStockVariants = [
-	{ id: 1, product: { name: 'Creato' }, color: 'Taupe', size: '60x120', stock_boxes: 3, minimum_stock: 10 },
-	{ id: 2, product: { name: 'Bastille' }, color: 'Gris', size: '30x60', stock_boxes: 0, minimum_stock: 8 },
-	{ id: 3, product: { name: 'Kenia' }, color: 'Beige', size: '45x45', stock_boxes: 5, minimum_stock: 12 },
-]
-
+// reemplaza por el store en el paso 5 (cotizaciones activas).
 const activeQuotes = [
 	{ id: 1, folio: 'COT-0012', customer: { name: 'Constructora del Norte' }, total: '18450.00' },
 	{ id: 2, folio: 'COT-0011', customer: null, total: '6320.50' },
