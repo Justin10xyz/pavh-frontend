@@ -1,11 +1,35 @@
 <template>
 	<div class="p-2 max-w-4xl">
 		<div class="mb-4">
-			<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
-			<p class="text-sm text-text-muted mt-0.5">Selecciona los productos, captura cantidades y ajusta el precio de venta si aplica.</p>
+			<h1 class="font-serif text-xl text-primary">{{ quoteId ? 'Convertir cotización a venta' : route.meta.title }}</h1>
+			<p v-if="quoteId" class="text-sm text-text-muted mt-0.5">
+				Revisa y ajusta los datos prellenados desde la
+				<router-link :to="{ name: 'quotes.show', params: { id: quoteId } }" class="text-accent hover:underline">cotización de origen</router-link>.
+			</p>
+			<p v-else class="text-sm text-text-muted mt-0.5">Selecciona los productos, captura cantidades y ajusta el precio de venta si aplica.</p>
 		</div>
 
-		<form @submit.prevent="handleSubmit" class="space-y-4">
+		<div v-if="loadingConversion" class="text-text-muted text-sm">Cargando cotización…</div>
+
+		<!-- Error bloqueante de /convert (cotización ya convertida, o variantes que
+		     ya no están en inventario): aquí sí
+		     se oculta el form a propósito, no hay nada que se pueda registrar. -->
+		<div v-else-if="conversionError" class="space-y-3">
+			<p class="text-danger text-[13px] flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+				</svg>
+				{{ conversionError }}
+			</p>
+			<router-link
+				:to="{ name: 'quotes.show', params: { id: quoteId } }"
+				class="inline-flex items-center bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none"
+			>
+				Volver a la cotización
+			</router-link>
+		</div>
+
+		<form v-else @submit.prevent="handleSubmit" class="space-y-4">
 			<!-- Sección 1 — Cliente -->
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
 				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Cliente</h2>
@@ -163,20 +187,116 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import axios from '@/lib/axios'
 import { useInventoryStore } from '@/stores/inventory'
 import { useSalesStore } from '@/stores/sales'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
 import VariantAutocomplete from '@/components/widgets/autocompletes/VariantAutocomplete.vue'
 
 const route = useRoute()
+const router = useRouter()
 const sales = useSalesStore()
 const inventory = useInventoryStore()
 
 const form = reactive({
 	customer_id: '',
 })
+
+// Con ?quote_id= es "Convertir a venta": se prellena desde GET /quotes/{id}/convert
+// y la confirmación pasa por el mismo POST /api/sales con quote_id en el payload.
+// Sin él es venta directa de mostrador.
+const quoteId = computed(() => route.query.quote_id ?? null)
+const loadingConversion = ref(false)
+const conversionError = ref(null)
+
+async function loadConversion() {
+	loadingConversion.value = true
+
+	try {
+		const { data } = await axios.get(`/api/quotes/${quoteId.value}/convert`)
+
+		// /convert solo trae product_variant_id; la variante completa (color,
+		// medida, stock…) se resuelve contra el inventario, con la misma forma
+		// que emite VariantAutocomplete (ver también QuoteFormView@loadQuote).
+		let inventoryIsFresh = false
+		if (!inventory.initialized) {
+			await inventory.fetchProducts()
+			inventoryIsFresh = true
+		}
+		if (!inventory.initialized) {
+			conversionError.value = inventory.error || 'No se pudieron cargar los productos.'
+			return
+		}
+
+		const items = data.data.items ?? []
+		let resolved = resolveConversionLines(items)
+
+		// Respaldo: las variantes dadas de baja ya las rechaza el backend con 422.
+		// Esto cubre una variante que existe en BD pero no en el inventory.products
+		// cacheado (ej. creada después de cargar el store): se refresca el
+		// inventario una sola vez (salvo que se acabe de cargar) y se reintenta.
+		if (resolved.missingVariantIds.length > 0 && !inventoryIsFresh) {
+			await inventory.fetchProducts()
+			resolved = resolveConversionLines(items)
+		}
+
+		const { loadedLines, missingVariantIds } = resolved
+
+		// Si aun así falta, se bloquea. Solo aquí el mensaje se arma en el
+		// frontend, con el id porque /convert no trae más datos.
+		if (missingVariantIds.length > 0) {
+			const ids = missingVariantIds.map((id) => `#${id}`).join(', ')
+			conversionError.value = missingVariantIds.length === 1
+				? `La variante ${ids} de esta cotización ya no está disponible en inventario. No se puede convertir a venta.`
+				: `Las variantes ${ids} de esta cotización ya no están disponibles en inventario. No se puede convertir a venta.`
+			return
+		}
+
+		form.customer_id = data.data.customer_id ?? ''
+		lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()]
+	} catch (err) {
+		console.error(err)
+		// 422 de QuoteController@convert (cotización ya convertida, o variantes
+		// dadas de baja): el mensaje ya viene listo y se muestra tal cual.
+		conversionError.value = err.response?.status === 404
+			? 'La cotización no existe.'
+			: err.response?.data?.message || 'No se pudo cargar la cotización.'
+	} finally {
+		loadingConversion.value = false
+	}
+}
+
+function resolveConversionLines(items) {
+	const loadedLines = []
+	const missingVariantIds = []
+
+	for (const item of items) {
+		const variant = findInventoryVariantWithLine(item.product_variant_id)
+		if (!variant) {
+			missingVariantIds.push(item.product_variant_id)
+			continue
+		}
+
+		loadedLines.push({
+			...createEmptyLine(),
+			variant,
+			quantity: Number(item.quantity),
+			unit_price: Number(item.unit_price),
+		})
+	}
+
+	return { loadedLines, missingVariantIds }
+}
+
+function findInventoryVariantWithLine(variantId) {
+	for (const product of inventory.products) {
+		const variant = product.variants?.find((v) => v.id === variantId)
+		if (variant) return { ...variant, lineName: product.name }
+	}
+	return null
+}
 
 function createEmptyLine() {
 	return {
@@ -319,6 +439,7 @@ const handleSubmit = async () => {
 	try {
 		const payload = {
 			customer_id: form.customer_id || null,
+			...(quoteId.value ? { quote_id: Number(quoteId.value) } : {}),
 			items: validLines.map((l) => ({
 				product_variant_id: l.variant.id,
 				quantity: l.quantity,
@@ -328,6 +449,14 @@ const handleSubmit = async () => {
 
 		const sale = await sales.createSale(payload)
 		syncInventoryStock(payload.items)
+
+		// Una conversión no es flujo de mostrador repetido: se vuelve al detalle
+		// de la cotización (que se refetchea al montar y ya mostrará "Convertida").
+		if (quoteId.value) {
+			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
+			return
+		}
+
 		resetForm()
 		successMessage.value = `Venta ${sale.folio} registrada correctamente.`
 	} catch (err) {
@@ -339,6 +468,16 @@ const handleSubmit = async () => {
 		submitting.value = false
 	}
 }
+
+// Al final del script: con `immediate` corre en setup y necesita que lines,
+// generalError, etc. ya estén declarados.
+watch(quoteId, () => {
+	conversionError.value = null
+	generalError.value = null
+	successMessage.value = null
+	resetForm()
+	if (quoteId.value) loadConversion()
+}, { immediate: true })
 </script>
 
 <style scoped>
