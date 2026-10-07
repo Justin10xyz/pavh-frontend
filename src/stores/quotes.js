@@ -1,38 +1,38 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import axios from '@/lib/axios'
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import axios from "@/lib/axios";
 
-export const useQuotesStore = defineStore('quotes', () => {
-	const quotes = ref([])
-	const loading = ref(false)
-	const error = ref(null)
-	const initialized = ref(false)
+export const useQuotesStore = defineStore("quotes", () => {
+	const quotes = ref([]);
+	const loading = ref(false);
+	const error = ref(null);
+	const initialized = ref(false);
 
 	// Detalle de una sola cotización (con items + producto). Va en su propio
 	// ref y con loading/error propios: es un registro completo, no el resumen
 	// del listado, y no debe pisar el estado de fetchQuotes().
-	const currentQuote = ref(null)
-	const currentQuoteLoading = ref(false)
-	const currentQuoteError = ref(null)
+	const currentQuote = ref(null);
+	const currentQuoteLoading = ref(false);
+	const currentQuoteError = ref(null);
 
 	// QuoteController@index solo soporta `?with=items` (carga items.productVariant).
 	// `customer` y `quoteStatus.name` no requieren `with`: QuoteResource los
 	// accede siempre, así que Eloquent los lazy-loads y ya vienen en la respuesta.
 	async function fetchQuotes({ force = false } = {}) {
-		if (initialized.value && !force) return
+		if (initialized.value && !force) return;
 
-		loading.value = true
-		error.value = null
+		loading.value = true;
+		error.value = null;
 
 		try {
-			const { data } = await axios.get('/api/quotes?with=customer,quoteStatus')
-			quotes.value = data.data
-			initialized.value = true
+			const { data } = await axios.get("/api/quotes?with=customer,quoteStatus");
+			quotes.value = data.data;
+			initialized.value = true;
 		} catch (err) {
-			error.value = 'No se pudieron cargar las cotizaciones.'
-			console.error(err)
+			error.value = "No se pudieron cargar las cotizaciones.";
+			console.error(err);
 		} finally {
-			loading.value = false
+			loading.value = false;
 		}
 	}
 
@@ -40,22 +40,23 @@ export const useQuotesStore = defineStore('quotes', () => {
 	// customer y quoteStatus server-side, no necesita `?with=`.
 	async function fetchQuote(id) {
 		if (currentQuote.value && String(currentQuote.value.id) !== String(id)) {
-			currentQuote.value = null
+			currentQuote.value = null;
 		}
 
-		currentQuoteLoading.value = true
-		currentQuoteError.value = null
+		currentQuoteLoading.value = true;
+		currentQuoteError.value = null;
 
 		try {
-			const { data } = await axios.get(`/api/quotes/${id}`)
-			currentQuote.value = data.data
+			const { data } = await axios.get(`/api/quotes/${id}`);
+			currentQuote.value = data.data;
 		} catch (err) {
-			currentQuoteError.value = err.response?.status === 404
-				? 'La cotización no existe.'
-				: 'No se pudo cargar la cotización.'
-			console.error(err)
+			currentQuoteError.value =
+				err.response?.status === 404
+					? "La cotización no existe."
+					: "No se pudo cargar la cotización.";
+			console.error(err);
 		} finally {
-			currentQuoteLoading.value = false
+			currentQuoteLoading.value = false;
 		}
 	}
 
@@ -64,21 +65,26 @@ export const useQuotesStore = defineStore('quotes', () => {
 	// items.productVariant + customer + quoteStatus cargados, así que se agrega
 	// directo al array in-place en vez de un refetch completo del listado.
 	async function createQuote(payload) {
-		const { data } = await axios.post('/api/quotes', payload)
-		quotes.value.unshift(data.data)
-		return data.data
+		const { data } = await axios.post("/api/quotes", payload);
+		quotes.value.unshift(data.data);
+		return data.data;
 	}
 
 	// PUT /api/quotes/{id} reemplaza todas las líneas. Se actualiza el registro
 	// in-place tanto en el detalle como en el listado, sin refetch completo.
 	async function updateQuote(id, payload) {
-		const { data } = await axios.put(`/api/quotes/${id}`, payload)
-		currentQuote.value = data.data
+		const { data } = await axios.put(`/api/quotes/${id}`, payload);
+		currentQuote.value = data.data;
 
-		const index = quotes.value.findIndex((q) => String(q.id) === String(id))
-		if (index !== -1) quotes.value[index] = data.data
+		const index = quotes.value.findIndex((q) => String(q.id) === String(id));
+		if (index !== -1) quotes.value[index] = data.data;
 
-		return data.data
+		return data.data;
+	}
+
+	async function fetchQuotePdf(id) {
+		const response = await axios.get(`/api/quotes/${id}/pdf`, { responseType: "blob" });
+		return response.data;
 	}
 
 	return {
@@ -93,5 +99,6 @@ export const useQuotesStore = defineStore('quotes', () => {
 		currentQuoteLoading,
 		currentQuoteError,
 		fetchQuote,
-	}
-})
+		fetchQuotePdf,
+	};
+});
