@@ -1,0 +1,20 @@
+export default [
+	{
+		path: '/inventario',
+		name: 'inventory',
+		component: () => import('@/views/inventory/InventoryView.vue'),
+		meta: { layout: 'AppLayout', title: 'Inventario', requiresAuth: true },
+	},
+	{
+		path: '/inventario/productos/nuevo',
+		name: 'products.create',
+		component: () => import('@/views/inventory/ProductFormView.vue'),
+		meta: { layout: 'AppLayout', title: 'Nuevo producto', requiresAuth: true },
+	},
+	{
+		path: '/inventario/productos/:id/editar',
+		name: 'products.edit',
+		component: () => import('@/views/inventory/ProductFormView.vue'),
+		meta: { layout: 'AppLayout', title: 'Editar producto', requiresAuth: true },
+	},
+]
