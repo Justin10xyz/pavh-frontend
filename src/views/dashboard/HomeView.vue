@@ -16,10 +16,10 @@
 </template>
 
 <script setup>
-import SalesSummaryCards from './dashboard/components/SalesSummaryCards.vue'
-import DashboardShortcuts from './dashboard/components/DashboardShortcuts.vue'
-import LowStockWidget from './dashboard/components/LowStockWidget.vue'
-import ActiveQuotesWidget from './dashboard/components/ActiveQuotesWidget.vue'
+import SalesSummaryCards from './components/SalesSummaryCards.vue'
+import DashboardShortcuts from './components/DashboardShortcuts.vue'
+import LowStockWidget from './components/LowStockWidget.vue'
+import ActiveQuotesWidget from './components/ActiveQuotesWidget.vue'
 
 // Datos de ejemplo con la misma forma que expone el store dashboard.js; se
 // reemplazan por el store cuando se conecte la vista (paso siguiente).
