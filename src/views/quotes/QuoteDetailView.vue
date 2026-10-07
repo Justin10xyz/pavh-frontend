@@ -1,6 +1,8 @@
 <template>
 	<div class="p-2 max-w-5xl">
-		<div v-if="quotes.currentQuoteLoading && !quote" class="text-text-muted text-sm">Cargando cotización…</div>
+		<div v-if="quotes.currentQuoteLoading && !quote" class="text-text-muted text-sm">
+			Cargando cotización…
+		</div>
 
 		<div v-else-if="quotes.currentQuoteError" class="space-y-4">
 			<p class="text-danger text-sm">{{ quotes.currentQuoteError }}</p>
@@ -19,54 +21,103 @@
 				<div>
 					<div class="flex items-center gap-2">
 						<h1 class="font-serif text-xl text-primary">{{ quote.folio }}</h1>
-						<span class="text-[10px] px-2 py-0.5 rounded" :class="statusClasses(quote.status)">
+						<span
+							class="text-[10px] px-2 py-0.5 rounded"
+							:class="statusClasses(quote.status)"
+						>
 							{{ quote.status }}
 						</span>
 					</div>
-					<p class="text-sm text-text-muted mt-0.5">Creada el {{ formatDate(quote.created_at) }}</p>
+					<p class="text-sm text-text-muted mt-0.5">
+						Creada el {{ formatDate(quote.created_at) }}
+					</p>
 				</div>
 
-				<div class="flex items-center gap-3">
-					<button
-						type="button"
-						@click="goBack"
-						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
-					>
-						Volver
-					</button>
-					<button
-						type="button"
-						:disabled="!isEditable"
-						:title="isEditable ? 'Editar cotización' : 'Solo se pueden editar cotizaciones en estado Borrador'"
-						@click="editQuote"
-						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
-					>
-						Editar
-					</button>
-					<button
-						type="button"
-						:disabled="!isEditable"
-						:title="isEditable ? 'Convertir a venta' : 'Solo se pueden convertir cotizaciones en estado Borrador'"
-						@click="convertToSale"
-						class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:bg-primary/50 disabled:cursor-not-allowed"
-					>
-						Convertir a venta
-					</button>
+				<div class="flex flex-col items-end gap-1.5">
+					<div class="flex flex-wrap items-center gap-3">
+						<button
+							type="button"
+							@click="goBack"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Volver
+						</button>
+						<button
+							type="button"
+							:disabled="!isEditable"
+							:title="
+								isEditable
+									? 'Editar cotización'
+									: 'Solo se pueden editar cotizaciones en estado Borrador'
+							"
+							@click="editQuote"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+						>
+							Editar
+						</button>
+						<button
+							v-if="canShareFiles"
+							type="button"
+							:disabled="pdfBusy"
+							@click="sharePdf"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+						>
+							<i class="ti ti-share text-[15px]"></i>
+							Compartir
+						</button>
+						<button
+							type="button"
+							:disabled="pdfBusy"
+							@click="downloadPdf"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+						>
+							<i class="ti ti-download text-[15px]"></i>
+							{{ pdfBusy ? "Generando PDF…" : "Descargar PDF" }}
+						</button>
+						<button
+							type="button"
+							:disabled="!isEditable"
+							:title="
+								isEditable
+									? 'Convertir a venta'
+									: 'Solo se pueden convertir cotizaciones en estado Borrador'
+							"
+							@click="convertToSale"
+							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:bg-primary/50 disabled:cursor-not-allowed"
+						>
+							Convertir a venta
+						</button>
+					</div>
+					<p v-if="pdfError" class="text-danger text-xs">{{ pdfError }}</p>
 				</div>
 			</div>
 
 			<div class="space-y-4">
 				<!-- Datos generales -->
 				<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-					<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
+					<h2
+						class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4"
+					>
+						Datos generales
+					</h2>
 
 					<dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
 						<div class="space-y-1">
 							<dt class="text-xs font-medium text-text-muted">Cliente</dt>
 							<dd v-if="quote.customer" class="text-text">
 								<div class="font-medium">{{ quote.customer.name }}</div>
-								<div v-if="quote.customer.phone" class="text-text-muted text-[13px]">{{ quote.customer.phone }}</div>
-								<div v-if="quote.customer.email" class="text-text-muted text-[13px]">{{ quote.customer.email }}</div>
+								<div
+									v-if="quote.customer.phone"
+									class="text-text-muted text-[13px]"
+								>
+									{{ quote.customer.phone }}
+								</div>
+								<div
+									v-if="quote.customer.email"
+									class="text-text-muted text-[13px]"
+								>
+									{{ quote.customer.email }}
+								</div>
 							</dd>
 							<dd v-else class="text-text-muted">Sin cliente</dd>
 						</div>
@@ -85,7 +136,11 @@
 
 				<!-- Líneas -->
 				<div class="bg-surface border border-border rounded-md overflow-hidden">
-					<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4">Productos</h2>
+					<h2
+						class="text-[11px] font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4"
+					>
+						Productos
+					</h2>
 
 					<div class="overflow-x-auto">
 						<table class="items-table">
@@ -101,15 +156,26 @@
 							<tbody>
 								<tr v-for="item in quote.items" :key="item.id">
 									<td>
-										<div class="font-medium text-text">{{ item.product_variant?.product?.name ?? '—' }}</div>
+										<div class="font-medium text-text">
+											{{ item.product_variant?.product?.name ?? "—" }}
+										</div>
 										<div class="text-text-muted text-[12px]">
-											{{ item.product_variant?.color }} · {{ item.product_variant?.size }}
+											{{ item.product_variant?.color }} ·
+											{{ item.product_variant?.size }}
 										</div>
 									</td>
-									<td class="text-right text-text">{{ formatQuantity(item.quantity) }} m²</td>
-									<td class="text-right text-text-muted">{{ boxesFor(item) ?? '—' }}</td>
-									<td class="text-right text-text">{{ formatCurrency(item.unit_price) }}/m²</td>
-									<td class="text-right text-text">{{ formatCurrency(item.line_total) }}</td>
+									<td class="text-right text-text">
+										{{ formatQuantity(item.quantity) }} m²
+									</td>
+									<td class="text-right text-text-muted">
+										{{ boxesFor(item) ?? "—" }}
+									</td>
+									<td class="text-right text-text">
+										{{ formatCurrency(item.unit_price) }}/m²
+									</td>
+									<td class="text-right text-text">
+										{{ formatCurrency(item.line_total) }}
+									</td>
 								</tr>
 							</tbody>
 						</table>
@@ -135,63 +201,149 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useQuotesStore } from '@/stores/quotes'
-import { statusClasses } from '@/lib/quoteStatus'
+import { computed, watch, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useQuotesStore } from "@/stores/quotes";
+import { statusClasses } from "@/lib/quoteStatus";
 
-const route = useRoute()
-const router = useRouter()
-const quotes = useQuotesStore()
+const route = useRoute();
+const router = useRouter();
+const quotes = useQuotesStore();
+
+//PDF & share
+let pdfPromise = null;
+const pdfBusy = ref(false);
+const pdfError = ref(null);
 
 watch(
 	() => route.params.id,
 	(id) => {
-		if (id) quotes.fetchQuote(id)
+		pdfPromise = null;
+		pdfError.value = null;
+		if (id) quotes.fetchQuote(id);
 	},
-	{ immediate: true }
-)
+	{ immediate: true },
+);
 
 // Evita mostrar por un instante una cotización distinta si el store aún
 // trae la de una visita anterior.
 const quote = computed(() => {
-	const current = quotes.currentQuote
-	return current && String(current.id) === String(route.params.id) ? current : null
-})
+	const current = quotes.currentQuote;
+	return current && String(current.id) === String(route.params.id) ? current : null;
+});
 
-const isEditable = computed(() => quote.value?.status === 'Borrador')
+const isEditable = computed(() => quote.value?.status === "Borrador");
 
 // Mismo cálculo que QuoteFormView: quantity está en m², el stock en cajas.
 function boxesFor(item) {
-	const m2PerBox = item.product_variant?.m2_per_box
-	if (!m2PerBox) return null
-	return Math.ceil((Number(item.quantity) || 0) / m2PerBox)
+	const m2PerBox = item.product_variant?.m2_per_box;
+	if (!m2PerBox) return null;
+	return Math.ceil((Number(item.quantity) || 0) / m2PerBox);
 }
 
-const currencyFormatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
+const currencyFormatter = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 
 function formatCurrency(value) {
-	return currencyFormatter.format(Number(value))
+	return currencyFormatter.format(Number(value));
 }
 
 function formatQuantity(value) {
-	return Number(value).toLocaleString('es-MX', { maximumFractionDigits: 2 })
+	return Number(value).toLocaleString("es-MX", { maximumFractionDigits: 2 });
 }
 
 function formatDate(value) {
-	return new Date(value).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+	return new Date(value).toLocaleDateString("es-MX", {
+		day: "2-digit",
+		month: "short",
+		year: "numeric",
+	});
+}
+
+//Share PDF
+// Se detecta con un archivo de prueba: navigator.share puede existir (ej.
+// escritorio) sin soportar archivos, y en ese caso el botón ni se muestra.
+const canShareFiles = (() => {
+	if (typeof navigator === "undefined" || !navigator.share || !navigator.canShare) return false;
+	try {
+		const probe = new File([""], "probe.pdf", { type: "application/pdf" });
+		return navigator.canShare({ files: [probe] });
+	} catch {
+		return false;
+	}
+})();
+
+//Generate PDF
+// El PDF se cachea por cotización: se usa tanto para descargar como para compartir.
+
+function loadPdfFile() {
+	const id = route.params.id;
+	pdfPromise ??= quotes.fetchQuotePdf(id).then(
+		(blob) =>
+			new File([blob], `Cotizacion-${quote.value?.folio ?? id}.pdf`, {
+				type: "application/pdf",
+			}),
+		(err) => {
+			pdfPromise = null;
+			throw err;
+		},
+	);
+	return pdfPromise;
+}
+
+// navigator.share() exige llamarse poco después del clic del usuario; Safari
+// lo rechaza si antes hubo que esperar al backend. Por eso se pide el PDF en
+// cuanto carga la cotización, igual que en SaleDetailView.
+watch(quote, (current) => {
+	if (current && canShareFiles) loadPdfFile().catch(() => {});
+});
+
+async function downloadPdf() {
+	pdfBusy.value = true;
+	pdfError.value = null;
+
+	try {
+		const file = await loadPdfFile();
+		const url = URL.createObjectURL(file);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = file.name;
+		link.click();
+		URL.revokeObjectURL(url);
+	} catch (err) {
+		pdfError.value = "No se pudo generar el PDF.";
+		console.error(err);
+	} finally {
+		pdfBusy.value = false;
+	}
+}
+
+async function sharePdf() {
+	pdfBusy.value = true;
+	pdfError.value = null;
+
+	try {
+		const file = await loadPdfFile();
+		await navigator.share({ files: [file], title: `Cotización ${quote.value.folio}` });
+	} catch (err) {
+		if (err?.name !== "AbortError") {
+			pdfError.value = "No se pudo compartir el PDF. Intenta descargarlo.";
+			console.error(err);
+		}
+	} finally {
+		pdfBusy.value = false;
+	}
 }
 
 function editQuote() {
-	router.push({ name: 'quotes.edit', params: { id: quote.value.id } })
+	router.push({ name: "quotes.edit", params: { id: quote.value.id } });
 }
 
 function convertToSale() {
-	router.push({ name: 'pos.sales.create', query: { quote_id: quote.value.id } })
+	router.push({ name: "pos.sales.create", query: { quote_id: quote.value.id } });
 }
 
 function goBack() {
-	router.push({ name: 'quotes' })
+	router.push({ name: "quotes" });
 }
 </script>
 
