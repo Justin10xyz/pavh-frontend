@@ -16,6 +16,12 @@ export const useSalesStore = defineStore('sales', () => {
 	// solo la respuesta más reciente puede escribir en el estado.
 	let lastRequestId = 0
 
+	// Detalle de una sola venta, en su propio ref con loading/error propios
+	// (mismo criterio que currentQuote en quotes.js): no pisa el listado.
+	const currentSale = ref(null)
+	const currentSaleLoading = ref(false)
+	const currentSaleError = ref(null)
+
 	async function fetchSales({ from, to } = {}) {
 		const requestId = ++lastRequestId
 		loading.value = true
@@ -39,10 +45,51 @@ export const useSalesStore = defineStore('sales', () => {
 		}
 	}
 
+	// GET /api/sales/{id} ya eager-loadea items.productVariant y customer
+	// server-side, no necesita `?with=`.
+	async function fetchSale(id) {
+		if (currentSale.value && String(currentSale.value.id) !== String(id)) {
+			currentSale.value = null
+		}
+
+		currentSaleLoading.value = true
+		currentSaleError.value = null
+
+		try {
+			const { data } = await axios.get(`/api/sales/${id}`)
+			currentSale.value = data.data
+		} catch (err) {
+			currentSaleError.value = err.response?.status === 404
+				? 'La venta no existe.'
+				: 'No se pudo cargar la venta.'
+			console.error(err)
+		} finally {
+			currentSaleLoading.value = false
+		}
+	}
+
+	// Devuelve el PDF como Blob; descargarlo o compartirlo lo decide la vista.
+	async function fetchSalePdf(id) {
+		const { data } = await axios.get(`/api/sales/${id}/pdf`, { responseType: 'blob' })
+		return data
+	}
+
 	async function createSale(payload) {
 		const { data } = await axios.post('/api/sales', payload)
 		return data.data
 	}
 
-	return { sales, loading, error, initialized, fetchSales, createSale }
+	return {
+		sales,
+		loading,
+		error,
+		initialized,
+		currentSale,
+		currentSaleLoading,
+		currentSaleError,
+		fetchSales,
+		fetchSale,
+		fetchSalePdf,
+		createSale,
+	}
 })

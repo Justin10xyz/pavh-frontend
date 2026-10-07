@@ -79,6 +79,20 @@
 						<span class="text-text">{{ formatCurrency(data.total) }}</span>
 					</template>
 				</Column>
+
+				<Column header="" style="width: 3rem">
+					<template #body="{ data }">
+						<button
+							type="button"
+							class="text-text-muted hover:text-accent transition-colors"
+							aria-label="Ver venta"
+							title="Ver venta"
+							@click="viewSale(data.id)"
+						>
+							<i class="ti ti-eye text-[15px]"></i>
+						</button>
+					</template>
+				</Column>
 			</DataTable>
 		</div>
 	</div>
@@ -86,10 +100,12 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import { useSalesStore } from '@/stores/sales'
 
+const router = useRouter()
 const sales = useSalesStore()
 
 const dateFilters = [
@@ -136,6 +152,10 @@ function dateRangeFor(key) {
 	}
 
 	return null
+}
+
+function viewSale(id) {
+	router.push({ name: 'pos.sales.show', params: { id } })
 }
 
 function applyDateFilter(key) {

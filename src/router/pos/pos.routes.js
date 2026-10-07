@@ -17,4 +17,10 @@ export default [
 		component: () => import('@/views/pos/SalesView.vue'),
 		meta: { layout: 'AppLayout', title: 'Ventas', requiresAuth: true },
 	},
+	{
+		path: '/pos/ventas/:id',
+		name: 'pos.sales.show',
+		component: () => import('@/views/pos/SaleDetailView.vue'),
+		meta: { layout: 'AppLayout', title: 'Venta', requiresAuth: true },
+	},
 ]
