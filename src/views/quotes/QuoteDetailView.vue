@@ -201,29 +201,15 @@
 </template>
 
 <script setup>
-import { computed, watch, ref } from "vue";
+import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useQuotesStore } from "@/stores/quotes";
 import { statusClasses } from "@/lib/quoteStatus";
+import { useDocumentPdf } from "@/composables/useDocumentPdf";
 
 const route = useRoute();
 const router = useRouter();
 const quotes = useQuotesStore();
-
-//PDF & share
-let pdfPromise = null;
-const pdfBusy = ref(false);
-const pdfError = ref(null);
-
-watch(
-	() => route.params.id,
-	(id) => {
-		pdfPromise = null;
-		pdfError.value = null;
-		if (id) quotes.fetchQuote(id);
-	},
-	{ immediate: true },
-);
 
 // Evita mostrar por un instante una cotización distinta si el store aún
 // trae la de una visita anterior.
@@ -231,6 +217,23 @@ const quote = computed(() => {
 	const current = quotes.currentQuote;
 	return current && String(current.id) === String(route.params.id) ? current : null;
 });
+
+const { canShareFiles, pdfBusy, pdfError, downloadPdf, sharePdf, reset: resetPdf } = useDocumentPdf({
+	fetchPdf: quotes.fetchQuotePdf,
+	filePrefix: "Cotizacion",
+	titlePrefix: "Cotización",
+	id: () => route.params.id,
+	document: quote,
+});
+
+watch(
+	() => route.params.id,
+	(id) => {
+		resetPdf();
+		if (id) quotes.fetchQuote(id);
+	},
+	{ immediate: true },
+);
 
 const isEditable = computed(() => quote.value?.status === "Borrador");
 
@@ -257,81 +260,6 @@ function formatDate(value) {
 		month: "short",
 		year: "numeric",
 	});
-}
-
-//Share PDF
-// Se detecta con un archivo de prueba: navigator.share puede existir (ej.
-// escritorio) sin soportar archivos, y en ese caso el botón ni se muestra.
-const canShareFiles = (() => {
-	if (typeof navigator === "undefined" || !navigator.share || !navigator.canShare) return false;
-	try {
-		const probe = new File([""], "probe.pdf", { type: "application/pdf" });
-		return navigator.canShare({ files: [probe] });
-	} catch {
-		return false;
-	}
-})();
-
-//Generate PDF
-// El PDF se cachea por cotización: se usa tanto para descargar como para compartir.
-
-function loadPdfFile() {
-	const id = route.params.id;
-	pdfPromise ??= quotes.fetchQuotePdf(id).then(
-		(blob) =>
-			new File([blob], `Cotizacion-${quote.value?.folio ?? id}.pdf`, {
-				type: "application/pdf",
-			}),
-		(err) => {
-			pdfPromise = null;
-			throw err;
-		},
-	);
-	return pdfPromise;
-}
-
-// navigator.share() exige llamarse poco después del clic del usuario; Safari
-// lo rechaza si antes hubo que esperar al backend. Por eso se pide el PDF en
-// cuanto carga la cotización, igual que en SaleDetailView.
-watch(quote, (current) => {
-	if (current && canShareFiles) loadPdfFile().catch(() => {});
-});
-
-async function downloadPdf() {
-	pdfBusy.value = true;
-	pdfError.value = null;
-
-	try {
-		const file = await loadPdfFile();
-		const url = URL.createObjectURL(file);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = file.name;
-		link.click();
-		URL.revokeObjectURL(url);
-	} catch (err) {
-		pdfError.value = "No se pudo generar el PDF.";
-		console.error(err);
-	} finally {
-		pdfBusy.value = false;
-	}
-}
-
-async function sharePdf() {
-	pdfBusy.value = true;
-	pdfError.value = null;
-
-	try {
-		const file = await loadPdfFile();
-		await navigator.share({ files: [file], title: `Cotización ${quote.value.folio}` });
-	} catch (err) {
-		if (err?.name !== "AbortError") {
-			pdfError.value = "No se pudo compartir el PDF. Intenta descargarlo.";
-			console.error(err);
-		}
-	} finally {
-		pdfBusy.value = false;
-	}
 }
 
 function editQuote() {

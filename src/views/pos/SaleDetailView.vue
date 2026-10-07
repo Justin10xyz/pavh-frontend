@@ -127,9 +127,10 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSalesStore } from '@/stores/sales'
+import { useDocumentPdf } from '@/composables/useDocumentPdf'
 
 const route = useRoute()
 const router = useRouter()
@@ -142,90 +143,21 @@ const sale = computed(() => {
 	return current && String(current.id) === String(route.params.id) ? current : null
 })
 
-// Se detecta con un archivo de prueba: navigator.share puede existir (ej.
-// escritorio) sin soportar archivos, y en ese caso el botón ni se muestra.
-const canShareFiles = (() => {
-	if (typeof navigator === 'undefined' || !navigator.share || !navigator.canShare) return false
-	try {
-		const probe = new File([''], 'probe.pdf', { type: 'application/pdf' })
-		return navigator.canShare({ files: [probe] })
-	} catch {
-		return false
-	}
-})()
-
-// El PDF se cachea por venta: se usa tanto para descargar como para compartir.
-let pdfPromise = null
-const pdfBusy = ref(false)
-const pdfError = ref(null)
-
-function loadPdfFile() {
-	const id = route.params.id
-	pdfPromise ??= sales.fetchSalePdf(id).then(
-		(blob) => new File([blob], `Venta-${sale.value?.folio ?? id}.pdf`, { type: 'application/pdf' }),
-		(err) => {
-			pdfPromise = null
-			throw err
-		}
-	)
-	return pdfPromise
-}
+const { canShareFiles, pdfBusy, pdfError, downloadPdf, sharePdf, reset: resetPdf } = useDocumentPdf({
+	fetchPdf: sales.fetchSalePdf,
+	filePrefix: 'Venta',
+	id: () => route.params.id,
+	document: sale,
+})
 
 watch(
 	() => route.params.id,
 	(id) => {
-		pdfPromise = null
-		pdfError.value = null
+		resetPdf()
 		if (id) sales.fetchSale(id)
 	},
 	{ immediate: true }
 )
-
-// navigator.share() exige que se llame poco después del clic del usuario;
-// Safari lo rechaza si antes hubo que esperar a que el backend genere el
-// PDF. Por eso, donde se puede compartir, se pide el PDF en cuanto carga la
-// venta para que al hacer clic ya esté listo.
-watch(sale, (current) => {
-	if (current && canShareFiles) loadPdfFile().catch(() => {})
-})
-
-async function downloadPdf() {
-	pdfBusy.value = true
-	pdfError.value = null
-
-	try {
-		const file = await loadPdfFile()
-		const url = URL.createObjectURL(file)
-		const link = document.createElement('a')
-		link.href = url
-		link.download = file.name
-		link.click()
-		URL.revokeObjectURL(url)
-	} catch (err) {
-		pdfError.value = 'No se pudo generar el PDF.'
-		console.error(err)
-	} finally {
-		pdfBusy.value = false
-	}
-}
-
-async function sharePdf() {
-	pdfBusy.value = true
-	pdfError.value = null
-
-	try {
-		const file = await loadPdfFile()
-		await navigator.share({ files: [file], title: `Venta ${sale.value.folio}` })
-	} catch (err) {
-		// AbortError = el usuario cerró la hoja de compartir; no es un error.
-		if (err?.name !== 'AbortError') {
-			pdfError.value = 'No se pudo compartir el PDF. Intenta descargarlo.'
-			console.error(err)
-		}
-	} finally {
-		pdfBusy.value = false
-	}
-}
 
 const currencyFormatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
 
