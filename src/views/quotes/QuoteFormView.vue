@@ -5,6 +5,8 @@
 			<p class="text-sm text-text-muted mt-0.5">Selecciona los productos y captura las cantidades de la cotización.</p>
 		</div>
 
+		<div v-if="loadingQuote" class="text-text-muted text-sm">Cargando cotización…</div>
+
 		<p v-if="generalError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -12,7 +14,7 @@
 			{{ generalError }}
 		</p>
 
-		<form @submit.prevent="handleSubmit" class="space-y-4">
+		<form v-else @submit.prevent="handleSubmit" class="space-y-4">
 			<!-- Sección 1 — Datos generales -->
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
 				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
@@ -220,10 +222,50 @@ const router = useRouter()
 const inventory = useInventoryStore()
 const quotes = useQuotesStore()
 
+// Modo edición cuando la ruta trae :id (quotes.edit); sin :id es creación.
+const quoteId = computed(() => route.params.id ?? null)
+const isEdit = computed(() => quoteId.value !== null)
+const loadingQuote = ref(false)
+
 onMounted(() => {
+	// Las líneas existentes ya traen su variante en la respuesta del quote, pero
+	// el buscador de "Cambiar" / "+ Agregar producto" sigue dependiendo del
+	// inventario, así que se carga en ambos modos (cacheado vía `initialized`).
 	if (!inventory.initialized) inventory.fetchProducts()
 	fetchCustomers()
+	if (isEdit.value) loadQuote()
 })
+
+async function loadQuote() {
+	loadingQuote.value = true
+	await quotes.fetchQuote(quoteId.value)
+	loadingQuote.value = false
+
+	const quote = quotes.currentQuote
+	if (quotes.currentQuoteError || !quote || String(quote.id) !== String(quoteId.value)) {
+		generalError.value = quotes.currentQuoteError || 'No se pudo cargar la cotización.'
+		return
+	}
+
+	// El backend rechaza el PUT si no está en Borrador (guard real); esto solo
+	// evita mostrar un form editable que de todos modos va a fallar.
+	if (quote.status !== 'Borrador') {
+		router.replace({ name: 'quotes.show', params: { id: quote.id } })
+		return
+	}
+
+	form.customer_id = quote.customer_id ?? ''
+	form.notes = quote.notes ?? ''
+
+	// Se mapea product.name → lineName para que la variante tenga la misma
+	// forma que las de flatVariants y el template no distinga entre modos.
+	const loadedLines = (quote.items ?? []).map((item) => ({
+		...createEmptyLine(),
+		variant: { ...item.product_variant, lineName: item.product_variant?.product?.name },
+		quantity: Number(item.quantity),
+	}))
+	lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()]
+}
 
 const form = reactive({
 	customer_id: '',
@@ -392,8 +434,13 @@ const handleSubmit = async () => {
 			})),
 		}
 
-		await quotes.createQuote(payload)
-		router.push({ name: 'quotes' })
+		if (isEdit.value) {
+			await quotes.updateQuote(quoteId.value, payload)
+			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
+		} else {
+			await quotes.createQuote(payload)
+			router.push({ name: 'quotes' })
+		}
 	} catch (err) {
 		console.error(err)
 		generalError.value = err.response?.data?.message || 'No se pudo guardar la cotización. Intenta de nuevo.'
@@ -403,7 +450,8 @@ const handleSubmit = async () => {
 }
 
 function handleCancel() {
-	router.push({ name: 'quotes' })
+	if (isEdit.value) router.push({ name: 'quotes.show', params: { id: quoteId.value } })
+	else router.push({ name: 'quotes' })
 }
 </script>
 

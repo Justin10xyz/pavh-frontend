@@ -12,6 +12,12 @@ export default [
 		meta: { layout: 'AppLayout', title: 'Nueva cotización', requiresAuth: true },
 	},
 	{
+		path: '/cotizaciones/:id/editar',
+		name: 'quotes.edit',
+		component: () => import('@/views/quotes/QuoteFormView.vue'),
+		meta: { layout: 'AppLayout', title: 'Editar cotización', requiresAuth: true },
+	},
+	{
 		path: '/cotizaciones/:id',
 		name: 'quotes.show',
 		component: () => import('@/views/quotes/QuoteDetailView.vue'),

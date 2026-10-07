@@ -69,6 +69,18 @@ export const useQuotesStore = defineStore('quotes', () => {
 		return data.data
 	}
 
+	// PUT /api/quotes/{id} reemplaza todas las líneas. Se actualiza el registro
+	// in-place tanto en el detalle como en el listado, sin refetch completo.
+	async function updateQuote(id, payload) {
+		const { data } = await axios.put(`/api/quotes/${id}`, payload)
+		currentQuote.value = data.data
+
+		const index = quotes.value.findIndex((q) => String(q.id) === String(id))
+		if (index !== -1) quotes.value[index] = data.data
+
+		return data.data
+	}
+
 	return {
 		quotes,
 		loading,
@@ -76,6 +88,7 @@ export const useQuotesStore = defineStore('quotes', () => {
 		initialized,
 		fetchQuotes,
 		createQuote,
+		updateQuote,
 		currentQuote,
 		currentQuoteLoading,
 		currentQuoteError,
