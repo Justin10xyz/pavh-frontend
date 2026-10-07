@@ -45,8 +45,9 @@
 					</button>
 					<button
 						type="button"
-						disabled
-						title="Disponible próximamente"
+						:disabled="!isEditable"
+						:title="isEditable ? 'Convertir a venta' : 'Solo se pueden convertir cotizaciones en estado Borrador'"
+						@click="convertToSale"
 						class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:bg-primary/50 disabled:cursor-not-allowed"
 					>
 						Convertir a venta
@@ -183,6 +184,10 @@ function formatDate(value) {
 
 function editQuote() {
 	router.push({ name: 'quotes.edit', params: { id: quote.value.id } })
+}
+
+function convertToSale() {
+	router.push({ name: 'pos.sales.create', query: { quote_id: quote.value.id } })
 }
 
 function goBack() {
