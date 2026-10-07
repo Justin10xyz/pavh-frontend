@@ -7,8 +7,8 @@
 
 		<SalesSummaryCards
 			:summary="dashboard.salesSummary"
-			:loading="dashboard.loading"
-			:error="dashboard.error"
+			:loading="dashboard.salesLoading"
+			:error="dashboard.salesError"
 			class="mb-6"
 		/>
 		<DashboardShortcuts class="mb-6" />

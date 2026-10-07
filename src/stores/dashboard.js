@@ -40,8 +40,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
 	const salesSummary = ref({ today: 0, week: 0, month: 0 })
 	const activeQuotes = ref([])
-	const loading = ref(false)
-	const error = ref(null)
+
+	// Loading/error por widget: cada sección puede fallar sin ocultar a las otras.
+	const salesLoading = ref(false)
+	const salesError = ref(null)
+	const lowStockLoading = ref(false)
+	const lowStockError = ref(null)
+	const activeQuotesLoading = ref(false)
+	const activeQuotesError = ref(null)
 
 	// Sin `initialized`: el dashboard se refresca en cada visita (mismo criterio
 	// que sales.js). Si se vuelve a llamar antes de que responda la anterior,
@@ -91,35 +97,65 @@ export const useDashboardStore = defineStore('dashboard', () => {
 		return data.data.filter((quote) => quote.status === 'Borrador')
 	}
 
-	async function fetchDashboardData() {
-		const requestId = ++lastRequestId
+	// Corre una de las tres cargas con su propio loading/error. Si falla, sus
+	// datos no se tocan (se quedan en su valor anterior o vacío).
+	async function loadSection(requestId, { loading, error, message, load, apply }) {
 		loading.value = true
 		error.value = null
 
 		try {
-			const [summary, , quotes] = await Promise.all([
-				fetchSalesSummary(),
-				ensureInventory(),
-				fetchActiveQuotes(),
-			])
+			const result = await load()
 			if (requestId !== lastRequestId) return
-			salesSummary.value = summary
-			activeQuotes.value = quotes
+			apply?.(result)
 		} catch (err) {
 			if (requestId !== lastRequestId) return
-			error.value = 'No se pudo cargar el resumen del dashboard.'
+			error.value = message
 			console.error(err)
 		} finally {
 			if (requestId === lastRequestId) loading.value = false
 		}
 	}
 
+	// allSettled: ninguna carga cancela a las otras. Cada sección actualiza su
+	// estado en cuanto responde, sin esperar a las demás.
+	async function fetchDashboardData() {
+		const requestId = ++lastRequestId
+
+		await Promise.allSettled([
+			loadSection(requestId, {
+				loading: salesLoading,
+				error: salesError,
+				message: 'No se pudo cargar el resumen de ventas.',
+				load: fetchSalesSummary,
+				apply: (summary) => { salesSummary.value = summary },
+			}),
+			// lowStockVariants es un computed sobre Inventario, no hay nada que asignar.
+			loadSection(requestId, {
+				loading: lowStockLoading,
+				error: lowStockError,
+				message: 'No se pudieron cargar las alertas de stock bajo.',
+				load: ensureInventory,
+			}),
+			loadSection(requestId, {
+				loading: activeQuotesLoading,
+				error: activeQuotesError,
+				message: 'No se pudieron cargar las cotizaciones activas.',
+				load: fetchActiveQuotes,
+				apply: (quotes) => { activeQuotes.value = quotes },
+			}),
+		])
+	}
+
 	return {
 		salesSummary,
 		lowStockVariants,
 		activeQuotes,
-		loading,
-		error,
+		salesLoading,
+		salesError,
+		lowStockLoading,
+		lowStockError,
+		activeQuotesLoading,
+		activeQuotesError,
 		fetchDashboardData,
 	}
 })
