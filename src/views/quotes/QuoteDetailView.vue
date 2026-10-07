@@ -38,6 +38,7 @@
 						type="button"
 						:disabled="!isEditable"
 						:title="isEditable ? 'Editar cotización' : 'Solo se pueden editar cotizaciones en estado Borrador'"
+						@click="editQuote"
 						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 					>
 						Editar
@@ -178,6 +179,10 @@ function formatQuantity(value) {
 
 function formatDate(value) {
 	return new Date(value).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function editQuote() {
+	router.push({ name: 'quotes.edit', params: { id: quote.value.id } })
 }
 
 function goBack() {
