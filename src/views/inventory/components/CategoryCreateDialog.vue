@@ -1,0 +1,124 @@
+<template>
+	<Dialog v-model:visible="visible" modal :pt="{ mask: { class: 'bg-primary/50' } }" @hide="reset">
+		<template #container="{ closeCallback }">
+			<form @submit.prevent="submitCategory" class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+				<div class="flex items-center justify-between mb-4">
+					<h3 class="font-serif text-base text-primary">Nueva categoría</h3>
+					<button type="button" @click="closeCallback" class="text-text-muted hover:text-text transition-colors" aria-label="Cerrar">
+						<i class="ti ti-x text-base"></i>
+					</button>
+				</div>
+
+				<div class="space-y-1.5 mb-4">
+					<label for="new_category_name" class="text-xs font-medium text-text-muted block">Nombre</label>
+					<input
+						id="new_category_name"
+						v-model="name"
+						type="text"
+						placeholder="Ej. Porcelanato"
+						@input="errors.name = ''"
+						class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
+						:class="errors.name ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'"
+					/>
+					<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">{{ errors.name }}</p>
+				</div>
+
+				<div class="space-y-1.5 mb-4">
+					<label for="new_category_code_prefix" class="text-xs font-medium text-text-muted block">Prefijo de código</label>
+					<input
+						id="new_category_code_prefix"
+						v-model="codePrefix"
+						type="text"
+						placeholder="Ej. POR"
+						@input="errors.code_prefix = ''"
+						class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
+						:class="errors.code_prefix ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'"
+					/>
+					<p v-if="errors.code_prefix" class="text-danger text-[12px] mt-1.5">{{ errors.code_prefix }}</p>
+				</div>
+
+				<p v-if="generalError" class="text-danger text-[12px] mb-4">{{ generalError }}</p>
+
+				<div class="flex items-center justify-end gap-3">
+					<button
+						type="button"
+						@click="closeCallback"
+						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						:disabled="!isValid || submitting"
+						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					>
+						{{ submitting ? 'Guardando…' : 'Guardar' }}
+					</button>
+				</div>
+			</form>
+		</template>
+	</Dialog>
+</template>
+
+<script setup>
+import { ref, reactive, computed } from 'vue'
+import Dialog from 'primevue/dialog'
+import axios from '@/lib/axios'
+import { useCatalogsStore } from '@/stores/catalogs'
+
+const visible = defineModel('visible', { type: Boolean, default: false })
+const emit = defineEmits(['category-created'])
+
+const catalogs = useCatalogsStore()
+
+const name = ref('')
+const codePrefix = ref('')
+const errors = reactive({ name: '', code_prefix: '' })
+const generalError = ref(null)
+const submitting = ref(false)
+
+const isValid = computed(() => name.value.trim() !== '' && codePrefix.value.trim() !== '')
+
+function reset() {
+	name.value = ''
+	codePrefix.value = ''
+	errors.name = ''
+	errors.code_prefix = ''
+	generalError.value = null
+}
+
+async function submitCategory() {
+	if (!isValid.value || submitting.value) return
+
+	submitting.value = true
+	errors.name = ''
+	errors.code_prefix = ''
+	generalError.value = null
+
+	try {
+		const { data } = await axios.post('/api/categories', {
+			name: name.value.trim(),
+			code_prefix: codePrefix.value.trim(),
+		})
+
+		catalogs.addCategory(data.data)
+		emit('category-created', data.data)
+		visible.value = false
+	} catch (err) {
+		if (err.response?.status === 422) {
+			const serverErrors = err.response.data.errors ?? {}
+			errors.name = serverErrors.name?.[0] ?? ''
+			errors.code_prefix = serverErrors.code_prefix?.[0] ?? ''
+			if (!errors.name && !errors.code_prefix) {
+				generalError.value = err.response.data.message || 'No se pudo crear la categoría.'
+			}
+		} else {
+			generalError.value = err.response?.data?.message || 'No se pudo crear la categoría. Intenta de nuevo.'
+		}
+	} finally {
+		submitting.value = false
+	}
+}
+</script>
+
+<style scoped></style>
