@@ -45,7 +45,12 @@
 			<DataTable :value="customers.customers" dataKey="id" class="customers-table">
 				<Column header="Nombre">
 					<template #body="{ data }">
-						<span class="font-medium text-text">{{ data.name }}</span>
+						<RouterLink
+							:to="{ name: 'customers.show', params: { id: data.id } }"
+							class="font-medium text-text hover:text-accent transition-colors"
+						>
+							{{ data.name }}
+						</RouterLink>
 					</template>
 				</Column>
 
