@@ -21,13 +21,21 @@
 					<p class="text-sm text-text-muted mt-0.5">Cliente desde el {{ formatDate(customer.created_at) }}</p>
 				</div>
 
-				<button
-					type="button"
-					@click="goBack"
-					class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
-				>
-					Volver
-				</button>
+				<div class="flex flex-wrap items-center gap-3">
+					<button
+						type="button"
+						@click="goBack"
+						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					>
+						Volver
+					</button>
+					<RouterLink
+						:to="{ name: 'customers.edit', params: { id: customer.id } }"
+						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none inline-flex items-center"
+					>
+						Editar
+					</RouterLink>
+				</div>
 			</div>
 
 			<div class="space-y-4">

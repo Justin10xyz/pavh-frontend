@@ -2,6 +2,12 @@
 	<div class="p-2">
 		<div class="flex items-center justify-between mb-4">
 			<h1 class="font-serif text-xl text-primary">Clientes</h1>
+			<RouterLink
+				:to="{ name: 'customers.create' }"
+				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors inline-flex items-center select-none"
+			>
+				Nuevo cliente
+			</RouterLink>
 		</div>
 
 		<div class="flex flex-wrap items-center gap-3 mb-4">
