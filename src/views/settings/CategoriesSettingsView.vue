@@ -14,7 +14,10 @@
 		<div v-if="catalogs.loading" class="text-text-muted text-sm">Cargando categorías…</div>
 		<div v-else-if="catalogs.error" class="text-danger text-sm">{{ catalogs.error }}</div>
 
-		<div v-else-if="catalogs.categories.length === 0" class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface">
+		<div
+			v-else-if="catalogs.categories.length === 0"
+			class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface"
+		>
 			Todavía no hay categorías registradas.
 		</div>
 
@@ -28,7 +31,9 @@
 
 				<Column header="Prefijo" style="width: 9rem">
 					<template #body="{ data }">
-						<span class="text-text-muted">{{ data.code_prefix }}</span>
+						<div class="px-2 py-1 bg-gray-100 border-gray-200 rounded">
+							<span class="text-xs text-gray-500">{{ data.code_prefix }}</span>
+						</div>
 					</template>
 				</Column>
 
@@ -36,12 +41,12 @@
 					<template #body="{ data }">
 						<button
 							type="button"
-							class="text-text-muted hover:text-accent transition-colors"
+							class="text-text-muted hover:text-accent transition-colors cursor-pointer"
 							aria-label="Editar categoría"
 							title="Editar categoría"
 							@click="openEdit(data)"
 						>
-							<i class="ti ti-pencil text-[15px]"></i>
+							<i class="ti ti-pencil text-lg"></i>
 						</button>
 					</template>
 				</Column>
@@ -53,31 +58,31 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import { useCatalogsStore } from '@/stores/catalogs'
-import CategoryFormDialog from './components/CategoryFormDialog.vue'
+import { onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import { useCatalogsStore } from "@/stores/catalogs";
+import CategoryFormDialog from "./components/CategoryFormDialog.vue";
 
-const route = useRoute()
-const catalogs = useCatalogsStore()
+const route = useRoute();
+const catalogs = useCatalogsStore();
 
 onMounted(() => {
-	if (!catalogs.initialized) catalogs.fetchCatalogs()
-})
+	if (!catalogs.initialized) catalogs.fetchCatalogs();
+});
 
-const dialogVisible = ref(false)
-const selectedCategory = ref(null)
+const dialogVisible = ref(false);
+const selectedCategory = ref(null);
 
 function openCreate() {
-	selectedCategory.value = null
-	dialogVisible.value = true
+	selectedCategory.value = null;
+	dialogVisible.value = true;
 }
 
 function openEdit(category) {
-	selectedCategory.value = category
-	dialogVisible.value = true
+	selectedCategory.value = category;
+	dialogVisible.value = true;
 }
 </script>
 
