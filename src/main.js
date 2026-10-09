@@ -16,6 +16,7 @@ import '@tabler/icons-webfont/dist/tabler-icons.min.css'
 //PrimeVue
 import PrimeVue from 'primevue/config'
 import ConfirmationService from 'primevue/confirmationservice'
+import Tooltip from 'primevue/tooltip'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -28,10 +29,19 @@ const app = createApp(App)
 app.use(PrimeVue, {
 	unstyled: true,
 	pt: {
-
+		directives: {
+			// Unstyled: el tooltip se monta en <body>, así que se estiliza aquí y no con :deep().
+			// `absolute` es necesario porque PrimeVue solo calcula left/top.
+			tooltip: {
+				root: { class: 'absolute max-w-xs p-1 pointer-events-none' },
+				text: { class: 'bg-primary text-white text-xs font-medium px-2 py-1 rounded-md' },
+				arrow: { class: 'hidden' },
+			},
+		},
 	}
 })
 app.use(ConfirmationService)
+app.directive('tooltip', Tooltip)
 
 app.use(createPinia())
 app.use(router)
