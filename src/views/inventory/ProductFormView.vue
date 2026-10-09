@@ -75,43 +75,31 @@
 						<label for="category_id" class="text-xs font-medium text-text-muted block"
 						>Categoría</label
 						>
-						<div class="flex gap-2">
-							<select
-								id="category_id"
-								v-model="form.category_id"
-								:disabled="catalogs.loading"
-								@change="errors.category_id = ''"
-								class="flex-1 min-w-0 bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-								:class="
-									errors.category_id
-										? 'border-danger focus:border-danger'
-										: 'border-border focus:border-accent'
-								"
+						<select
+							id="category_id"
+							v-model="form.category_id"
+							:disabled="catalogs.loading"
+							@change="errors.category_id = ''"
+							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
+							:class="
+								errors.category_id
+									? 'border-danger focus:border-danger'
+									: 'border-border focus:border-accent'
+							"
+						>
+							<option value="" disabled>
+								{{
+									catalogs.loading ? "Cargando…" : "Selecciona una categoría"
+								}}
+							</option>
+							<option
+								v-for="category in catalogs.categories"
+								:key="category.id"
+								:value="category.id"
 							>
-								<option value="" disabled>
-									{{
-										catalogs.loading ? "Cargando…" : "Selecciona una categoría"
-									}}
-								</option>
-								<option
-									v-for="category in catalogs.categories"
-									:key="category.id"
-									:value="category.id"
-								>
-									{{ category.name }}
-								</option>
-							</select>
-							<button
-								type="button"
-								@click="categoryDialogVisible = true"
-								:disabled="catalogs.loading"
-								class="flex-shrink-0 w-[38px] h-[38px] flex items-center justify-center bg-surface border border-border hover:bg-bg hover:text-text rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-								aria-label="Agregar una categoría nueva"
-								v-tooltip.top="'Agregar una categoría nueva'"
-							>
-								<i class="ti ti-plus text-base"></i>
-							</button>
-						</div>
+								{{ category.name }}
+							</option>
+						</select>
 						<p v-if="errors.category_id" class="text-danger text-[12px] mt-1.5">
 							{{ errors.category_id }}
 						</p>
@@ -671,11 +659,6 @@
 				</div>
 			</template>
 		</ConfirmDialog>
-
-		<CategoryCreateDialog
-			v-model:visible="categoryDialogVisible"
-			@category-created="handleCategoryCreated"
-		/>
 	</div>
 </template>
 
@@ -687,7 +670,6 @@ import { useConfirm } from "primevue/useconfirm";
 import axios from "@/lib/axios";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { useInventoryStore } from "@/stores/inventory";
-import CategoryCreateDialog from "./components/CategoryCreateDialog.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -712,13 +694,6 @@ const form = reactive({
 	name: "",
 	purchase_unit: "",
 });
-
-const categoryDialogVisible = ref(false);
-
-function handleCategoryCreated(category) {
-	form.category_id = category.id;
-	errors.category_id = "";
-}
 
 const errors = reactive({
 	supplier_id: "",

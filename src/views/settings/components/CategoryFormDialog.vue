@@ -1,18 +1,18 @@
 <template>
-	<Dialog v-model:visible="visible" modal :pt="{ mask: { class: 'bg-primary/50' } }" @hide="reset">
+	<Dialog v-model:visible="visible" modal :pt="{ mask: { class: 'bg-primary/50' } }" @show="fillForm" @hide="reset">
 		<template #container="{ closeCallback }">
 			<form @submit.prevent="submitCategory" class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
 				<div class="flex items-center justify-between mb-4">
-					<h3 class="font-serif text-base text-primary">Nueva categoría</h3>
+					<h3 class="font-serif text-base text-primary">{{ isEditMode ? 'Editar categoría' : 'Nueva categoría' }}</h3>
 					<button type="button" @click="closeCallback" class="text-text-muted hover:text-text transition-colors" aria-label="Cerrar">
 						<i class="ti ti-x text-base"></i>
 					</button>
 				</div>
 
 				<div class="space-y-1.5 mb-4">
-					<label for="new_category_name" class="text-xs font-medium text-text-muted block">Nombre</label>
+					<label for="category_name" class="text-xs font-medium text-text-muted block">Nombre</label>
 					<input
-						id="new_category_name"
+						id="category_name"
 						v-model="name"
 						type="text"
 						placeholder="Ej. Porcelanato"
@@ -24,9 +24,9 @@
 				</div>
 
 				<div class="space-y-1.5 mb-4">
-					<label for="new_category_code_prefix" class="text-xs font-medium text-text-muted block">Prefijo de código</label>
+					<label for="category_code_prefix" class="text-xs font-medium text-text-muted block">Prefijo de código</label>
 					<input
-						id="new_category_code_prefix"
+						id="category_code_prefix"
 						v-model="codePrefix"
 						type="text"
 						placeholder="Ej. POR"
@@ -52,7 +52,7 @@
 						:disabled="!isValid || submitting"
 						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
 					>
-						{{ submitting ? 'Guardando…' : 'Guardar' }}
+						{{ submitting ? 'Guardando…' : (isEditMode ? 'Guardar cambios' : 'Guardar') }}
 					</button>
 				</div>
 			</form>
@@ -67,7 +67,10 @@ import axios from '@/lib/axios'
 import { useCatalogsStore } from '@/stores/catalogs'
 
 const visible = defineModel('visible', { type: Boolean, default: false })
-const emit = defineEmits(['category-created'])
+const props = defineProps({
+	// Con una categoría el formulario edita; sin ella, crea una nueva.
+	category: { type: Object, default: null },
+})
 
 const catalogs = useCatalogsStore()
 
@@ -77,7 +80,14 @@ const errors = reactive({ name: '', code_prefix: '' })
 const generalError = ref(null)
 const submitting = ref(false)
 
+const isEditMode = computed(() => !!props.category?.id)
+
 const isValid = computed(() => name.value.trim() !== '' && codePrefix.value.trim() !== '')
+
+function fillForm() {
+	name.value = props.category?.name ?? ''
+	codePrefix.value = props.category?.code_prefix ?? ''
+}
 
 function reset() {
 	name.value = ''
@@ -96,13 +106,19 @@ async function submitCategory() {
 	generalError.value = null
 
 	try {
-		const { data } = await axios.post('/api/categories', {
+		const payload = {
 			name: name.value.trim(),
 			code_prefix: codePrefix.value.trim(),
-		})
+		}
 
-		catalogs.addCategory(data.data)
-		emit('category-created', data.data)
+		if (isEditMode.value) {
+			const { data } = await axios.put(`/api/categories/${props.category.id}`, payload)
+			catalogs.updateCategory(props.category.id, data.data)
+		} else {
+			const { data } = await axios.post('/api/categories', payload)
+			catalogs.addCategory(data.data)
+		}
+
 		visible.value = false
 	} catch (err) {
 		if (err.response?.status === 422) {
@@ -110,10 +126,10 @@ async function submitCategory() {
 			errors.name = serverErrors.name?.[0] ?? ''
 			errors.code_prefix = serverErrors.code_prefix?.[0] ?? ''
 			if (!errors.name && !errors.code_prefix) {
-				generalError.value = err.response.data.message || 'No se pudo crear la categoría.'
+				generalError.value = err.response.data.message || 'No se pudo guardar la categoría.'
 			}
 		} else {
-			generalError.value = err.response?.data?.message || 'No se pudo crear la categoría. Intenta de nuevo.'
+			generalError.value = err.response?.data?.message || 'No se pudo guardar la categoría. Intenta de nuevo.'
 		}
 	} finally {
 		submitting.value = false
