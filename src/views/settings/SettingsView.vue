@@ -7,7 +7,7 @@
 
 		<div class="flex flex-wrap gap-3">
 			<router-link
-				:to="{ name: 'configuracion.categories' }"
+				:to="{ name: 'settings.categories' }"
 				class="group flex items-center gap-4 w-full sm:w-80 bg-surface border border-border rounded-md p-5 hover:border-accent focus:outline-none focus-visible:border-accent transition-colors"
 			>
 				<span class="w-10 h-10 flex items-center justify-center rounded-md bg-primary text-white flex-shrink-0">

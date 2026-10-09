@@ -22,7 +22,7 @@
 		<!-- Settings -->
 		<div class="border-t border-white/10 py-3 shrink-0">
 			<router-link
-				:to="{ name: 'configuracion.index' }"
+				:to="{ name: 'settings.index' }"
 				class="flex items-center gap-3 px-5 py-2.5 text-sm text-white/70 border-l-2 border-transparent transition-colors hover:text-white hover:bg-white/5 [&.router-link-active]:text-white [&.router-link-active]:bg-white/10 [&.router-link-active]:border-accent"
 			>
 				<i class="ti ti-settings text-base"></i>
