@@ -41,7 +41,7 @@
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5">
 						<label for="supplier_id" class="text-xs font-medium text-text-muted block"
-							>Proveedor</label
+						>Proveedor</label
 						>
 						<select
 							id="supplier_id"
@@ -73,7 +73,7 @@
 
 					<div class="space-y-1.5">
 						<label for="category_id" class="text-xs font-medium text-text-muted block"
-							>Categoría</label
+						>Categoría</label
 						>
 						<div class="flex gap-2">
 							<select
@@ -119,7 +119,7 @@
 
 					<div class="space-y-1.5">
 						<label for="unit_type_id" class="text-xs font-medium text-text-muted block"
-							>Unidad</label
+						>Unidad</label
 						>
 						<select
 							id="unit_type_id"
@@ -151,7 +151,7 @@
 
 					<div class="space-y-1.5">
 						<label for="name" class="text-xs font-medium text-text-muted block"
-							>Nombre</label
+						>Nombre</label
 						>
 						<input
 							id="name"
@@ -173,7 +173,7 @@
 
 					<div class="space-y-1.5">
 						<label for="purchase_unit" class="text-xs font-medium text-text-muted block"
-							>Unidad de compra</label
+						>Unidad de compra</label
 						>
 						<input
 							id="purchase_unit"
@@ -204,7 +204,7 @@
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 					<div class="space-y-1.5">
 						<label for="size" class="text-xs font-medium text-text-muted block"
-							>Medida</label
+						>Medida</label
 						>
 						<input
 							id="size"
@@ -226,7 +226,7 @@
 
 					<div class="space-y-1.5">
 						<label for="pei" class="text-xs font-medium text-text-muted block"
-							>PEI</label
+						>PEI</label
 						>
 						<select
 							id="pei"
@@ -251,7 +251,7 @@
 
 					<div class="space-y-1.5">
 						<label for="ett" class="text-xs font-medium text-text-muted block"
-							>ETT</label
+						>ETT</label
 						>
 						<input
 							id="ett"
@@ -273,7 +273,7 @@
 
 					<div class="space-y-1.5">
 						<label for="kilos_per_box" class="text-xs font-medium text-text-muted block"
-							>Kilos por caja</label
+						>Kilos por caja</label
 						>
 						<input
 							id="kilos_per_box"
@@ -302,7 +302,7 @@
 						<label
 							for="boxes_per_pallet"
 							class="text-xs font-medium text-text-muted block"
-							>Cajas por tarima</label
+						>Cajas por tarima</label
 						>
 						<input
 							id="boxes_per_pallet"
@@ -331,7 +331,7 @@
 						<label
 							for="commission_category_id"
 							class="text-xs font-medium text-text-muted block"
-							>Categoría de comisión</label
+						>Categoría de comisión</label
 						>
 						<select
 							id="commission_category_id"
@@ -366,12 +366,12 @@
 
 					<div class="space-y-1.5">
 						<label for="price_per_box" class="text-xs font-medium text-text-muted block"
-							>Precio por caja</label
+						>Precio por caja</label
 						>
 						<div class="relative">
 							<span
 								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
-								>$</span
+							>$</span
 							>
 							<input
 								id="price_per_box"
@@ -399,12 +399,12 @@
 
 					<div class="space-y-1.5">
 						<label for="price_per_m2" class="text-xs font-medium text-text-muted block"
-							>Precio por m²</label
+						>Precio por m²</label
 						>
 						<div class="relative">
 							<span
 								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
-								>$</span
+							>$</span
 							>
 							<input
 								id="price_per_m2"
@@ -431,7 +431,7 @@
 						<label
 							for="pieces_per_box"
 							class="text-xs font-medium text-text-muted block"
-							>Piezas por caja</label
+						>Piezas por caja</label
 						>
 						<input
 							id="pieces_per_box"
@@ -458,7 +458,7 @@
 
 					<div class="space-y-1.5">
 						<label for="m2_per_box" class="text-xs font-medium text-text-muted block"
-							>m² por caja</label
+						>m² por caja</label
 						>
 						<input
 							id="m2_per_box"
@@ -497,7 +497,7 @@
 						>
 							<div class="flex items-center justify-between mb-3">
 								<span class="text-xs font-medium text-text-muted"
-									>Color {{ index + 1 }}</span
+								>Color {{ index + 1 }}</span
 								>
 								<button
 									type="button"
@@ -528,7 +528,7 @@
 									<label
 										:for="`color-${row.id}`"
 										class="text-xs font-medium text-text-muted block"
-										>Color</label
+									>Color</label
 									>
 									<input
 										:id="`color-${row.id}`"
@@ -555,7 +555,7 @@
 									<label
 										:for="`stock_boxes-${row.id}`"
 										class="text-xs font-medium text-text-muted block"
-										>Stock inicial (cajas)</label
+									>Stock inicial (cajas)</label
 									>
 									<input
 										:id="`stock_boxes-${row.id}`"
@@ -584,7 +584,7 @@
 									<label
 										:for="`minimum_stock-${row.id}`"
 										class="text-xs font-medium text-text-muted block"
-										>Stock mínimo</label
+									>Stock mínimo</label
 									>
 									<input
 										:id="`minimum_stock-${row.id}`"
@@ -982,9 +982,9 @@ const handleSubmit = async () => {
 			colorRows.value.map((row) =>
 				row.variantId
 					? axios.put(
-							`/api/product-variants/${row.variantId}`,
-							buildVariantPayload(productId, row),
-						)
+						`/api/product-variants/${row.variantId}`,
+						buildVariantPayload(productId, row),
+					)
 					: axios.post("/api/product-variants", buildVariantPayload(productId, row)),
 			),
 		);
