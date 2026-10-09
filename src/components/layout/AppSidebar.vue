@@ -35,6 +35,7 @@ const navLinks = [
 	{ name: 'Inventario', to: { name: 'inventory' }, icon: 'ti-package' },
 	{ name: 'Cotizaciones', to: { name: 'quotes' }, icon: 'ti-file-description' },
 	{ name: 'Punto de venta', to: { name: 'pos' }, icon: 'ti-shopping-cart' },
+	{ name: 'Clientes', to: { name: 'customers' }, icon: 'ti-users' },
 ]
 </script>
 

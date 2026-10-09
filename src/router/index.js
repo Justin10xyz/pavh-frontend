@@ -6,6 +6,7 @@ import dashboardRoutes from './dashboard/dashboard.routes.js'
 import inventoryRoutes from './inventory/inventory.routes.js'
 import quotesRoutes from './quotes/quotes.routes.js'
 import posRoutes from './pos/pos.routes.js'
+import customersRoutes from './customers/customers.routes.js'
 
 const routes = [
 	...authRoutes,
@@ -13,6 +14,7 @@ const routes = [
 	...inventoryRoutes,
 	...quotesRoutes,
 	...posRoutes,
+	...customersRoutes,
 ]
 
 const router = createRouter({
