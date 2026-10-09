@@ -30,6 +30,13 @@
 			</div>
 		</div>
 
+		<p v-if="deleteError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+			</svg>
+			{{ deleteError }}
+		</p>
+
 		<div v-if="customers.error" class="text-danger text-sm">{{ customers.error }}</div>
 
 		<!-- Solo en la primera carga: mientras se busca se deja la tabla anterior
@@ -77,8 +84,48 @@
 						<span class="text-text-muted">{{ formatDate(data.created_at) }}</span>
 					</template>
 				</Column>
+
+				<Column header="" style="width: 3rem">
+					<template #body="{ data }">
+						<button
+							type="button"
+							class="text-text-muted hover:text-danger transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							:disabled="busyId === data.id"
+							aria-label="Eliminar cliente"
+							title="Eliminar cliente"
+							@click="requestDelete(data)"
+						>
+							<i class="ti ti-trash text-[15px]"></i>
+						</button>
+					</template>
+				</Column>
 			</DataTable>
 		</div>
+
+		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
+			<template #container="{ message, acceptCallback, rejectCallback }">
+				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+					<h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
+					<p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+					<div class="flex items-center justify-end gap-3">
+						<button
+							type="button"
+							@click="rejectCallback"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Cancelar
+						</button>
+						<button
+							type="button"
+							@click="acceptCallback"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Eliminar
+						</button>
+					</div>
+				</div>
+			</template>
+		</ConfirmDialog>
 	</div>
 </template>
 
@@ -86,9 +133,14 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import ConfirmDialog from 'primevue/confirmdialog'
 import { useCustomersStore } from '@/stores/customers'
+import { useCustomerDelete } from '@/composables/useCustomerDelete'
 
 const customers = useCustomersStore()
+
+// La fila se quita in-place en customers.deleteCustomer(); no hay nada más que hacer.
+const { busyId, deleteError, requestDelete } = useCustomerDelete()
 
 const searchQuery = ref('')
 
