@@ -16,10 +16,12 @@
 				v-for="section in sections"
 				:key="section.key"
 				type="button"
-				class="text-sm px-3 py-2 bg-surface border rounded-md transition-colors select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-				:class="activeSection === section.key
-					? 'border-accent text-text font-medium'
-					: 'border-border text-text-muted hover:text-text'"
+				class="text-sm px-3 py-2 bg-surface border rounded-md transition-colors cursor-pointer select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+				:class="
+					activeSection === section.key
+						? 'border-accent text-text font-medium'
+						: 'border-border text-text-muted hover:text-text'
+				"
 				:aria-pressed="activeSection === section.key"
 				@click="selectSection(section.key)"
 			>
@@ -41,7 +43,10 @@
 				@clear-filters="clearFilters"
 			/>
 
-			<div v-if="filteredProducts.length === 0" class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface">
+			<div
+				v-if="filteredProducts.length === 0"
+				class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface"
+			>
 				No se encontraron productos con esos filtros.
 			</div>
 
@@ -67,110 +72,110 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useInventoryStore } from '@/stores/inventory'
+import { onMounted, ref, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useInventoryStore } from "@/stores/inventory";
 
-import InventoryFilters from './components/InventoryFilters.vue'
-import InventoryTable from './components/InventoryTable.vue'
-import StockAdjustDialog from './components/StockAdjustDialog.vue'
-import SimpleProductsSection from './components/SimpleProductsSection.vue'
+import InventoryFilters from "./components/InventoryFilters.vue";
+import InventoryTable from "./components/InventoryTable.vue";
+import StockAdjustDialog from "./components/StockAdjustDialog.vue";
+import SimpleProductsSection from "./components/SimpleProductsSection.vue";
 
-const route = useRoute()
-const router = useRouter()
-const inventory = useInventoryStore()
+const route = useRoute();
+const router = useRouter();
+const inventory = useInventoryStore();
 
 onMounted(() => {
-	if (!inventory.initialized) inventory.fetchProducts()
-})
+	if (!inventory.initialized) inventory.fetchProducts();
+});
 
 // La sección activa vive en la URL (?seccion=otros) para que, al volver de
 // crear/editar un producto simple, se regrese a "Otros productos" y no a pisos.
 const sections = [
-	{ key: 'floors', label: 'Catálogo de pisos' },
-	{ key: 'other', label: 'Otros productos' },
-]
+	{ key: "floors", label: "Catálogo de pisos" },
+	{ key: "other", label: "Otros productos" },
+];
 
-const activeSection = computed(() => (route.query.seccion === 'otros' ? 'other' : 'floors'))
+const activeSection = computed(() => (route.query.seccion === "otros" ? "other" : "floors"));
 
 function selectSection(key) {
-	router.replace({ query: key === 'other' ? { seccion: 'otros' } : {} })
+	router.replace({ query: key === "other" ? { seccion: "otros" } : {} });
 }
 
 function editProduct(productId) {
-	router.push({ name: 'products.edit', params: { id: productId } })
+	router.push({ name: "products.edit", params: { id: productId } });
 }
 
-const stockDialogOpen = ref(false)
-const stockDialogVariant = ref(null)
+const stockDialogOpen = ref(false);
+const stockDialogVariant = ref(null);
 
 function openStockDialog(variant) {
-	stockDialogVariant.value = variant
-	stockDialogOpen.value = true
+	stockDialogVariant.value = variant;
+	stockDialogOpen.value = true;
 }
 
 function onVariantStockUpdated(updatedVariant) {
 	inventory.updateVariantStock(updatedVariant.id, {
 		stock_boxes: updatedVariant.stock_boxes,
 		low_stock: updatedVariant.low_stock,
-	})
+	});
 }
 
 // Filters logic
-const searchQuery = ref('')
-const selectedCategory = ref('')
-const lowStockOnly = ref(false)
+const searchQuery = ref("");
+const selectedCategory = ref("");
+const lowStockOnly = ref(false);
 
 function clearFilters() {
-	searchQuery.value = ''
-	selectedCategory.value = ''
-	lowStockOnly.value = false
+	searchQuery.value = "";
+	selectedCategory.value = "";
+	lowStockOnly.value = false;
 }
 
 const categoryOptions = computed(() => {
-	const set = new Set(inventory.products.map((p) => p.category).filter(Boolean))
-	return Array.from(set).sort()
-})
+	const set = new Set(inventory.products.map((p) => p.category).filter(Boolean));
+	return Array.from(set).sort();
+});
 
 function normalize(str) {
-	return (str ?? '')
+	return (str ?? "")
 		.toString()
 		.normalize("NFD")
-		.replace(/[\u0300-\u036f]/g, '')
-		.toLowerCase()
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLowerCase();
 }
 
 const visibleVariantsByProduct = computed(() => {
-	const map = new Map()
-	const q = normalize(searchQuery.value)
+	const map = new Map();
+	const q = normalize(searchQuery.value);
 
 	for (const product of inventory.products) {
-		let variants = product.variants
+		let variants = product.variants;
 
 		if (lowStockOnly.value) {
-			variants = variants.filter((v) => v.low_stock)
+			variants = variants.filter((v) => v.low_stock);
 		}
 
 		if (q) {
-			const productMatches = normalize(product.name).includes(q)
+			const productMatches = normalize(product.name).includes(q);
 			if (!productMatches) {
 				variants = variants.filter(
-					(v) => normalize(v.color).includes(q) || normalize(v.code).includes(q)
-				)
+					(v) => normalize(v.color).includes(q) || normalize(v.code).includes(q),
+				);
 			}
 		}
 
-		map.set(product.id, variants)
+		map.set(product.id, variants);
 	}
 
-	return map
-})
+	return map;
+});
 
 const filteredProducts = computed(() => {
 	return inventory.products.filter((product) => {
-		if (selectedCategory.value && product.category !== selectedCategory.value) return false
-		const variants = visibleVariantsByProduct.value.get(product.id) ?? []
-		return variants.length > 0
-	})
-})
+		if (selectedCategory.value && product.category !== selectedCategory.value) return false;
+		const variants = visibleVariantsByProduct.value.get(product.id) ?? [];
+		return variants.length > 0;
+	});
+});
 </script>
