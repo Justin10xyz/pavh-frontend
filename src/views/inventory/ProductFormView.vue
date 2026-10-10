@@ -1,14 +1,24 @@
 <template>
 	<div class="p-2 max-w-4xl">
-		<div class="mb-4">
-			<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
-			<p class="text-sm text-text-muted mt-0.5">
-				{{
-					isEditMode
-						? "Actualiza los datos de la línea y sus variantes."
-						: "Captura la línea de producto junto con su primera variante."
-				}}
-			</p>
+		<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+			<div>
+				<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
+				<p class="text-sm text-text-muted mt-0.5">
+					{{
+						isEditMode
+							? "Actualiza los datos de la línea y sus variantes."
+							: "Captura la línea de producto junto con su primera variante."
+					}}
+				</p>
+			</div>
+			<button
+				type="button"
+				@click="handleCancel"
+				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+			>
+				<i class="ti ti-arrow-left text-sm"></i>
+				Volver
+			</button>
 		</div>
 
 		<p
