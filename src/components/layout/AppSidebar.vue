@@ -12,7 +12,7 @@
 				v-for="link in navLinks"
 				:key="link.name"
 				:to="link.to"
-				class="flex items-center gap-3 px-5 py-2.5 text-sm text-white/70 border-l-2 border-transparent transition-colors hover:text-white hover:bg-white/5 [&.router-link-active]:text-white [&.router-link-active]:bg-white/10 [&.router-link-active]:border-accent"
+				:class="linkClass(link.section)"
 			>
 				<i :class="['ti', link.icon, 'text-base']"></i>
 				<span>{{ link.name }}</span>
@@ -23,7 +23,7 @@
 		<div class="border-t border-white/10 py-3 shrink-0">
 			<router-link
 				:to="{ name: 'settings.index' }"
-				class="flex items-center gap-3 px-5 py-2.5 text-sm text-white/70 border-l-2 border-transparent transition-colors hover:text-white hover:bg-white/5 [&.router-link-active]:text-white [&.router-link-active]:bg-white/10 [&.router-link-active]:border-accent"
+				:class="linkClass('settings')"
 			>
 				<i class="ti ti-settings text-base"></i>
 				<span>Configuración</span>
@@ -33,13 +33,29 @@
 </template>
 
 <script setup>
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+// `section` debe coincidir con `meta.section` de las rutas: así el link se resalta
+// también en sus vistas secundarias (ej. /inventario/productos/nuevo), que son
+// rutas planas y no hijas, por lo que `router-link-active` no las detecta.
 const navLinks = [
-	{ name: 'Dashboard', to: { name: 'dashboard' }, icon: 'ti-layout-dashboard' },
-	{ name: 'Inventario', to: { name: 'inventory' }, icon: 'ti-package' },
-	{ name: 'Cotizaciones', to: { name: 'quotes' }, icon: 'ti-file-description' },
-	{ name: 'Punto de venta', to: { name: 'pos' }, icon: 'ti-shopping-cart' },
-	{ name: 'Clientes', to: { name: 'customers' }, icon: 'ti-users' },
+	{ name: 'Dashboard', to: { name: 'dashboard' }, section: 'dashboard', icon: 'ti-layout-dashboard' },
+	{ name: 'Inventario', to: { name: 'inventory' }, section: 'inventory', icon: 'ti-package' },
+	{ name: 'Cotizaciones', to: { name: 'quotes' }, section: 'quotes', icon: 'ti-file-description' },
+	{ name: 'Punto de venta', to: { name: 'pos' }, section: 'pos', icon: 'ti-shopping-cart' },
+	{ name: 'Clientes', to: { name: 'customers' }, section: 'customers', icon: 'ti-users' },
 ]
+
+function linkClass(section) {
+	return [
+		'flex items-center gap-3 px-5 py-2.5 text-sm border-l-2 transition-colors',
+		route.meta.section === section
+			? 'text-white bg-white/10 border-accent'
+			: 'text-white/70 border-transparent hover:text-white hover:bg-white/5',
+	]
+}
 </script>
 
 <style scoped>

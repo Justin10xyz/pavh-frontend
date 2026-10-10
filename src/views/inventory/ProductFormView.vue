@@ -186,7 +186,7 @@
 				</div>
 
 				<!-- Grupo 3 — Precio -->
-				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 border-t border-border pt-4">
 					<div class="space-y-1.5">
 						<label for="price_per_box" class="text-xs font-medium text-text-muted block"
 							>Precio por caja</label
@@ -230,9 +230,7 @@
 				</div>
 
 				<!-- Grupo 2 — Datos por caja -->
-				<div
-					class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 border-t border-border pt-4"
-				>
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
 					<div class="space-y-1.5">
 						<label
 							for="pieces_per_box"
