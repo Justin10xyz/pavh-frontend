@@ -41,31 +41,17 @@
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5">
 						<label for="supplier_id" class="text-xs font-medium text-text-muted block"
-						>Proveedor</label
+							>Proveedor</label
 						>
-						<select
+						<SelectCustom
 							id="supplier_id"
 							v-model="form.supplier_id"
-							:disabled="catalogs.loading"
+							:options="catalogs.suppliers"
+							:loading="catalogs.loading"
+							:error="errors.supplier_id"
+							placeholder="Selecciona un proveedor"
 							@change="errors.supplier_id = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="
-								errors.supplier_id
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="" disabled>
-								{{ catalogs.loading ? "Cargando…" : "Selecciona un proveedor" }}
-							</option>
-							<option
-								v-for="supplier in catalogs.suppliers"
-								:key="supplier.id"
-								:value="supplier.id"
-							>
-								{{ supplier.name }}
-							</option>
-						</select>
+						/>
 						<p v-if="errors.supplier_id" class="text-danger text-[12px] mt-1.5">
 							{{ errors.supplier_id }}
 						</p>
@@ -73,73 +59,25 @@
 
 					<div class="space-y-1.5">
 						<label for="category_id" class="text-xs font-medium text-text-muted block"
-						>Categoría</label
+							>Categoría</label
 						>
-						<select
+						<SelectCustom
 							id="category_id"
 							v-model="form.category_id"
-							:disabled="catalogs.loading"
+							:options="catalogs.categories"
+							:loading="catalogs.loading"
+							:error="errors.category_id"
+							placeholder="Selecciona una categoría"
 							@change="errors.category_id = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="
-								errors.category_id
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="" disabled>
-								{{
-									catalogs.loading ? "Cargando…" : "Selecciona una categoría"
-								}}
-							</option>
-							<option
-								v-for="category in catalogs.categories"
-								:key="category.id"
-								:value="category.id"
-							>
-								{{ category.name }}
-							</option>
-						</select>
+						/>
 						<p v-if="errors.category_id" class="text-danger text-[12px] mt-1.5">
 							{{ errors.category_id }}
 						</p>
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="unit_type_id" class="text-xs font-medium text-text-muted block"
-						>Unidad</label
-						>
-						<select
-							id="unit_type_id"
-							v-model="form.unit_type_id"
-							:disabled="catalogs.loading"
-							@change="errors.unit_type_id = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="
-								errors.unit_type_id
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="" disabled>
-								{{ catalogs.loading ? "Cargando…" : "Selecciona una unidad" }}
-							</option>
-							<option
-								v-for="unitType in catalogs.unitTypes"
-								:key="unitType.id"
-								:value="unitType.id"
-							>
-								{{ unitType.name }}
-							</option>
-						</select>
-						<p v-if="errors.unit_type_id" class="text-danger text-[12px] mt-1.5">
-							{{ errors.unit_type_id }}
-						</p>
-					</div>
-
-					<div class="space-y-1.5">
 						<label for="name" class="text-xs font-medium text-text-muted block"
-						>Nombre</label
+							>Nombre</label
 						>
 						<input
 							id="name"
@@ -160,8 +98,26 @@
 					</div>
 
 					<div class="space-y-1.5">
+						<label for="unit_type_id" class="text-xs font-medium text-text-muted block"
+							>Unidad</label
+						>
+						<SelectCustom
+							id="unit_type_id"
+							v-model="form.unit_type_id"
+							:options="catalogs.unitTypes"
+							:loading="catalogs.loading"
+							:error="errors.unit_type_id"
+							placeholder="Selecciona una unidad"
+							@change="errors.unit_type_id = ''"
+						/>
+						<p v-if="errors.unit_type_id" class="text-danger text-[12px] mt-1.5">
+							{{ errors.unit_type_id }}
+						</p>
+					</div>
+
+					<div class="space-y-1.5">
 						<label for="purchase_unit" class="text-xs font-medium text-text-muted block"
-						>Unidad de compra</label
+							>Unidad de compra</label
 						>
 						<input
 							id="purchase_unit"
@@ -189,10 +145,11 @@
 					Datos de la variante inicial
 				</h2>
 
-				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				<!-- Grupo 1 — Medida y especificaciones técnicas -->
+				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 					<div class="space-y-1.5">
 						<label for="size" class="text-xs font-medium text-text-muted block"
-						>Medida</label
+							>Medida</label
 						>
 						<input
 							id="size"
@@ -214,24 +171,16 @@
 
 					<div class="space-y-1.5">
 						<label for="pei" class="text-xs font-medium text-text-muted block"
-						>PEI</label
+							>PEI</label
 						>
-						<select
+						<SelectCustom
 							id="pei"
 							v-model="variant.pei"
+							:options="peiOptions"
+							:error="variantErrors.pei"
+							placeholder="Selecciona un PEI"
 							@change="variantErrors.pei = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.pei
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="" disabled>Selecciona un PEI</option>
-							<option v-for="option in peiOptions" :key="option" :value="option">
-								{{ option }}
-							</option>
-						</select>
+						/>
 						<p v-if="variantErrors.pei" class="text-danger text-[12px] mt-1.5">
 							{{ variantErrors.pei }}
 						</p>
@@ -239,13 +188,13 @@
 
 					<div class="space-y-1.5">
 						<label for="ett" class="text-xs font-medium text-text-muted block"
-						>ETT</label
+							>ETT</label
 						>
 						<input
 							id="ett"
 							v-model="variant.ett"
 							type="text"
-							placeholder="Ej. 9.5mm"
+							placeholder="Ej. 1"
 							@input="variantErrors.ett = ''"
 							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
 							:class="
@@ -258,108 +207,18 @@
 							{{ variantErrors.ett }}
 						</p>
 					</div>
+				</div>
 
-					<div class="space-y-1.5">
-						<label for="kilos_per_box" class="text-xs font-medium text-text-muted block"
-						>Kilos por caja</label
-						>
-						<input
-							id="kilos_per_box"
-							v-model.number="variant.kilos_per_box"
-							type="number"
-							min="0"
-							step="0.01"
-							placeholder="0.00"
-							@input="variantErrors.kilos_per_box = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.kilos_per_box
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						/>
-						<p
-							v-if="variantErrors.kilos_per_box"
-							class="text-danger text-[12px] mt-1.5"
-						>
-							{{ variantErrors.kilos_per_box }}
-						</p>
-					</div>
-
-					<div class="space-y-1.5">
-						<label
-							for="boxes_per_pallet"
-							class="text-xs font-medium text-text-muted block"
-						>Cajas por tarima</label
-						>
-						<input
-							id="boxes_per_pallet"
-							v-model.number="variant.boxes_per_pallet"
-							type="number"
-							min="0"
-							step="1"
-							placeholder="0"
-							@input="variantErrors.boxes_per_pallet = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.boxes_per_pallet
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						/>
-						<p
-							v-if="variantErrors.boxes_per_pallet"
-							class="text-danger text-[12px] mt-1.5"
-						>
-							{{ variantErrors.boxes_per_pallet }}
-						</p>
-					</div>
-
-					<div class="space-y-1.5">
-						<label
-							for="commission_category_id"
-							class="text-xs font-medium text-text-muted block"
-						>Categoría de comisión</label
-						>
-						<select
-							id="commission_category_id"
-							v-model="variant.commission_category_id"
-							:disabled="catalogs.loading"
-							@change="variantErrors.commission_category_id = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="
-								variantErrors.commission_category_id
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="">
-								{{ catalogs.loading ? "Cargando…" : "Sin categoría" }}
-							</option>
-							<option
-								v-for="commissionCategory in catalogs.commissionCategories"
-								:key="commissionCategory.id"
-								:value="commissionCategory.id"
-							>
-								{{ commissionCategory.code }}
-							</option>
-						</select>
-						<p
-							v-if="variantErrors.commission_category_id"
-							class="text-danger text-[12px] mt-1.5"
-						>
-							{{ variantErrors.commission_category_id }}
-						</p>
-					</div>
-
+				<!-- Grupo 3 — Precio -->
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
 					<div class="space-y-1.5">
 						<label for="price_per_box" class="text-xs font-medium text-text-muted block"
-						>Precio por caja</label
+							>Precio por caja</label
 						>
 						<div class="relative">
 							<span
 								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
-							>$</span
+								>$</span
 							>
 							<input
 								id="price_per_box"
@@ -387,12 +246,12 @@
 
 					<div class="space-y-1.5">
 						<label for="price_per_m2" class="text-xs font-medium text-text-muted block"
-						>Precio por m²</label
+							>Precio por m²</label
 						>
 						<div class="relative">
 							<span
 								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
-							>$</span
+								>$</span
 							>
 							<input
 								id="price_per_m2"
@@ -414,12 +273,17 @@
 							{{ variantErrors.price_per_m2 }}
 						</p>
 					</div>
+				</div>
 
+				<!-- Grupo 2 — Datos por caja -->
+				<div
+					class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 border-t border-border pt-4"
+				>
 					<div class="space-y-1.5">
 						<label
 							for="pieces_per_box"
 							class="text-xs font-medium text-text-muted block"
-						>Piezas por caja</label
+							>Piezas por caja</label
 						>
 						<input
 							id="pieces_per_box"
@@ -445,8 +309,35 @@
 					</div>
 
 					<div class="space-y-1.5">
+						<label for="kilos_per_box" class="text-xs font-medium text-text-muted block"
+							>Kilos por caja</label
+						>
+						<input
+							id="kilos_per_box"
+							v-model.number="variant.kilos_per_box"
+							type="number"
+							min="0"
+							step="0.01"
+							placeholder="0.00"
+							@input="variantErrors.kilos_per_box = ''"
+							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
+							:class="
+								variantErrors.kilos_per_box
+									? 'border-danger focus:border-danger'
+									: 'border-border focus:border-accent'
+							"
+						/>
+						<p
+							v-if="variantErrors.kilos_per_box"
+							class="text-danger text-[12px] mt-1.5"
+						>
+							{{ variantErrors.kilos_per_box }}
+						</p>
+					</div>
+
+					<div class="space-y-1.5">
 						<label for="m2_per_box" class="text-xs font-medium text-text-muted block"
-						>m² por caja</label
+							>m² por caja</label
 						>
 						<input
 							id="m2_per_box"
@@ -467,6 +358,63 @@
 							{{ variantErrors.m2_per_box }}
 						</p>
 					</div>
+
+					<div class="space-y-1.5">
+						<label
+							for="boxes_per_pallet"
+							class="text-xs font-medium text-text-muted block"
+							>Cajas por tarima</label
+						>
+						<input
+							id="boxes_per_pallet"
+							v-model.number="variant.boxes_per_pallet"
+							type="number"
+							min="0"
+							step="1"
+							placeholder="0"
+							@input="variantErrors.boxes_per_pallet = ''"
+							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
+							:class="
+								variantErrors.boxes_per_pallet
+									? 'border-danger focus:border-danger'
+									: 'border-border focus:border-accent'
+							"
+						/>
+						<p
+							v-if="variantErrors.boxes_per_pallet"
+							class="text-danger text-[12px] mt-1.5"
+						>
+							{{ variantErrors.boxes_per_pallet }}
+						</p>
+					</div>
+				</div>
+
+				<!-- Grupo 4 — Dato interno del negocio, separado del resto (no viene de la hoja del proveedor) -->
+				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+					<div class="space-y-1.5">
+						<label
+							for="commission_category_id"
+							class="text-xs font-medium text-text-muted block"
+							>Categoría de comisión</label
+						>
+						<SelectCustom
+							id="commission_category_id"
+							v-model="variant.commission_category_id"
+							:options="catalogs.commissionCategories"
+							option-label="code"
+							:loading="catalogs.loading"
+							:error="variantErrors.commission_category_id"
+							placeholder="Sin categoría"
+							allow-empty
+							@change="variantErrors.commission_category_id = ''"
+						/>
+						<p
+							v-if="variantErrors.commission_category_id"
+							class="text-danger text-[12px] mt-1.5"
+						>
+							{{ variantErrors.commission_category_id }}
+						</p>
+					</div>
 				</div>
 
 				<!-- Colores — lista repetible: cada fila se convierte en su propia variante -->
@@ -485,7 +433,7 @@
 						>
 							<div class="flex items-center justify-between mb-3">
 								<span class="text-xs font-medium text-text-muted"
-								>Color {{ index + 1 }}</span
+									>Color {{ index + 1 }}</span
 								>
 								<button
 									type="button"
@@ -516,7 +464,7 @@
 									<label
 										:for="`color-${row.id}`"
 										class="text-xs font-medium text-text-muted block"
-									>Color</label
+										>Color</label
 									>
 									<input
 										:id="`color-${row.id}`"
@@ -543,7 +491,7 @@
 									<label
 										:for="`stock_boxes-${row.id}`"
 										class="text-xs font-medium text-text-muted block"
-									>Stock inicial (cajas)</label
+										>Stock inicial (cajas)</label
 									>
 									<input
 										:id="`stock_boxes-${row.id}`"
@@ -572,7 +520,7 @@
 									<label
 										:for="`minimum_stock-${row.id}`"
 										class="text-xs font-medium text-text-muted block"
-									>Stock mínimo</label
+										>Stock mínimo</label
 									>
 									<input
 										:id="`minimum_stock-${row.id}`"
@@ -668,6 +616,7 @@ import { useRoute, useRouter } from "vue-router";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import axios from "@/lib/axios";
+import SelectCustom from "@/components/widgets/SelectCustom.vue";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { useInventoryStore } from "@/stores/inventory";
 
@@ -957,9 +906,9 @@ const handleSubmit = async () => {
 			colorRows.value.map((row) =>
 				row.variantId
 					? axios.put(
-						`/api/product-variants/${row.variantId}`,
-						buildVariantPayload(productId, row),
-					)
+							`/api/product-variants/${row.variantId}`,
+							buildVariantPayload(productId, row),
+						)
 					: axios.post("/api/product-variants", buildVariantPayload(productId, row)),
 			),
 		);
