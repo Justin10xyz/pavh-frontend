@@ -1,16 +1,16 @@
 <template>
 	<div class="p-2">
-		<div class="flex items-center justify-between mb-4">
+		<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
 			<h1 class="font-serif text-xl text-primary">Inventario</h1>
 			<RouterLink
 				:to="newProductRoute"
-				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors inline-flex items-center select-none"
+				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center select-none"
 			>
 				Nuevo producto
 			</RouterLink>
 		</div>
 
-		<div class="flex items-center gap-2 mb-4" role="group" aria-label="Sección del inventario">
+		<div class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Sección del inventario">
 			<button
 				v-for="section in sections"
 				:key="section.key"

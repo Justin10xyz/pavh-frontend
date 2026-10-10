@@ -1,7 +1,7 @@
 <template>
 	<Dialog v-model:visible="visible" modal :pt="{ mask: { class: 'bg-primary/50' } }" @show="fetchMovements" @hide="reset">
 		<template #container="{ closeCallback }">
-			<div v-if="url" class="bg-surface border border-border rounded-md p-5 w-[640px] max-w-[90vw] max-h-[85vh] flex flex-col">
+			<div v-if="url" class="bg-surface border border-border rounded-md p-4 sm:p-5 w-160 max-w-[90vw] max-h-[85vh] flex flex-col">
 				<div class="flex items-center justify-between mb-4">
 					<h3 class="font-serif text-base text-primary">Historial de stock</h3>
 					<button type="button" @click="closeCallback" class="text-text-muted hover:text-text transition-colors" aria-label="Cerrar">

@@ -1,6 +1,6 @@
 <template>
 	<div class="flex flex-wrap items-center gap-3 mb-4">
-		<div class="relative flex-1 min-w-[220px]">
+		<div class="relative flex-1 min-w-56">
 			<svg
 				class="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
 				width="14"
