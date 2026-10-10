@@ -17,4 +17,16 @@ export default [
 		component: () => import('@/views/inventory/ProductFormView.vue'),
 		meta: { layout: 'AppLayout', section: 'inventory', title: 'Editar producto', requiresAuth: true },
 	},
+	{
+		path: '/inventario/otros-productos/nuevo',
+		name: 'inventory.simpleProducts.create',
+		component: () => import('@/views/inventory/SimpleProductFormView.vue'),
+		meta: { layout: 'AppLayout', section: 'inventory', title: 'Nuevo producto', requiresAuth: true },
+	},
+	{
+		path: '/inventario/otros-productos/:id/editar',
+		name: 'inventory.simpleProducts.edit',
+		component: () => import('@/views/inventory/SimpleProductFormView.vue'),
+		meta: { layout: 'AppLayout', section: 'inventory', title: 'Editar producto', requiresAuth: true },
+	},
 ]

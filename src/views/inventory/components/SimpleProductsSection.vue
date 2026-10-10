@@ -11,7 +11,7 @@
 				@clear-filters="clearFilters"
 			/>
 			<RouterLink
-				:to="{ name: 'simpleProducts.create' }"
+				:to="{ name: 'inventory.simpleProducts.create' }"
 				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center shrink-0 select-none"
 			>
 				Nuevo producto
@@ -122,7 +122,7 @@ function categoryName(product) {
 }
 
 function editProduct(id) {
-	router.push({ name: 'simpleProducts.edit', params: { id } })
+	router.push({ name: 'inventory.simpleProducts.edit', params: { id } })
 }
 
 const stockDialogOpen = ref(false)
