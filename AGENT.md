@@ -124,6 +124,9 @@ Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif
 ### Layout
 
 - Sidebar fijo, fondo `primary`, íconos + labels en blanco/gris claro.
+  - **Responsive**: por debajo de `lg` el sidebar es una barra de solo íconos (`w-16`, 4rem) con tooltip a la derecha por item; desde `lg` se expande con labels (`w-50`, 12.5rem). Es CSS puro (mobile-first), sin estado de abierto/cerrado ni menú hamburguesa. El tooltip se desactiva en `lg`+ vía `useMediaQuery` (`src/composables/useMediaQuery.js`), que solo existe para lógica JS que el CSS no resuelve — no para decidir layout.
+  - Por eso el área de contenido disponible es `100vw - 4rem` por debajo de `lg` y `100vw - 12.5rem` desde `lg` — tenerlo en cuenta al decidir columnas de un grid o qué columnas de tabla ocultar.
+  - El `<main>` de `AppLayout.vue` usa padding escalonado `p-4 sm:p-6 lg:p-8`, que ya es el margen exterior de toda vista.
 - Topbar blanco, borde inferior `border` (1px, sin sombra).
 - Contenido sobre fondo `bg`, cards en `surface` con borde `border` de 1px — **no usar `box-shadow` pesado**, rompe la seriedad del diseño.
 - Border-radius pequeño: `4px`–`6px` en cards, inputs y botones. Nunca `rounded-full` en botones (se siente demasiado "startup").
