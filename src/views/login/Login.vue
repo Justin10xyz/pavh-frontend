@@ -107,11 +107,7 @@
 			<!-- Additional options (fully neutral) -->
 			<div class="flex items-center justify-between pt-1 text-[12px]">
 				<label class="flex items-center gap-2 cursor-pointer select-none">
-					<input
-						type="checkbox"
-						v-model="form.rememberMe"
-						class="rounded border-zinc-300 bg-white text-zinc-700 focus:ring-0 focus:ring-offset-0 h-3.5 w-3.5 cursor-pointer"
-					/>
+					<CheckboxCustom v-model="form.rememberMe" size="sm" />
 					<span class="text-zinc-500 hover:text-zinc-700 transition-colors">Recordar contraseña</span>
 				</label>
 				<a href="#" class="text-zinc-500 hover:text-zinc-700 transition-colors hover:underline">¿Olvidaste tu contraseña?</a>
@@ -138,6 +134,7 @@
 import { ref, reactive, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import CheckboxCustom from '@/components/widgets/CheckboxCustom.vue'
 
 const router = useRouter()
 const auth = useAuthStore()

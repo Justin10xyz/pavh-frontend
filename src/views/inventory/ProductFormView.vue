@@ -79,18 +79,12 @@
 						<label for="name" class="text-xs font-medium text-text-muted block"
 							>Nombre</label
 						>
-						<input
+						<InputTextCustom
 							id="name"
 							v-model="form.name"
-							type="text"
+							:error="errors.name"
 							placeholder="Ej. Porcelanato Carrara"
 							@input="errors.name = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								errors.name
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
 						/>
 						<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">
 							{{ errors.name }}
@@ -119,18 +113,12 @@
 						<label for="purchase_unit" class="text-xs font-medium text-text-muted block"
 							>Unidad de compra</label
 						>
-						<input
+						<InputTextCustom
 							id="purchase_unit"
 							v-model="form.purchase_unit"
-							type="text"
+							:error="errors.purchase_unit"
 							placeholder="Ej. Caja"
 							@input="errors.purchase_unit = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								errors.purchase_unit
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
 						/>
 						<p v-if="errors.purchase_unit" class="text-danger text-[12px] mt-1.5">
 							{{ errors.purchase_unit }}
@@ -151,18 +139,12 @@
 						<label for="size" class="text-xs font-medium text-text-muted block"
 							>Medida</label
 						>
-						<input
+						<InputTextCustom
 							id="size"
 							v-model="variant.size"
-							type="text"
+							:error="variantErrors.size"
 							placeholder="Ej. 60X120"
 							@input="variantErrors.size = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.size
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
 						/>
 						<p v-if="variantErrors.size" class="text-danger text-[12px] mt-1.5">
 							{{ variantErrors.size }}
@@ -190,18 +172,12 @@
 						<label for="ett" class="text-xs font-medium text-text-muted block"
 							>ETT</label
 						>
-						<input
+						<InputTextCustom
 							id="ett"
 							v-model="variant.ett"
-							type="text"
+							:error="variantErrors.ett"
 							placeholder="Ej. 1"
 							@input="variantErrors.ett = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.ett
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
 						/>
 						<p v-if="variantErrors.ett" class="text-danger text-[12px] mt-1.5">
 							{{ variantErrors.ett }}
@@ -215,27 +191,16 @@
 						<label for="price_per_box" class="text-xs font-medium text-text-muted block"
 							>Precio por caja</label
 						>
-						<div class="relative">
-							<span
-								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
-								>$</span
-							>
-							<input
-								id="price_per_box"
-								v-model.number="variant.price_per_box"
-								type="number"
-								min="0"
-								step="0.01"
-								placeholder="0.00"
-								@input="variantErrors.price_per_box = ''"
-								class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors pl-6 pr-3 h-[38px] rounded-md"
-								:class="
-									variantErrors.price_per_box
-										? 'border-danger focus:border-danger'
-										: 'border-border focus:border-accent'
-								"
-							/>
-						</div>
+						<InputNumberCustom
+							id="price_per_box"
+							v-model="variant.price_per_box"
+							:error="variantErrors.price_per_box"
+							:min="0"
+							placeholder="$0.00"
+							@input="variantErrors.price_per_box = ''"
+							mode="currency"
+							currency="MXN"
+						/>
 						<p
 							v-if="variantErrors.price_per_box"
 							class="text-danger text-[12px] mt-1.5"
@@ -248,27 +213,16 @@
 						<label for="price_per_m2" class="text-xs font-medium text-text-muted block"
 							>Precio por m²</label
 						>
-						<div class="relative">
-							<span
-								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
-								>$</span
-							>
-							<input
-								id="price_per_m2"
-								v-model.number="variant.price_per_m2"
-								type="number"
-								min="0"
-								step="0.01"
-								placeholder="0.00"
-								@input="variantErrors.price_per_m2 = ''"
-								class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors pl-6 pr-3 h-[38px] rounded-md"
-								:class="
-									variantErrors.price_per_m2
-										? 'border-danger focus:border-danger'
-										: 'border-border focus:border-accent'
-								"
-							/>
-						</div>
+						<InputNumberCustom
+							id="price_per_m2"
+							v-model="variant.price_per_m2"
+							:error="variantErrors.price_per_m2"
+							:min="0"
+							placeholder="$0.00"
+							@input="variantErrors.price_per_m2 = ''"
+							mode="currency"
+							currency="MXN"
+						/>
 						<p v-if="variantErrors.price_per_m2" class="text-danger text-[12px] mt-1.5">
 							{{ variantErrors.price_per_m2 }}
 						</p>
@@ -285,20 +239,14 @@
 							class="text-xs font-medium text-text-muted block"
 							>Piezas por caja</label
 						>
-						<input
+						<InputNumberCustom
 							id="pieces_per_box"
-							v-model.number="variant.pieces_per_box"
-							type="number"
-							min="0"
-							step="1"
+							v-model="variant.pieces_per_box"
+							:error="variantErrors.pieces_per_box"
+							:min="0"
 							placeholder="0"
 							@input="variantErrors.pieces_per_box = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.pieces_per_box
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
+							:max-fraction-digits="0"
 						/>
 						<p
 							v-if="variantErrors.pieces_per_box"
@@ -312,20 +260,14 @@
 						<label for="kilos_per_box" class="text-xs font-medium text-text-muted block"
 							>Kilos por caja</label
 						>
-						<input
+						<InputNumberCustom
 							id="kilos_per_box"
-							v-model.number="variant.kilos_per_box"
-							type="number"
-							min="0"
-							step="0.01"
+							v-model="variant.kilos_per_box"
+							:error="variantErrors.kilos_per_box"
+							:min="0"
 							placeholder="0.00"
 							@input="variantErrors.kilos_per_box = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.kilos_per_box
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
+							:max-fraction-digits="2"
 						/>
 						<p
 							v-if="variantErrors.kilos_per_box"
@@ -339,20 +281,14 @@
 						<label for="m2_per_box" class="text-xs font-medium text-text-muted block"
 							>m² por caja</label
 						>
-						<input
+						<InputNumberCustom
 							id="m2_per_box"
-							v-model.number="variant.m2_per_box"
-							type="number"
-							min="0"
-							step="0.01"
+							v-model="variant.m2_per_box"
+							:error="variantErrors.m2_per_box"
+							:min="0"
 							placeholder="0.00"
 							@input="variantErrors.m2_per_box = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.m2_per_box
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
+							:max-fraction-digits="2"
 						/>
 						<p v-if="variantErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
 							{{ variantErrors.m2_per_box }}
@@ -365,20 +301,14 @@
 							class="text-xs font-medium text-text-muted block"
 							>Cajas por tarima</label
 						>
-						<input
+						<InputNumberCustom
 							id="boxes_per_pallet"
-							v-model.number="variant.boxes_per_pallet"
-							type="number"
-							min="0"
-							step="1"
+							v-model="variant.boxes_per_pallet"
+							:error="variantErrors.boxes_per_pallet"
+							:min="0"
 							placeholder="0"
 							@input="variantErrors.boxes_per_pallet = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.boxes_per_pallet
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
+							:max-fraction-digits="0"
 						/>
 						<p
 							v-if="variantErrors.boxes_per_pallet"
@@ -466,18 +396,12 @@
 										class="text-xs font-medium text-text-muted block"
 										>Color</label
 									>
-									<input
+									<InputTextCustom
 										:id="`color-${row.id}`"
 										v-model="row.color"
-										type="text"
+										:error="row.errors.color"
 										placeholder="Ej. Blanco"
 										@input="row.errors.color = ''"
-										class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-										:class="
-											row.errors.color
-												? 'border-danger focus:border-danger'
-												: 'border-border focus:border-accent'
-										"
 									/>
 									<p
 										v-if="row.errors.color"
@@ -493,20 +417,14 @@
 										class="text-xs font-medium text-text-muted block"
 										>Stock inicial (cajas)</label
 									>
-									<input
+									<InputNumberCustom
 										:id="`stock_boxes-${row.id}`"
-										v-model.number="row.stock_boxes"
-										type="number"
-										min="0"
-										step="1"
+										v-model="row.stock_boxes"
+										:error="row.errors.stock_boxes"
+										:min="0"
 										placeholder="0"
 										@input="row.errors.stock_boxes = ''"
-										class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-										:class="
-											row.errors.stock_boxes
-												? 'border-danger focus:border-danger'
-												: 'border-border focus:border-accent'
-										"
+										:max-fraction-digits="0"
 									/>
 									<p
 										v-if="row.errors.stock_boxes"
@@ -522,20 +440,14 @@
 										class="text-xs font-medium text-text-muted block"
 										>Stock mínimo</label
 									>
-									<input
+									<InputNumberCustom
 										:id="`minimum_stock-${row.id}`"
-										v-model.number="row.minimum_stock"
-										type="number"
-										min="0"
-										step="1"
+										v-model="row.minimum_stock"
+										:error="row.errors.minimum_stock"
+										:min="0"
 										placeholder="0"
 										@input="row.errors.minimum_stock = ''"
-										class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-										:class="
-											row.errors.minimum_stock
-												? 'border-danger focus:border-danger'
-												: 'border-border focus:border-accent'
-										"
+										:max-fraction-digits="0"
 									/>
 									<p
 										v-if="row.errors.minimum_stock"
@@ -619,6 +531,8 @@ import axios from "@/lib/axios";
 import SelectCustom from "@/components/widgets/SelectCustom.vue";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { useInventoryStore } from "@/stores/inventory";
+import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
+import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 
 const route = useRoute();
 const router = useRouter();

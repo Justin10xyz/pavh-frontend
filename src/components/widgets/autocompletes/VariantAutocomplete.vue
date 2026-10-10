@@ -1,12 +1,10 @@
 <template>
 	<div class="relative">
-		<input
+		<InputTextCustom
 			v-model="searchQuery"
-			type="text"
 			:placeholder="placeholder"
 			@focus="showDropdown = true"
 			@blur="closeDropdownDelayed"
-			class="w-full bg-surface border border-border text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors px-3 h-[38px] rounded-md"
 		/>
 
 		<div
@@ -39,6 +37,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useInventoryStore } from '@/stores/inventory'
+import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 
 defineProps({
 	placeholder: { type: String, default: 'Buscar por código, línea o color…' },

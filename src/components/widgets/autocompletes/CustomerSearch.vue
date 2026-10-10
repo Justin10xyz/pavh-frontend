@@ -13,12 +13,12 @@ import { onMounted, ref } from 'vue'
 import axios from '@/lib/axios'
 import SelectCustom from '@/components/widgets/SelectCustom.vue'
 
-// '' = sin cliente; el `id` (para el <label for>) y demás atributos caen
-// hasta el <select> de SelectCustom.
+// '' = sin cliente; el `id` (para el <label for>) y demás atributos se pasan
+// tal cual a SelectCustom.
 const customerId = defineModel({ type: [String, Number], default: '' })
 
 // GET /api/customers acepta ?search=, pero para un catálogo de este tamaño se
-// carga completo una sola vez y se filtra en el <select> nativo del navegador.
+// carga completo una sola vez y se elige desde SelectCustom.
 const customers = ref([])
 const loading = ref(false)
 

@@ -35,14 +35,12 @@
 
 				<div class="space-y-1.5 mb-4">
 					<label for="stock_adjust_quantity" class="text-xs font-medium text-text-muted block">Cantidad (cajas)</label>
-					<input
+					<InputNumberCustom
 						id="stock_adjust_quantity"
-						v-model.number="stockAdjustQuantity"
-						type="number"
-						min="1"
-						step="1"
+						v-model="stockAdjustQuantity"
+						:min="1"
 						placeholder="0"
-						class="w-full bg-surface border border-border text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors px-3 h-[38px] rounded-md"
+						:max-fraction-digits="0"
 					/>
 				</div>
 
@@ -75,6 +73,7 @@ import { ref, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 import axios from '@/lib/axios'
 import { useInventoryStore } from '@/stores/inventory'
+import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 
 const props = defineProps({
 	variant: {
