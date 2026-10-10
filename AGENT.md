@@ -129,6 +129,17 @@ Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif
 - Border-radius pequeño: `4px`–`6px` en cards, inputs y botones. Nunca `rounded-full` en botones (se siente demasiado "startup").
 - Indicador de item activo en el sidebar: barra delgada de 2-3px en `accent` al lado izquierdo del item — es el único acento de color vivo permitido fuera de estados (success/danger).
 
+### Responsive design (rem, breakpoints, mobile-first)
+
+- **Unidades: `rem`, no `px`, para todo lo que deba escalar con el tamaño de fuente del usuario** — alturas de controles (inputs/selects/botones), padding, margin, gap, tamaños de fuente, border-radius. Con Tailwind esto significa preferir las utilidades con nombre (`p-4`, `h-10`, `rounded-md`, `text-sm`), que ya están definidas en rem, sobre un valor arbitrario en px (`h-[38px]`, `rounded-[6px]`). Si de verdad se necesita un valor fuera de la escala de Tailwind, el valor arbitrario se escribe en rem (`h-[2.375rem]`), nunca en px.
+  - **Excepción**: bordes de 1px (`border`, `border-b`) se quedan en px — es una línea de separación visual fija, no debe engrosarse con el zoom del usuario.
+  - **Patrón existente a corregir solo hacia adelante, no retroactivo**: `ProductFormView.vue`, `QuoteFormView.vue` y `SaleFormView.vue` usan `h-[38px]` en controles de formulario. A partir de ahora, cualquier control nuevo usa `h-10` (2.5rem, la utilidad estándar de Tailwind más cercana) en vez de un valor arbitrario en px. Migrar los controles ya existentes es candidato para el pase de UX/UI transversal (ver `PROJECT.md`), no se adelanta fuera de ese pase.
+  - El border-radius de la sección "Layout" (`4px`–`6px`) equivale a `rounded` (0.25rem) y `rounded-md` (0.375rem) de Tailwind — usar esas utilidades con nombre.
+  - El tamaño base de 16px de la sección "Tipografía" es el `font-size` raíz del navegador, del cual parten todos los `rem` — no se declara en px en ningún componente; se usan las utilidades de tamaño de Tailwind (`text-sm`, `text-base`, etc.), que ya son rem.
+- **Breakpoints: los default de Tailwind v4**, sin breakpoints custom en `@theme` — `sm` 40rem (640px), `md` 48rem (768px), `lg` 64rem (1024px), `xl` 80rem (1280px). No agregar breakpoints custom salvo necesidad real y explícita.
+- **Mobile-first obligatorio**: toda clase sin prefijo es la base (la más angosta) y los prefijos (`sm:`, `md:`, `lg:`) van ampliando/ajustando hacia arriba — nunca al revés (ej. una clase pensada para desktop con `max-sm:` para encoger). Patrón ya usado correctamente en `ProductFormView.vue` (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`) — replicar ese orden en cualquier grid o layout nuevo; nunca un grid fijo a N columnas sin su versión `grid-cols-1` base.
+- **Objetivo del responsive**: PAVH es primero una herramienta de trabajo de escritorio (panel administrativo), pero Punto de Venta puede usarse desde una tablet en mostrador — por eso toda vista debe seguir siendo usable al menos hasta `md` (tablet en vertical), aunque el diseño esté optimizado visualmente para `lg`+ (laptop/desktop). No es un objetivo actual adaptar sidebar/topbar a un ancho de teléfono (`< sm`, ej. menú hamburguesa) — si el contenido se rompe por debajo de `sm`, no es un bug a corregir todavía, salvo que se pida explícitamente.
+
 ### Componentes base ya definidos
 
 - **Forms** (patrón establecido en `Login.vue`, replicado en `ProductFormView.vue`, `QuoteFormView.vue` y `SaleFormView.vue`): card centrada o de ancho completo según contexto, inputs con ícono a la izquierda cuando aplica, botón primario de color sólido (sin gradientes), estado de error inline (no toast para errores de validación de campo). El error inline no debe ocultar el resto del formulario (ver bug conocido de `QuoteFormView.vue` en `PROJECT.md` — evitar repetirlo en formularios nuevos).
@@ -145,6 +156,7 @@ Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif
 - [ ] ¿Usa los tokens de color definidos arriba (no hex sueltos)?
 - [ ] ¿Usa Inter para UI y Source Serif 4 solo en títulos de página?
 - [ ] ¿Sigue el patrón de layout (sidebar/topbar/cards sin sombra pesada)?
+- [ ] ¿Usa `rem` (utilidades con nombre de Tailwind) en vez de `px` arbitrario para alturas/padding/margin/font-size/radius nuevos? ¿Usa mobile-first con los breakpoints default de Tailwind, usable al menos hasta `md`?
 - [ ] ¿El commit sigue Conventional Commits + gitmoji en inglés?
 - [ ] ¿No introduce una librería nueva sin pedirlo (más allá de PrimeVue 4 y `laravel-dompdf`, ya adoptadas), Repository Pattern, o roles/permisos sin que se haya pedido?
 - [ ] ¿No introduce borrado ni ninguna otra acción destructiva sin que se haya pedido explícitamente?
