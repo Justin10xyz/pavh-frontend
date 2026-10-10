@@ -56,6 +56,19 @@
 							Editar
 						</button>
 						<button
+							type="button"
+							:disabled="!isEditable || cancelling"
+							:title="
+								isEditable
+									? 'Cancelar cotización'
+									: 'Solo se pueden cancelar cotizaciones en estado Borrador'
+							"
+							@click="requestCancel"
+							class="bg-surface border border-border hover:bg-danger/10 text-danger font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+						>
+							{{ cancelling ? "Cancelando…" : "Cancelar" }}
+						</button>
+						<button
 							v-if="canShareFiles"
 							type="button"
 							:disabled="pdfBusy"
@@ -89,6 +102,7 @@
 						</button>
 					</div>
 					<p v-if="pdfError" class="text-danger text-xs">{{ pdfError }}</p>
+					<p v-if="cancelError" class="text-danger text-xs">{{ cancelError }}</p>
 				</div>
 			</div>
 
@@ -214,12 +228,39 @@
 				</div>
 			</div>
 		</template>
+
+		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
+			<template #container="{ message, acceptCallback, rejectCallback }">
+				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+					<h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
+					<p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+					<div class="flex items-center justify-end gap-3">
+						<button
+							type="button"
+							@click="rejectCallback"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Volver
+						</button>
+						<button
+							type="button"
+							@click="acceptCallback"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Cancelar cotización
+						</button>
+					</div>
+				</div>
+			</template>
+		</ConfirmDialog>
 	</div>
 </template>
 
 <script setup>
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import ConfirmDialog from "primevue/confirmdialog";
+import { useConfirm } from "primevue/useconfirm";
 import { useQuotesStore } from "@/stores/quotes";
 import { statusClasses } from "@/lib/quoteStatus";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
@@ -227,6 +268,10 @@ import { useDocumentPdf } from "@/composables/useDocumentPdf";
 const route = useRoute();
 const router = useRouter();
 const quotes = useQuotesStore();
+const confirm = useConfirm();
+
+const cancelling = ref(false);
+const cancelError = ref(null);
 
 // Evita mostrar por un instante una cotización distinta si el store aún
 // trae la de una visita anterior.
@@ -247,6 +292,7 @@ watch(
 	() => route.params.id,
 	(id) => {
 		resetPdf();
+		cancelError.value = null;
 		if (id) quotes.fetchQuote(id);
 	},
 	{ immediate: true },
@@ -285,6 +331,31 @@ function editQuote() {
 
 function convertToSale() {
 	router.push({ name: "pos.sales.create", query: { quote_id: quote.value.id } });
+}
+
+function requestCancel() {
+	confirm.require({
+		header: "Cancelar cotización",
+		message: `¿Cancelar la cotización ${quote.value.folio}? Ya no se podrá editar ni convertir a venta. Esta acción no se puede deshacer.`,
+		accept: cancelQuote,
+	});
+}
+
+async function cancelQuote() {
+	cancelling.value = true;
+	cancelError.value = null;
+
+	try {
+		await quotes.cancelQuote(quote.value.id);
+	} catch (err) {
+		console.error(err);
+		cancelError.value =
+			err.response?.status === 422
+				? err.response.data.message
+				: "No se pudo cancelar la cotización. Intenta de nuevo.";
+	} finally {
+		cancelling.value = false;
+	}
 }
 
 function goBack() {

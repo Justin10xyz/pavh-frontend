@@ -82,6 +82,23 @@ export const useQuotesStore = defineStore("quotes", () => {
 		return data.data;
 	}
 
+	// PATCH /api/quotes/{id}/cancel solo cambia el status (responde 422 si no
+	// está en Borrador). Mismo update in-place que updateQuote(), pero en el
+	// detalle se conservan los items ya cargados: la respuesta no eager-loadea
+	// items.productVariant.product y cancelar no toca las líneas.
+	async function cancelQuote(id) {
+		const { data } = await axios.patch(`/api/quotes/${id}/cancel`);
+
+		if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+			currentQuote.value = { ...data.data, items: currentQuote.value.items };
+		}
+
+		const index = quotes.value.findIndex((q) => String(q.id) === String(id));
+		if (index !== -1) quotes.value[index] = data.data;
+
+		return data.data;
+	}
+
 	async function fetchQuotePdf(id) {
 		const response = await axios.get(`/api/quotes/${id}/pdf`, { responseType: "blob" });
 		return response.data;
@@ -95,6 +112,7 @@ export const useQuotesStore = defineStore("quotes", () => {
 		fetchQuotes,
 		createQuote,
 		updateQuote,
+		cancelQuote,
 		currentQuote,
 		currentQuoteLoading,
 		currentQuoteError,
