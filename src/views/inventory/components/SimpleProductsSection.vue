@@ -52,6 +52,15 @@
 							>
 								<i class="ti ti-adjustments-horizontal text-[13px]"></i>
 							</button>
+							<button
+								type="button"
+								class="text-text-muted hover:text-accent transition-colors"
+								aria-label="Ver historial de stock"
+								title="Ver historial de stock"
+								@click="openMovementsDialog(data)"
+							>
+								<i class="ti ti-history text-[13px]"></i>
+							</button>
 						</div>
 					</template>
 				</Column>
@@ -81,6 +90,14 @@
 			:subtitle="stockDialogProduct?.name"
 			@stock-updated="onStockUpdated"
 		/>
+
+		<StockMovementsDialog
+			v-model:visible="movementsDialogOpen"
+			:url="movementsDialogProduct ? `/api/simple-products/${movementsDialogProduct.id}/stock-movements` : null"
+			:stock="movementsDialogProduct?.stock_quantity"
+			stock-unit="unidades"
+			:subtitle="movementsDialogProduct?.name"
+		/>
 	</div>
 </template>
 
@@ -94,6 +111,7 @@ import { useCatalogsStore } from '@/stores/catalogs'
 import { formatCurrency } from '@/lib/formatCurrency'
 import InventoryFilters from './InventoryFilters.vue'
 import StockAdjustDialog from './StockAdjustDialog.vue'
+import StockMovementsDialog from './StockMovementsDialog.vue'
 
 const router = useRouter()
 const simpleProducts = useSimpleProductsStore()
@@ -126,6 +144,14 @@ function openStockDialog(product) {
 
 function onStockUpdated(product) {
 	simpleProducts.updateSimpleProductStock(product.id, { stock_quantity: product.stock_quantity })
+}
+
+const movementsDialogOpen = ref(false)
+const movementsDialogProduct = ref(null)
+
+function openMovementsDialog(product) {
+	movementsDialogProduct.value = product
+	movementsDialogOpen.value = true
 }
 
 // Filtros — estado propio, independiente del catálogo de pisos.

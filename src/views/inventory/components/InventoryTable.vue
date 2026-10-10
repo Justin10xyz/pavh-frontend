@@ -106,6 +106,15 @@
 											>
 												<i class="ti ti-adjustments-horizontal text-[13px]"></i>
 											</button>
+											<button
+												type="button"
+												@click="emit('open-movements-dialog', variant)"
+												class="text-text-muted hover:text-accent transition-colors"
+												aria-label="Ver historial de stock"
+												title="Ver historial de stock"
+											>
+												<i class="ti ti-history text-[13px]"></i>
+											</button>
 										</div>
 									</td>
 								</tr>
@@ -135,7 +144,7 @@ defineProps({
 	}
 })
 
-const emit = defineEmits(['edit-product', 'open-stock-dialog'])
+const emit = defineEmits(['edit-product', 'open-stock-dialog', 'open-movements-dialog'])
 
 const expandedRows = ref({})
 const expandedGroups = ref({})
