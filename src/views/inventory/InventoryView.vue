@@ -3,8 +3,7 @@
 		<div class="flex items-center justify-between mb-4">
 			<h1 class="font-serif text-xl text-primary">Inventario</h1>
 			<RouterLink
-				v-if="activeSection === 'floors'"
-				:to="{ name: 'products.create' }"
+				:to="newProductRoute"
 				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors inline-flex items-center select-none"
 			>
 				Nuevo producto
@@ -97,6 +96,13 @@ const sections = [
 ];
 
 const activeSection = computed(() => (route.query.seccion === "otros" ? "other" : "floors"));
+
+// Un solo botón en el encabezado para ambas secciones; solo cambia el destino.
+const newProductRoute = computed(() =>
+	activeSection.value === "other"
+		? { name: "inventory.simpleProducts.create" }
+		: { name: "products.create" },
+);
 
 function selectSection(key) {
 	router.replace({ query: key === "other" ? { seccion: "otros" } : {} });
