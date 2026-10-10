@@ -254,7 +254,7 @@ async function handleSubmit() {
 			await simpleProducts.createSimpleProduct(payload)
 		}
 
-		router.push({ name: 'inventory' })
+		router.push({ name: 'inventory', query: { seccion: 'otros' } })
 	} catch (err) {
 		// El 422 de "categoría que no admite productos simples" llega sin `errors`,
 		// solo con `message`.
@@ -270,7 +270,7 @@ async function handleSubmit() {
 }
 
 function handleCancel() {
-	router.push({ name: 'inventory' })
+	router.push({ name: 'inventory', query: { seccion: 'otros' } })
 }
 </script>
 
