@@ -11,7 +11,7 @@
 			</svg>
 			<InputTextCustom
 				v-model="searchQuery"
-				placeholder="Buscar por línea, color o código…"
+				:placeholder="searchPlaceholder"
 				class="pl-8"
 			/>
 		</div>
@@ -25,7 +25,7 @@
 			/>
 		</div>
 
-		<label class="flex items-center gap-2 text-sm text-text select-none cursor-pointer">
+		<label v-if="showLowStockFilter" class="flex items-center gap-2 text-sm text-text select-none cursor-pointer">
 			<CheckboxCustom v-model="lowStockOnly" />
 			Solo stock bajo
 		</label>
@@ -51,7 +51,16 @@ defineProps({
 	categoryOptions: {
 		type: Array,
 		required: true,
-	}
+	},
+	searchPlaceholder: {
+		type: String,
+		default: 'Buscar por línea, color o código…',
+	},
+	// Los productos simples no tienen stock mínimo, así que no aplica "stock bajo".
+	showLowStockFilter: {
+		type: Boolean,
+		default: true,
+	},
 })
 
 const emit = defineEmits(['clear-filters'])

@@ -10,7 +10,7 @@
 				</div>
 
 				<div class="space-y-1.5 mb-4">
-					<label for="category_name" class="text-xs font-medium text-text-muted block">Nombre</label>
+					<FieldLabel html-for="category_name" text="Nombre" required />
 					<InputTextCustom
 						id="category_name"
 						v-model="name"
@@ -22,7 +22,7 @@
 				</div>
 
 				<div class="space-y-1.5 mb-4">
-					<label for="category_code_prefix" class="text-xs font-medium text-text-muted block">Prefijo de código</label>
+					<FieldLabel html-for="category_code_prefix" text="Prefijo de código" required />
 					<InputTextCustom
 						id="category_code_prefix"
 						v-model="codePrefix"
@@ -31,6 +31,20 @@
 						@input="errors.code_prefix = ''"
 					/>
 					<p v-if="errors.code_prefix" class="text-danger text-[12px] mt-1.5">{{ errors.code_prefix }}</p>
+				</div>
+
+				<div class="space-y-1.5 mb-4">
+					<FieldLabel html-for="category_product_form_type" text="Tipo de formulario de producto" required />
+					<SelectCustom
+						id="category_product_form_type"
+						v-model="productFormType"
+						:options="productFormTypeOptions"
+						option-value="value"
+						option-label="label"
+						:error="errors.product_form_type"
+						@change="errors.product_form_type = ''"
+					/>
+					<p v-if="errors.product_form_type" class="text-danger text-[12px] mt-1.5">{{ errors.product_form_type }}</p>
 				</div>
 
 				<p v-if="generalError" class="text-danger text-[12px] mb-4">{{ generalError }}</p>
@@ -62,6 +76,8 @@ import Dialog from 'primevue/dialog'
 import axios from '@/lib/axios'
 import { useCatalogsStore } from '@/stores/catalogs'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
+import SelectCustom from '@/components/widgets/SelectCustom.vue'
+import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 
 const visible = defineModel('visible', { type: Boolean, default: false })
 const props = defineProps({
@@ -71,9 +87,17 @@ const props = defineProps({
 
 const catalogs = useCatalogsStore()
 
+// Define qué formulario de producto usa la categoría. Mismo default que el backend.
+const DEFAULT_PRODUCT_FORM_TYPE = 'variant'
+const productFormTypeOptions = [
+	{ value: 'variant', label: 'Pisos (con variantes)' },
+	{ value: 'simple', label: 'General (nombre, precio, descripción)' },
+]
+
 const name = ref('')
 const codePrefix = ref('')
-const errors = reactive({ name: '', code_prefix: '' })
+const productFormType = ref(DEFAULT_PRODUCT_FORM_TYPE)
+const errors = reactive({ name: '', code_prefix: '', product_form_type: '' })
 const generalError = ref(null)
 const submitting = ref(false)
 
@@ -84,13 +108,16 @@ const isValid = computed(() => name.value.trim() !== '' && codePrefix.value.trim
 function fillForm() {
 	name.value = props.category?.name ?? ''
 	codePrefix.value = props.category?.code_prefix ?? ''
+	productFormType.value = props.category?.product_form_type ?? DEFAULT_PRODUCT_FORM_TYPE
 }
 
 function reset() {
 	name.value = ''
 	codePrefix.value = ''
+	productFormType.value = DEFAULT_PRODUCT_FORM_TYPE
 	errors.name = ''
 	errors.code_prefix = ''
+	errors.product_form_type = ''
 	generalError.value = null
 }
 
@@ -100,12 +127,14 @@ async function submitCategory() {
 	submitting.value = true
 	errors.name = ''
 	errors.code_prefix = ''
+	errors.product_form_type = ''
 	generalError.value = null
 
 	try {
 		const payload = {
 			name: name.value.trim(),
 			code_prefix: codePrefix.value.trim(),
+			product_form_type: productFormType.value,
 		}
 
 		if (isEditMode.value) {
@@ -122,7 +151,8 @@ async function submitCategory() {
 			const serverErrors = err.response.data.errors ?? {}
 			errors.name = serverErrors.name?.[0] ?? ''
 			errors.code_prefix = serverErrors.code_prefix?.[0] ?? ''
-			if (!errors.name && !errors.code_prefix) {
+			errors.product_form_type = serverErrors.product_form_type?.[0] ?? ''
+			if (!errors.name && !errors.code_prefix && !errors.product_form_type) {
 				generalError.value = err.response.data.message || 'No se pudo guardar la categoría.'
 			}
 		} else {

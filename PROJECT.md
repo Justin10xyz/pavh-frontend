@@ -64,6 +64,8 @@ Vista rápida — el detalle completo de cada uno está en "Módulos" más abajo
 - `SoftDeletes` en `Product`/`ProductVariant` — no se borran físicamente porque pueden quedar referenciados en cotizaciones/ventas futuras
 - `ProductVariantResource` expone `product` (`id`+`name` de la línea) vía `whenLoaded` — agregado para que el detalle de cotización pueda mostrar línea/color/medida sin depender de que Inventario esté cargado en el frontend
 - Suite de tests pasando, verificado manualmente con curl y en navegador
+- **Tipo de formulario de producto por categoría** (`categories.product_form_type`: `variant` | `simple`, default `variant`) — determina si una categoría usa el formulario de línea+variante (Pisos) o el formulario general (nombre+precio+descripción+stock simple). Editable después de creada la categoría, bloqueado (422) si ya tiene productos del tipo que dejaría de aplicar (`Category::productFormTypeChangeBlockedMessage()`, no cuenta soft-deleted)
+- **`simple_products`**: tabla paralela a `products`/`product_variants` para categorías tipo `simple` — `name`, `price`, `description`, `stock_quantity`, `SoftDeletes`. CRUD completo (`/api/simple-products`), guard que rechaza crear/editar si la categoría referenciada no es `simple`. Ajuste de stock dedicado (`PATCH /simple-products/{id}/stock`, mismo contrato que variantes), `stock_quantity` excluido de `PUT`. `AdjustStockRequest` compartido entre ambos endpoints ganó `min:1` en `quantity` (antes aceptaba negativos/0, afectaba también a variantes)
 
 **Frontend:**
 
@@ -78,6 +80,10 @@ Vista rápida — el detalle completo de cada uno está en "Módulos" más abajo
 - **`src/stores/inventory.js`** y **`src/stores/catalogs.js`** (Pinia, patrón `initialized`); mutaciones puntuales (ajuste de stock, borrado de variante) actualizan el store in-place sin refetch completo
 - `src/lib/groupVariants.js`: agrupa variantes por medida+PEI+ETT+categoría de comisión+precio, dejando el color como lo único que varía dentro del grupo
 - Convención de nombres en inglés aplicada a código (archivos/componentes/rutas internas); contenido de negocio visible y URLs de rutas se quedan en español
+- **`SimpleProductFormView.vue`**: crea/edita productos simples (categoría filtrada a `product_form_type = 'simple'`, nombre, precio, descripción); stock no se captura al crear, se ajusta desde edición vía `StockAdjustDialog.vue` generalizado
+- **`StockAdjustDialog.vue` generalizado** (antes específico de variantes): recibe endpoint/campo/etiqueta por props, emite `stock-updated`; quien lo abre actualiza su propio store. Reusado por `InventoryView.vue` (variantes) y `SimpleProductsSection.vue` (productos simples)
+- **`InventoryView.vue`** ganó selector de sección ("Catálogo de pisos" / "Otros productos", mismo patrón de botones que `SalesView.vue`). `SimpleProductsSection.vue` (listado plano, sin expansión) con filtros propios vía `InventoryFilters.vue` extendido (`searchPlaceholder`/`showLowStockFilter` opcionales)
+- Rutas: `inventory.simpleProducts.create`/`inventory.simpleProducts.edit` (`/inventario/otros-productos/nuevo`, `/inventario/otros-productos/:id/editar`). Nota: rutas de Pisos (`products.create`/`products.edit`) no llevan el prefijo `inventory.` — inconsistencia preexistente, no corregida en este trabajo
 
 ### 2. Cotizaciones — ✅ completo (backend + frontend)
 
@@ -203,6 +209,10 @@ Vista rápida — el detalle completo de cada uno está en "Módulos" más abajo
 | Borrado de cliente (`DELETE /api/customers/{id}`) nunca bloquea, ni con historial — en vez de un guard duro tipo "última variante activa", el frontend muestra los conteos de `delete-summary` en el `ConfirmDialog` antes de confirmar | Con `SoftDeletes` + `withTrashed()` en la relación `customer()`, el borrado ya es seguro y reversible — una cotización/venta con cliente borrado sigue mostrando su nombre; un bloqueo duro habría sido una restricción sin ganancia real de integridad, solo fricción |
 | `withTrashed()` en la relación `customer()` se puso en los modelos `Quote`/`Sale`, no repetido en cada `load()` de los controladores                                                                                                    | Una sola fuente de verdad que cubre automáticamente `index`, `show`, `store`/`update`, `convert` y los PDFs — consistente con el criterio ya usado en `Quote::conversionBlockedMessage()`                                                                              |
 | `GET /api/quotes` ganó `->latest()`                                                                                                                                                                                                     | Sin orden explícito salía en orden de base de datos, inconsistente con `GET /api/sales` (que ya usaba `latest()`) y con lo que necesita el historial de cliente mostrado de más reciente a más antiguo                                                                 |
+| `categories.product_form_type` decide la forma de producto, no es un catálogo propio                                                                                                                                                    | Es un campo que determina lógica/formulario de la misma categoría, no un valor de negocio editable en su propio catálogo                                                                                                                                               |
+| `simple_products` como tabla paralela, no columnas nullable dentro de `products`/`product_variants`                                                                                                                                     | Evita columnas sin sentido para el caso simple (PEI, ETT, m2_per_box); consistente con "sin indirección extra"                                                                                                                                                         |
+| Cambio de `product_form_type` bloqueado si la categoría ya tiene productos del tipo saliente                                                                                                                                            | Evita productos huérfanos de un formulario que ya no les aplica; mismo patrón que `Quote::conversionBlockedMessage()`                                                                                                                                                  |
+| `StockAdjustDialog.vue` generalizado vía props en vez de duplicado para `SimpleProduct`                                                                                                                                                 | Segundo consumidor real del mismo patrón ya usado en variantes                                                                                                                                                                                                         |
 
 ## Pendientes
 
@@ -214,6 +224,7 @@ Vista rápida — el detalle completo de cada uno está en "Módulos" más abajo
 - Importador de listas de precios de proveedores
 - Dashboard de ventas por producto
 - Historial de movimientos de stock
+- Integración de `simple_products` a Cotizaciones/Ventas (`quote_items`/`sale_items`) — diseño acordado (FK nullable `simple_product_id` junto a `product_variant_id`, arco exclusivo validado en controlador), no iniciado
 
 **Cotizaciones:**
 
