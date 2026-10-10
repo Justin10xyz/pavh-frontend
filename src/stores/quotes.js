@@ -99,6 +99,19 @@ export const useQuotesStore = defineStore("quotes", () => {
 		return data.data;
 	}
 
+	// La conversión ocurre en POST /api/sales con quote_id (SaleFormView), cuya
+	// respuesta no trae el quote completo: solo {id, folio}. El backend la marca
+	// "Convertida" en la misma transacción, así que un POST exitoso basta para
+	// actualizar el status in-place sin refetch del listado.
+	function markQuoteConverted(id) {
+		const quote = quotes.value.find((q) => String(q.id) === String(id));
+		if (quote) quote.status = "Convertida";
+
+		if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+			currentQuote.value.status = "Convertida";
+		}
+	}
+
 	async function fetchQuotePdf(id) {
 		const response = await axios.get(`/api/quotes/${id}/pdf`, { responseType: "blob" });
 		return response.data;
@@ -113,6 +126,7 @@ export const useQuotesStore = defineStore("quotes", () => {
 		createQuote,
 		updateQuote,
 		cancelQuote,
+		markQuoteConverted,
 		currentQuote,
 		currentQuoteLoading,
 		currentQuoteError,
