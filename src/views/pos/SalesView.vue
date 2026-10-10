@@ -27,21 +27,7 @@
 				/>
 			</div>
 
-			<div class="flex items-center gap-2" role="group" aria-label="Filtrar por fecha">
-				<button
-					v-for="filter in dateFilters"
-					:key="filter.key"
-					type="button"
-					class="text-sm px-3 py-2 bg-surface border rounded-md transition-colors select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-					:class="activeFilter === filter.key
-						? 'border-accent text-text font-medium'
-						: 'border-border text-text-muted hover:text-text'"
-					:aria-pressed="activeFilter === filter.key"
-					@click="applyDateFilter(filter.key)"
-				>
-					{{ filter.label }}
-				</button>
-			</div>
+			<DateRangeFilter :model-value="activeFilter" @update:model-value="applyDateFilter" />
 		</div>
 
 		<div v-if="sales.loading" class="text-text-muted text-sm">Cargando ventas…</div>
@@ -104,16 +90,11 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import { useSalesStore } from '@/stores/sales'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
+import DateRangeFilter from '@/components/widgets/filters/DateRangeFilter.vue'
+import { dateRangeFor } from '@/lib/dateRanges'
 
 const router = useRouter()
 const sales = useSalesStore()
-
-const dateFilters = [
-	{ key: 'all', label: 'Todas' },
-	{ key: 'today', label: 'Hoy' },
-	{ key: 'week', label: 'Esta semana' },
-	{ key: 'month', label: 'Este mes' },
-]
 
 const activeFilter = ref('all')
 
@@ -124,35 +105,6 @@ const activeFilter = ref('all')
 onMounted(() => {
 	sales.fetchSales()
 })
-
-// Fecha local en YYYY-MM-DD; toISOString() la convertiría a UTC y en la noche
-// podría correrse al día siguiente.
-function toDateParam(date) {
-	const y = date.getFullYear()
-	const m = String(date.getMonth() + 1).padStart(2, '0')
-	const d = String(date.getDate()).padStart(2, '0')
-	return `${y}-${m}-${d}`
-}
-
-// Rangos de calendario terminando hoy; la semana empieza en lunes.
-function dateRangeFor(key) {
-	const today = new Date()
-	const to = toDateParam(today)
-
-	if (key === 'today') return { from: to, to }
-
-	if (key === 'week') {
-		const monday = new Date(today)
-		monday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
-		return { from: toDateParam(monday), to }
-	}
-
-	if (key === 'month') {
-		return { from: toDateParam(new Date(today.getFullYear(), today.getMonth(), 1)), to }
-	}
-
-	return null
-}
 
 function viewSale(id) {
 	router.push({ name: 'pos.sales.show', params: { id } })

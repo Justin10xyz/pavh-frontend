@@ -157,7 +157,7 @@ Vista rápida — el detalle completo de cada uno está en "Módulos" más abajo
 
 ### 4. Dashboard — ✅ completo (backend + frontend)
 
-- No se identificó necesidad de un `GET /api/dashboard` dedicado: los tres widgets (resumen de ventas, alertas de stock bajo, cotizaciones activas) se resuelven reusando `/api/sales`, `/api/product-variants` y `/api/quotes` ya existentes. Se reconsiderará si el volumen de datos lo justifica más adelante.
+- No se identificó necesidad de un `GET /api/dashboard` general: los tres primeros widgets (resumen de ventas, alertas de stock bajo, cotizaciones activas) se resuelven reusando `/api/sales`, `/api/product-variants` y `/api/quotes` ya existentes. Se reconsiderará si el volumen de datos lo justifica más adelante.
 - **`src/stores/dashboard.js`** — `fetchDashboardData()` dispara en paralelo con `Promise.allSettled()`: (1) `salesSummary` (`today`/`week`/`month`), tres `GET /api/sales?from=&to=` sumando `total` client-side en centavos (evita error de punto flotante con el string decimal); (2) `lowStockVariants`, computed sobre `inventory.products` (respeta la caché `initialized` de Inventario) filtrando `low_stock === true`; (3) `activeQuotes`, `GET /api/quotes` filtrado client-side por `status === 'Borrador'` (el campo es `status`, string plano en `QuoteResource` — no `quoteStatus.name`). No usa el patrón `initialized`: se recalcula en cada visita, igual que `sales.js`, con contador de petición para descartar respuestas tardías
 - Las ventas y cotizaciones del dashboard se piden directo por axios, no vía `sales.fetchSales()`/`quotes.fetchQuotes()` — esas acciones escriben en el store de su propio listado (`SalesView.vue`/`QuotesView.vue`) y heredan su gate de caché/contador, pensado para ese caso de uso, no para 3 fetches paralelos independientes del dashboard
 - `fetchDashboardData()` usa `Promise.allSettled()` con estado independiente por sección (`salesLoading`/`salesError`, `lowStockLoading`/`lowStockError`, `activeQuotesLoading`/`activeQuotesError`), no un loading/error único — con `Promise.all()` y estado compartido, el fallo de un widget tapaba o bloqueaba los otros dos aunque sí hubieran cargado bien. Cada sección actualiza su propio estado en cuanto su fetch responde, sin esperar a las otras dos; si una falla, su mensaje nombra la sección y sus datos se quedan con el valor anterior (o vacíos en la primera visita), sin afectar a las demás
@@ -166,6 +166,9 @@ Vista rápida — el detalle completo de cada uno está en "Módulos" más abajo
 - `LowStockWidget.vue` conectado a `dashboard.lowStockVariants` (`low_stock === true`)
 - `ActiveQuotesWidget.vue` conectado a `dashboard.activeQuotes` (`status === 'Borrador'`)
 - `src/lib/formatCurrency.js` extraído para los widgets (no toca el `formatCurrency` ya existente en vistas cerradas como `SalesView.vue`)
+- **Productos más vendidos** — primer endpoint dedicado del dashboard, `GET /api/dashboard/top-products?from=&to=` (top 5 por `revenue`; `quantity_sold` en la unidad propia de cada fila: m² para variantes, unidades para productos simples). `dashboard.fetchTopProducts(range)` con su propio `topProductsLoading`/`topProductsError` y su propio contador de petición (`lastTopProductsRequestId`), separado de `fetchDashboardData()`: se vuelve a pedir sola al cambiar su filtro, y compartir el contador habría descartado las cargas en curso de los otros widgets (dejándolos en loading). `loadSection()` ahora recibe un `isCurrent()` en vez del `requestId` para servir a ambos contadores
+- `TopProductsWidget.vue` (tabla producto/cantidad/monto, ancho completo en `lg`) con filtro de fecha propio; el filtro activo vive en `HomeView.vue` (default "Este mes", se reinicia en cada visita, mismo criterio que `SalesView.vue`)
+- `src/components/widgets/filters/DateRangeFilter.vue` extraído de `SalesView.vue` al aparecer el segundo consumidor (este widget): `v-model` con la clave del filtro (`all`/`today`/`week`/`month`); el padre la convierte con `dateRangeFor()` de `src/lib/dateRanges.js` (extraído también, ver pendiente resuelto en Transversal)
 
 ### 5. Clientes — ✅ completo (backend + frontend)
 
@@ -251,7 +254,7 @@ Vista rápida — el detalle completo de cada uno está en "Módulos" más abajo
 
 **Transversal:**
 
-- Bug: la lógica de cálculo de rango de fecha (hoy/semana/mes, semana empezando en lunes, en hora local) está duplicada entre `SalesView.vue` y `src/stores/dashboard.js` — detectado al construir el store del Dashboard, no corregido ahí para no reabrir `SalesView.vue` (módulo de POS ya cerrado) sin motivo. Candidato a extraerse a `src/lib/` (ej. `dateRanges.js`) cuando aparezca un tercer consumidor, o junto con el pase de UX/UI
+- ~~Bug: la lógica de cálculo de rango de fecha estaba duplicada entre `SalesView.vue` y `src/stores/dashboard.js`~~ — resuelto: extraída a `src/lib/dateRanges.js` al sumarse Productos más vendidos como tercer consumidor
 - Bug: `formatCurrency`/`Intl.NumberFormat` está duplicado entre `SalesView.vue` (y otras vistas cerradas) y `src/lib/formatCurrency.js` (usado por los widgets del Dashboard) — mismo criterio que el punto anterior, no se tocaron las vistas cerradas para consolidarlo
 - Pase de UX/UI y estilos, módulo por módulo, una vez cerrada la cobertura funcional completa de todos los módulos (decisión de Justin — evitar pulir vistas que aún pueden cambiar de forma). Los 5 módulos funcionales ya están cerrados — este pase puede empezar cuando se decida
 
