@@ -20,12 +20,12 @@
 					<circle cx="11" cy="11" r="7" />
 					<line x1="21" y1="21" x2="16.65" y2="16.65" />
 				</svg>
-				<input
+				<InputTextCustom
 					v-model="searchQuery"
 					type="search"
 					placeholder="Buscar por nombre, teléfono o correo…"
 					aria-label="Buscar clientes"
-					class="w-full max-w-md pl-8 pr-3 py-2 text-sm bg-surface border border-border rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
+					class="max-w-md pl-8"
 				/>
 			</div>
 		</div>
@@ -136,6 +136,7 @@ import Column from 'primevue/column'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useCustomersStore } from '@/stores/customers'
 import { useCustomerDelete } from '@/composables/useCustomerDelete'
+import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 
 const customers = useCustomersStore()
 

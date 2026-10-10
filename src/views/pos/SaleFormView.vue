@@ -89,14 +89,12 @@
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
 								<div class="space-y-1.5">
 									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (m²)</label>
-									<input
+									<InputNumberCustom
 										:id="`quantity-${row.id}`"
-										v-model.number="row.quantity"
-										type="number"
-										min="0.01"
-										step="0.01"
+										v-model="row.quantity"
+										:min="0.01"
 										placeholder="0.00"
-										class="w-full bg-surface border border-border text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors px-3 h-[38px] rounded-md"
+										:max-fraction-digits="2"
 									/>
 								</div>
 
@@ -109,14 +107,13 @@
 
 								<div class="space-y-1.5">
 									<label :for="`unit-price-${row.id}`" class="text-xs font-medium text-text-muted block">Precio unitario (m²)</label>
-									<input
+									<InputNumberCustom
 										:id="`unit-price-${row.id}`"
-										v-model.number="row.unit_price"
-										type="number"
-										min="0"
-										step="0.01"
-										placeholder="0.00"
-										class="w-full bg-surface border border-border text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors px-3 h-[38px] rounded-md"
+										v-model="row.unit_price"
+										:min="0"
+										placeholder="$0.00"
+										mode="currency"
+										currency="MXN"
 									/>
 								</div>
 
@@ -194,6 +191,7 @@ import { useInventoryStore } from '@/stores/inventory'
 import { useSalesStore } from '@/stores/sales'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
 import VariantAutocomplete from '@/components/widgets/autocompletes/VariantAutocomplete.vue'
+import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 
 const route = useRoute()
 const router = useRouter()

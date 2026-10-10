@@ -21,16 +21,14 @@
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5 sm:col-span-2">
 						<label for="name" class="text-xs font-medium text-text-muted block">Nombre</label>
-						<input
+						<InputTextCustom
 							id="name"
 							v-model="form.name"
-							type="text"
+							:error="errors.name"
 							autocomplete="off"
 							placeholder="Ej. Constructora del Norte"
 							:disabled="loadingCustomer"
 							@input="errors.name = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="errors.name ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'"
 						/>
 						<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">{{ errors.name }}</p>
 					</div>
@@ -39,16 +37,15 @@
 						<label for="phone" class="text-xs font-medium text-text-muted block">
 							Teléfono <span class="font-normal">(opcional)</span>
 						</label>
-						<input
+						<InputTextCustom
 							id="phone"
 							v-model="form.phone"
+							:error="errors.phone"
 							type="tel"
 							autocomplete="off"
 							placeholder="Ej. 81 1234 5678"
 							:disabled="loadingCustomer"
 							@input="errors.phone = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="errors.phone ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'"
 						/>
 						<p v-if="errors.phone" class="text-danger text-[12px] mt-1.5">{{ errors.phone }}</p>
 					</div>
@@ -57,16 +54,15 @@
 						<label for="email" class="text-xs font-medium text-text-muted block">
 							Correo <span class="font-normal">(opcional)</span>
 						</label>
-						<input
+						<InputTextCustom
 							id="email"
 							v-model="form.email"
+							:error="errors.email"
 							type="email"
 							autocomplete="off"
 							placeholder="Ej. compras@constructora.mx"
 							:disabled="loadingCustomer"
 							@input="errors.email = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="errors.email ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'"
 						/>
 						<p v-if="errors.email" class="text-danger text-[12px] mt-1.5">{{ errors.email }}</p>
 					</div>
@@ -98,6 +94,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCustomersStore } from '@/stores/customers'
+import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 
 const route = useRoute()
 const router = useRouter()

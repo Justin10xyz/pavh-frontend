@@ -11,28 +11,24 @@
 
 				<div class="space-y-1.5 mb-4">
 					<label for="category_name" class="text-xs font-medium text-text-muted block">Nombre</label>
-					<input
+					<InputTextCustom
 						id="category_name"
 						v-model="name"
-						type="text"
+						:error="errors.name"
 						placeholder="Ej. Porcelanato"
 						@input="errors.name = ''"
-						class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-						:class="errors.name ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'"
 					/>
 					<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">{{ errors.name }}</p>
 				</div>
 
 				<div class="space-y-1.5 mb-4">
 					<label for="category_code_prefix" class="text-xs font-medium text-text-muted block">Prefijo de código</label>
-					<input
+					<InputTextCustom
 						id="category_code_prefix"
 						v-model="codePrefix"
-						type="text"
+						:error="errors.code_prefix"
 						placeholder="Ej. POR"
 						@input="errors.code_prefix = ''"
-						class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-						:class="errors.code_prefix ? 'border-danger focus:border-danger' : 'border-border focus:border-accent'"
 					/>
 					<p v-if="errors.code_prefix" class="text-danger text-[12px] mt-1.5">{{ errors.code_prefix }}</p>
 				</div>
@@ -65,6 +61,7 @@ import { ref, reactive, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 import axios from '@/lib/axios'
 import { useCatalogsStore } from '@/stores/catalogs'
+import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 
 const visible = defineModel('visible', { type: Boolean, default: false })
 const props = defineProps({

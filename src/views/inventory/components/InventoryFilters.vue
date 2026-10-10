@@ -9,11 +9,10 @@
 				<circle cx="11" cy="11" r="7" />
 				<line x1="21" y1="21" x2="16.65" y2="16.65" />
 			</svg>
-			<input
+			<InputTextCustom
 				v-model="searchQuery"
-				type="text"
 				placeholder="Buscar por línea, color o código…"
-				class="w-full pl-8 pr-3 py-2 text-sm bg-surface border border-border rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
+				class="pl-8"
 			/>
 		</div>
 
@@ -27,11 +26,7 @@
 		</div>
 
 		<label class="flex items-center gap-2 text-sm text-text select-none cursor-pointer">
-			<input
-				type="checkbox"
-				v-model="lowStockOnly"
-				class="w-4 h-4 rounded border-border text-accent focus:ring-accent"
-			/>
+			<CheckboxCustom v-model="lowStockOnly" />
 			Solo stock bajo
 		</label>
 
@@ -49,6 +44,8 @@
 <script setup>
 import { computed } from 'vue'
 import SelectCustom from '@/components/widgets/SelectCustom.vue'
+import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
+import CheckboxCustom from '@/components/widgets/CheckboxCustom.vue'
 
 defineProps({
 	categoryOptions: {

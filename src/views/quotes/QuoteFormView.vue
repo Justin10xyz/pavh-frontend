@@ -27,13 +27,12 @@
 
 					<div class="space-y-1.5 sm:col-span-2">
 						<label for="notes" class="text-xs font-medium text-text-muted block">Notas</label>
-						<textarea
+						<TextareaCustom
 							id="notes"
 							v-model="form.notes"
 							rows="3"
 							placeholder="Notas adicionales para esta cotización (opcional)"
-							class="w-full bg-surface border border-border text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors px-3 py-2 rounded-md resize-none"
-						></textarea>
+						/>
 					</div>
 				</div>
 			</div>
@@ -85,14 +84,12 @@
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
 								<div class="space-y-1.5">
 									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (m²)</label>
-									<input
+									<InputNumberCustom
 										:id="`quantity-${row.id}`"
-										v-model.number="row.quantity"
-										type="number"
-										min="0.01"
-										step="0.01"
+										v-model="row.quantity"
+										:min="0.01"
 										placeholder="0.00"
-										class="w-full bg-surface border border-border text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors px-3 h-[38px] rounded-md"
+										:max-fraction-digits="2"
 									/>
 								</div>
 
@@ -175,6 +172,8 @@ import { useInventoryStore } from '@/stores/inventory'
 import { useQuotesStore } from '@/stores/quotes'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
 import VariantAutocomplete from '@/components/widgets/autocompletes/VariantAutocomplete.vue'
+import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
+import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
 
 const route = useRoute()
 const router = useRouter()
