@@ -7,14 +7,14 @@
 
 		<div v-if="loadingQuote" class="text-text-muted text-sm">Cargando cotización…</div>
 
-		<p v-if="generalError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+		<p v-if="loadError || generalError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 			</svg>
-			{{ generalError }}
+			{{ loadError || generalError }}
 		</p>
 
-		<form v-else @submit.prevent="handleSubmit" class="space-y-4">
+		<form v-if="!loadingQuote && !loadError" @submit.prevent="handleSubmit" class="space-y-4">
 			<!-- Sección 1 — Datos generales -->
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
 				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
@@ -272,7 +272,7 @@ async function loadQuote() {
 
 	const quote = quotes.currentQuote
 	if (quotes.currentQuoteError || !quote || String(quote.id) !== String(quoteId.value)) {
-		generalError.value = quotes.currentQuoteError || 'No se pudo cargar la cotización.'
+		loadError.value = quotes.currentQuoteError || 'No se pudo cargar la cotización.'
 		return
 	}
 
@@ -416,6 +416,10 @@ function formatCurrency(value) {
 
 const submitting = ref(false)
 const generalError = ref(null)
+// Fallo de fetchQuote en modo edición: oculta el form (no se debe poder
+// enviar uno vacío sobre una cotización que no cargó). generalError queda
+// solo para errores de submit, que no desmontan el form.
+const loadError = ref(null)
 
 const handleSubmit = async () => {
 	generalError.value = null
