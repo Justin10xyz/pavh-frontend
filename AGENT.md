@@ -124,6 +124,9 @@ Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif
 ### Layout
 
 - Sidebar fijo, fondo `primary`, íconos + labels en blanco/gris claro.
+  - **Responsive**: por debajo de `lg` el sidebar es una barra de solo íconos (`w-16`, 4rem) con tooltip a la derecha por item; desde `lg` se expande con labels (`w-50`, 12.5rem). Es CSS puro (mobile-first), sin estado de abierto/cerrado ni menú hamburguesa. El tooltip se desactiva en `lg`+ vía `useMediaQuery` (`src/composables/useMediaQuery.js`), que solo existe para lógica JS que el CSS no resuelve — no para decidir layout.
+  - Por eso el área de contenido disponible es `100vw - 4rem` por debajo de `lg` y `100vw - 12.5rem` desde `lg` — tenerlo en cuenta al decidir columnas de un grid o qué columnas de tabla ocultar.
+  - El `<main>` de `AppLayout.vue` usa padding escalonado `p-4 sm:p-6 lg:p-8`, que ya es el margen exterior de toda vista.
 - Topbar blanco, borde inferior `border` (1px, sin sombra).
 - Contenido sobre fondo `bg`, cards en `surface` con borde `border` de 1px — **no usar `box-shadow` pesado**, rompe la seriedad del diseño.
 - Border-radius pequeño: `4px`–`6px` en cards, inputs y botones. Nunca `rounded-full` en botones (se siente demasiado "startup").
@@ -143,6 +146,7 @@ Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif
 ### Componentes base ya definidos
 
 - **Forms** (patrón establecido en `Login.vue`, replicado en `ProductFormView.vue`, `QuoteFormView.vue` y `SaleFormView.vue`): card centrada o de ancho completo según contexto, inputs con ícono a la izquierda cuando aplica, botón primario de color sólido (sin gradientes), estado de error inline (no toast para errores de validación de campo). El error inline no debe ocultar el resto del formulario (ver bug conocido de `QuoteFormView.vue` en `PROJECT.md` — evitar repetirlo en formularios nuevos).
+- **Labels de campos de form** (`src/components/widgets/labels/FieldLabel.vue`): todo label de un form usa `<FieldLabel html-for="..." text="..." />`. Todo campo obligatorio lo marca con `required` (asterisco rojo `text-danger` después del texto); todo campo opcional lo omite (sin `required` o `:required="false"`). Un form nuevo no debe volver a escribir `<label>` a mano.
 - **Listas repetibles dentro de un form** (patrón de colores en `ProductFormView.vue`, líneas de producto en `QuoteFormView.vue` y `SaleFormView.vue`): campos compartidos se capturan una sola vez; el campo que varía se captura como lista repetible con botón "+ Agregar" y botón de quitar por fila (deshabilitado si solo queda 1 fila).
 - **Tablas agrupadas con expansión** (patrón de `InventoryView.vue`): PrimeVue `DataTable` con row-expansion nativo vía slots (`#body`/`#expansion`), agrupación visual hecha con un helper de JS puro (no de PrimeVue) cuando el agrupamiento depende de reglas de negocio específicas (ver `groupVariants.js`).
 - **Listados simples con filtros rápidos** (patrón de `SalesView.vue`): `DataTable` sin expansión, con botones de filtro rápido (ej. "Hoy"/"Esta semana"/"Este mes") en vez de inputs de fecha libres cuando los rangos son predecibles, resaltando visualmente el filtro activo (borde `accent`, texto más oscuro, `aria-pressed`). Búsqueda adicional client-side sobre el resultado ya cargado, combinable con el filtro activo. Mismo patrón de tabla (sin expansión) usado en `CategoriesSettingsView.vue`, sin filtros de fecha porque no aplica.
