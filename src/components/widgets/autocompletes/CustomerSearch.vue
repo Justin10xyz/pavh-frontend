@@ -1,20 +1,20 @@
 <template>
-	<select
+	<SelectCustom
 		v-model="customerId"
-		:disabled="loading"
-		class="w-full bg-surface border border-border text-sm text-text focus:outline-none focus:border-accent transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-	>
-		<option value="">{{ loading ? 'Cargando…' : 'Sin cliente' }}</option>
-		<option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.name }}</option>
-	</select>
+		:options="customers"
+		:loading="loading"
+		placeholder="Sin cliente"
+		allow-empty
+	/>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import axios from '@/lib/axios'
+import SelectCustom from '@/components/widgets/SelectCustom.vue'
 
 // '' = sin cliente; el `id` (para el <label for>) y demás atributos caen
-// directo al <select> raíz.
+// hasta el <select> de SelectCustom.
 const customerId = defineModel({ type: [String, Number], default: '' })
 
 // GET /api/customers acepta ?search=, pero para un catálogo de este tamaño se

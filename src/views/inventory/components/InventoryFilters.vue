@@ -17,13 +17,14 @@
 			/>
 		</div>
 
-		<select
-			v-model="selectedCategory"
-			class="py-2 px-3 text-sm bg-surface border border-border rounded-md text-text focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
-		>
-			<option value="">Todas las categorías</option>
-			<option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ cat }}</option>
-		</select>
+		<div class="w-full sm:w-56">
+			<SelectCustom
+				v-model="selectedCategory"
+				:options="categoryOptions"
+				placeholder="Todas las categorías"
+				allow-empty
+			/>
+		</div>
 
 		<label class="flex items-center gap-2 text-sm text-text select-none cursor-pointer">
 			<input
@@ -47,6 +48,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import SelectCustom from '@/components/widgets/SelectCustom.vue'
 
 defineProps({
 	categoryOptions: {

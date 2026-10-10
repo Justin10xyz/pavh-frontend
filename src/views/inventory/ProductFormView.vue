@@ -43,29 +43,15 @@
 						<label for="supplier_id" class="text-xs font-medium text-text-muted block"
 							>Proveedor</label
 						>
-						<select
+						<SelectCustom
 							id="supplier_id"
 							v-model="form.supplier_id"
-							:disabled="catalogs.loading"
+							:options="catalogs.suppliers"
+							:loading="catalogs.loading"
+							:error="errors.supplier_id"
+							placeholder="Selecciona un proveedor"
 							@change="errors.supplier_id = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="
-								errors.supplier_id
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="" disabled>
-								{{ catalogs.loading ? "Cargando…" : "Selecciona un proveedor" }}
-							</option>
-							<option
-								v-for="supplier in catalogs.suppliers"
-								:key="supplier.id"
-								:value="supplier.id"
-							>
-								{{ supplier.name }}
-							</option>
-						</select>
+						/>
 						<p v-if="errors.supplier_id" class="text-danger text-[12px] mt-1.5">
 							{{ errors.supplier_id }}
 						</p>
@@ -75,29 +61,15 @@
 						<label for="category_id" class="text-xs font-medium text-text-muted block"
 							>Categoría</label
 						>
-						<select
+						<SelectCustom
 							id="category_id"
 							v-model="form.category_id"
-							:disabled="catalogs.loading"
+							:options="catalogs.categories"
+							:loading="catalogs.loading"
+							:error="errors.category_id"
+							placeholder="Selecciona una categoría"
 							@change="errors.category_id = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="
-								errors.category_id
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="" disabled>
-								{{ catalogs.loading ? "Cargando…" : "Selecciona una categoría" }}
-							</option>
-							<option
-								v-for="category in catalogs.categories"
-								:key="category.id"
-								:value="category.id"
-							>
-								{{ category.name }}
-							</option>
-						</select>
+						/>
 						<p v-if="errors.category_id" class="text-danger text-[12px] mt-1.5">
 							{{ errors.category_id }}
 						</p>
@@ -129,29 +101,15 @@
 						<label for="unit_type_id" class="text-xs font-medium text-text-muted block"
 							>Unidad</label
 						>
-						<select
+						<SelectCustom
 							id="unit_type_id"
 							v-model="form.unit_type_id"
-							:disabled="catalogs.loading"
+							:options="catalogs.unitTypes"
+							:loading="catalogs.loading"
+							:error="errors.unit_type_id"
+							placeholder="Selecciona una unidad"
 							@change="errors.unit_type_id = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="
-								errors.unit_type_id
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="" disabled>
-								{{ catalogs.loading ? "Cargando…" : "Selecciona una unidad" }}
-							</option>
-							<option
-								v-for="unitType in catalogs.unitTypes"
-								:key="unitType.id"
-								:value="unitType.id"
-							>
-								{{ unitType.name }}
-							</option>
-						</select>
+						/>
 						<p v-if="errors.unit_type_id" class="text-danger text-[12px] mt-1.5">
 							{{ errors.unit_type_id }}
 						</p>
@@ -215,22 +173,14 @@
 						<label for="pei" class="text-xs font-medium text-text-muted block"
 							>PEI</label
 						>
-						<select
+						<SelectCustom
 							id="pei"
 							v-model="variant.pei"
+							:options="peiOptions"
+							:error="variantErrors.pei"
+							placeholder="Selecciona un PEI"
 							@change="variantErrors.pei = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.pei
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="" disabled>Selecciona un PEI</option>
-							<option v-for="option in peiOptions" :key="option" :value="option">
-								{{ option }}
-							</option>
-						</select>
+						/>
 						<p v-if="variantErrors.pei" class="text-danger text-[12px] mt-1.5">
 							{{ variantErrors.pei }}
 						</p>
@@ -447,29 +397,17 @@
 							class="text-xs font-medium text-text-muted block"
 							>Categoría de comisión</label
 						>
-						<select
+						<SelectCustom
 							id="commission_category_id"
 							v-model="variant.commission_category_id"
-							:disabled="catalogs.loading"
+							:options="catalogs.commissionCategories"
+							option-label="code"
+							:loading="catalogs.loading"
+							:error="variantErrors.commission_category_id"
+							placeholder="Sin categoría"
+							allow-empty
 							@change="variantErrors.commission_category_id = ''"
-							class="w-full bg-surface border text-sm text-text focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed"
-							:class="
-								variantErrors.commission_category_id
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						>
-							<option value="">
-								{{ catalogs.loading ? "Cargando…" : "Sin categoría" }}
-							</option>
-							<option
-								v-for="commissionCategory in catalogs.commissionCategories"
-								:key="commissionCategory.id"
-								:value="commissionCategory.id"
-							>
-								{{ commissionCategory.code }}
-							</option>
-						</select>
+						/>
 						<p
 							v-if="variantErrors.commission_category_id"
 							class="text-danger text-[12px] mt-1.5"
@@ -678,6 +616,7 @@ import { useRoute, useRouter } from "vue-router";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import axios from "@/lib/axios";
+import SelectCustom from "@/components/widgets/SelectCustom.vue";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { useInventoryStore } from "@/stores/inventory";
 
