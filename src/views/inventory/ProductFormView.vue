@@ -338,7 +338,7 @@
 						>
 							<div class="flex items-center justify-between mb-3">
 								<span class="text-xs font-medium text-text-muted"
-									>Color {{ index + 1 }}</span
+								>Color {{ index + 1 }}</span
 								>
 								<button
 									type="button"
@@ -792,9 +792,9 @@ const handleSubmit = async () => {
 			colorRows.value.map((row) =>
 				row.variantId
 					? axios.put(
-							`/api/product-variants/${row.variantId}`,
-							buildVariantPayload(productId, row),
-						)
+						`/api/product-variants/${row.variantId}`,
+						buildVariantPayload(productId, row),
+					)
 					: axios.post("/api/product-variants", buildVariantPayload(productId, row)),
 			),
 		);
