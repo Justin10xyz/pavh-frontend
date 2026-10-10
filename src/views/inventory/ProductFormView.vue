@@ -40,9 +40,7 @@
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5">
-						<label for="supplier_id" class="text-xs font-medium text-text-muted block"
-							>Proveedor</label
-						>
+						<FieldLabel html-for="supplier_id" text="Proveedor" required />
 						<SelectCustom
 							id="supplier_id"
 							v-model="form.supplier_id"
@@ -58,9 +56,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="category_id" class="text-xs font-medium text-text-muted block"
-							>Categoría</label
-						>
+						<FieldLabel html-for="category_id" text="Categoría" required />
 						<SelectCustom
 							id="category_id"
 							v-model="form.category_id"
@@ -76,9 +72,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="name" class="text-xs font-medium text-text-muted block"
-							>Nombre</label
-						>
+						<FieldLabel html-for="name" text="Nombre" required />
 						<InputTextCustom
 							id="name"
 							v-model="form.name"
@@ -92,9 +86,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="unit_type_id" class="text-xs font-medium text-text-muted block"
-							>Unidad</label
-						>
+						<FieldLabel html-for="unit_type_id" text="Unidad" required />
 						<SelectCustom
 							id="unit_type_id"
 							v-model="form.unit_type_id"
@@ -110,9 +102,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="purchase_unit" class="text-xs font-medium text-text-muted block"
-							>Unidad de compra</label
-						>
+						<FieldLabel html-for="purchase_unit" text="Unidad de compra" required />
 						<InputTextCustom
 							id="purchase_unit"
 							v-model="form.purchase_unit"
@@ -136,9 +126,7 @@
 				<!-- Grupo 1 — Medida y especificaciones técnicas -->
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 					<div class="space-y-1.5">
-						<label for="size" class="text-xs font-medium text-text-muted block"
-							>Medida</label
-						>
+						<FieldLabel html-for="size" text="Medida" required />
 						<InputTextCustom
 							id="size"
 							v-model="variant.size"
@@ -152,9 +140,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="pei" class="text-xs font-medium text-text-muted block"
-							>PEI</label
-						>
+						<FieldLabel html-for="pei" text="PEI" />
 						<SelectCustom
 							id="pei"
 							v-model="variant.pei"
@@ -169,9 +155,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="ett" class="text-xs font-medium text-text-muted block"
-							>ETT</label
-						>
+						<FieldLabel html-for="ett" text="ETT" />
 						<InputTextCustom
 							id="ett"
 							v-model="variant.ett"
@@ -188,9 +172,7 @@
 				<!-- Grupo 3 — Precio -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 border-t border-border pt-4">
 					<div class="space-y-1.5">
-						<label for="price_per_box" class="text-xs font-medium text-text-muted block"
-							>Precio por caja</label
-						>
+						<FieldLabel html-for="price_per_box" text="Precio por caja" required />
 						<InputNumberCustom
 							id="price_per_box"
 							v-model="variant.price_per_box"
@@ -210,9 +192,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="price_per_m2" class="text-xs font-medium text-text-muted block"
-							>Precio por m²</label
-						>
+						<FieldLabel html-for="price_per_m2" text="Precio por m²" required />
 						<InputNumberCustom
 							id="price_per_m2"
 							v-model="variant.price_per_m2"
@@ -232,11 +212,7 @@
 				<!-- Grupo 2 — Datos por caja -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
 					<div class="space-y-1.5">
-						<label
-							for="pieces_per_box"
-							class="text-xs font-medium text-text-muted block"
-							>Piezas por caja</label
-						>
+						<FieldLabel html-for="pieces_per_box" text="Piezas por caja" required />
 						<InputNumberCustom
 							id="pieces_per_box"
 							v-model="variant.pieces_per_box"
@@ -255,9 +231,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="kilos_per_box" class="text-xs font-medium text-text-muted block"
-							>Kilos por caja</label
-						>
+						<FieldLabel html-for="kilos_per_box" text="Kilos por caja" />
 						<InputNumberCustom
 							id="kilos_per_box"
 							v-model="variant.kilos_per_box"
@@ -276,9 +250,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="m2_per_box" class="text-xs font-medium text-text-muted block"
-							>m² por caja</label
-						>
+						<FieldLabel html-for="m2_per_box" text="m² por caja" required />
 						<InputNumberCustom
 							id="m2_per_box"
 							v-model="variant.m2_per_box"
@@ -294,11 +266,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label
-							for="boxes_per_pallet"
-							class="text-xs font-medium text-text-muted block"
-							>Cajas por tarima</label
-						>
+						<FieldLabel html-for="boxes_per_pallet" text="Cajas por tarima" />
 						<InputNumberCustom
 							id="boxes_per_pallet"
 							v-model="variant.boxes_per_pallet"
@@ -320,11 +288,10 @@
 				<!-- Grupo 4 — Dato interno del negocio, separado del resto (no viene de la hoja del proveedor) -->
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
 					<div class="space-y-1.5">
-						<label
-							for="commission_category_id"
-							class="text-xs font-medium text-text-muted block"
-							>Categoría de comisión</label
-						>
+						<FieldLabel
+							html-for="commission_category_id"
+							text="Categoría de comisión"
+						/>
 						<SelectCustom
 							id="commission_category_id"
 							v-model="variant.commission_category_id"
@@ -389,11 +356,11 @@
 
 							<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 								<div class="space-y-1.5">
-									<label
-										:for="`color-${row.id}`"
-										class="text-xs font-medium text-text-muted block"
-										>Color</label
-									>
+									<FieldLabel
+										:html-for="`color-${row.id}`"
+										text="Color"
+										required
+									/>
 									<InputTextCustom
 										:id="`color-${row.id}`"
 										v-model="row.color"
@@ -410,11 +377,11 @@
 								</div>
 
 								<div class="space-y-1.5">
-									<label
-										:for="`stock_boxes-${row.id}`"
-										class="text-xs font-medium text-text-muted block"
-										>Stock inicial (cajas)</label
-									>
+									<FieldLabel
+										:html-for="`stock_boxes-${row.id}`"
+										text="Stock inicial (cajas)"
+										required
+									/>
 									<InputNumberCustom
 										:id="`stock_boxes-${row.id}`"
 										v-model="row.stock_boxes"
@@ -433,11 +400,11 @@
 								</div>
 
 								<div class="space-y-1.5">
-									<label
-										:for="`minimum_stock-${row.id}`"
-										class="text-xs font-medium text-text-muted block"
-										>Stock mínimo</label
-									>
+									<FieldLabel
+										:html-for="`minimum_stock-${row.id}`"
+										text="Stock mínimo"
+										required
+									/>
 									<InputNumberCustom
 										:id="`minimum_stock-${row.id}`"
 										v-model="row.minimum_stock"
@@ -531,6 +498,7 @@ import { useCatalogsStore } from "@/stores/catalogs";
 import { useInventoryStore } from "@/stores/inventory";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
+import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -711,10 +679,6 @@ async function fetchProduct() {
 const requiredFormFields = ["supplier_id", "category_id", "unit_type_id", "name", "purchase_unit"];
 const requiredVariantFields = [
 	"size",
-	"pei",
-	"ett",
-	"kilos_per_box",
-	"boxes_per_pallet",
 	"price_per_box",
 	"price_per_m2",
 	"pieces_per_box",
