@@ -55,6 +55,7 @@
 				:visibleVariantsByProduct="visibleVariantsByProduct"
 				@edit-product="editProduct"
 				@open-stock-dialog="openStockDialog"
+				@open-movements-dialog="openMovementsDialog"
 			/>
 		</template>
 	</div>
@@ -68,6 +69,14 @@
 		:subtitle="stockDialogVariant?.color"
 		@stock-updated="onVariantStockUpdated"
 	/>
+
+	<StockMovementsDialog
+		v-model:visible="movementsDialogOpen"
+		:url="movementsDialogVariant ? `/api/product-variants/${movementsDialogVariant.id}/stock-movements` : null"
+		:stock="movementsDialogVariant?.stock_boxes"
+		stock-unit="cj"
+		:subtitle="movementsDialogVariant?.color"
+	/>
 </template>
 
 <script setup>
@@ -78,6 +87,7 @@ import { useInventoryStore } from "@/stores/inventory";
 import InventoryFilters from "./components/InventoryFilters.vue";
 import InventoryTable from "./components/InventoryTable.vue";
 import StockAdjustDialog from "./components/StockAdjustDialog.vue";
+import StockMovementsDialog from "./components/StockMovementsDialog.vue";
 import SimpleProductsSection from "./components/SimpleProductsSection.vue";
 
 const route = useRoute();
@@ -125,6 +135,14 @@ function onVariantStockUpdated(updatedVariant) {
 		stock_boxes: updatedVariant.stock_boxes,
 		low_stock: updatedVariant.low_stock,
 	});
+}
+
+const movementsDialogOpen = ref(false);
+const movementsDialogVariant = ref(null);
+
+function openMovementsDialog(variant) {
+	movementsDialogVariant.value = variant;
+	movementsDialogOpen.value = true;
 }
 
 // Filters logic
