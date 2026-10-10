@@ -1,7 +1,7 @@
 <template>
 	<Dialog v-model:visible="visible" modal :pt="{ mask: { class: 'bg-primary/50' } }" @hide="reset">
 		<template #container="{ closeCallback }">
-			<div v-if="variant" class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+			<div v-if="url" class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
 				<div class="flex items-center justify-between mb-4">
 					<h3 class="font-serif text-base text-primary">Ajustar stock</h3>
 					<button type="button" @click="closeCallback" class="text-text-muted hover:text-text transition-colors" aria-label="Cerrar">
@@ -10,8 +10,8 @@
 				</div>
 
 				<div class="text-sm text-text mb-4">
-					<span class="text-text-muted">{{ variant.color }} · </span>
-					Stock actual: <span class="font-medium">{{ variant.stock_boxes }} cj</span>
+					<span v-if="subtitle" class="text-text-muted">{{ subtitle }} · </span>
+					Stock actual: <span class="font-medium">{{ stock }} {{ stockUnit }}</span>
 				</div>
 
 				<div class="flex gap-2 mb-4">
@@ -34,7 +34,7 @@
 				</div>
 
 				<div class="space-y-1.5 mb-4">
-					<label for="stock_adjust_quantity" class="text-xs font-medium text-text-muted block">Cantidad (cajas)</label>
+					<FieldLabel html-for="stock_adjust_quantity" :text="quantityLabel" required />
 					<InputNumberCustom
 						id="stock_adjust_quantity"
 						v-model="stockAdjustQuantity"
@@ -72,20 +72,24 @@
 import { ref, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 import axios from '@/lib/axios'
-import { useInventoryStore } from '@/stores/inventory'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
+import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 
+// No sabe de qué tipo de producto es el stock (variante, producto simple): recibe
+// el endpoint PATCH y lo que debe mostrar, y emite la respuesta del backend para
+// que el padre actualice su store in-place.
 const props = defineProps({
-	variant: {
-		type: Object,
-		default: null,
-	}
+	// Endpoint PATCH de stock (ej. `/api/product-variants/5/stock`). Sin él no se muestra nada.
+	url: { type: String, default: null },
+	stock: { type: Number, default: 0 },
+	stockUnit: { type: String, default: '' },
+	quantityLabel: { type: String, default: 'Cantidad' },
+	// Contexto opcional antes del stock actual (ej. el color de la variante).
+	subtitle: { type: String, default: '' },
 })
 
 const visible = defineModel('visible', { type: Boolean, default: false })
 const emit = defineEmits(['stock-updated'])
-
-const inventory = useInventoryStore()
 
 const stockAdjustType = ref('add')
 const stockAdjustQuantity = ref(null)
@@ -103,20 +107,15 @@ function reset() {
 }
 
 async function submitStockAdjust() {
-	if (!isStockAdjustValid.value || !props.variant) return
+	if (!isStockAdjustValid.value || !props.url) return
 
 	stockAdjustSubmitting.value = true
 	stockDialogError.value = null
 
 	try {
-		const { data } = await axios.patch(`/api/product-variants/${props.variant.id}/stock`, {
+		const { data } = await axios.patch(props.url, {
 			quantity: stockAdjustQuantity.value,
 			type: stockAdjustType.value,
-		})
-
-		inventory.updateVariantStock(props.variant.id, {
-			stock_boxes: data.data.stock_boxes,
-			low_stock: data.data.low_stock,
 		})
 
 		emit('stock-updated', data.data)

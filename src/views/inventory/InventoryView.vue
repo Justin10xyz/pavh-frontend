@@ -38,7 +38,12 @@
 
 	<StockAdjustDialog
 		v-model:visible="stockDialogOpen"
-		:variant="stockDialogVariant"
+		:url="stockDialogVariant ? `/api/product-variants/${stockDialogVariant.id}/stock` : null"
+		:stock="stockDialogVariant?.stock_boxes"
+		stock-unit="cj"
+		quantity-label="Cantidad (cajas)"
+		:subtitle="stockDialogVariant?.color"
+		@stock-updated="onVariantStockUpdated"
 	/>
 </template>
 
@@ -68,6 +73,13 @@ const stockDialogVariant = ref(null)
 function openStockDialog(variant) {
 	stockDialogVariant.value = variant
 	stockDialogOpen.value = true
+}
+
+function onVariantStockUpdated(updatedVariant) {
+	inventory.updateVariantStock(updatedVariant.id, {
+		stock_boxes: updatedVariant.stock_boxes,
+		low_stock: updatedVariant.low_stock,
+	})
 }
 
 // Filters logic
