@@ -41,7 +41,7 @@
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5">
 						<label for="supplier_id" class="text-xs font-medium text-text-muted block"
-						>Proveedor</label
+							>Proveedor</label
 						>
 						<select
 							id="supplier_id"
@@ -73,7 +73,7 @@
 
 					<div class="space-y-1.5">
 						<label for="category_id" class="text-xs font-medium text-text-muted block"
-						>Categoría</label
+							>Categoría</label
 						>
 						<select
 							id="category_id"
@@ -88,9 +88,7 @@
 							"
 						>
 							<option value="" disabled>
-								{{
-									catalogs.loading ? "Cargando…" : "Selecciona una categoría"
-								}}
+								{{ catalogs.loading ? "Cargando…" : "Selecciona una categoría" }}
 							</option>
 							<option
 								v-for="category in catalogs.categories"
@@ -106,8 +104,30 @@
 					</div>
 
 					<div class="space-y-1.5">
+						<label for="name" class="text-xs font-medium text-text-muted block"
+							>Nombre</label
+						>
+						<input
+							id="name"
+							v-model="form.name"
+							type="text"
+							placeholder="Ej. Porcelanato Carrara"
+							@input="errors.name = ''"
+							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
+							:class="
+								errors.name
+									? 'border-danger focus:border-danger'
+									: 'border-border focus:border-accent'
+							"
+						/>
+						<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">
+							{{ errors.name }}
+						</p>
+					</div>
+
+					<div class="space-y-1.5">
 						<label for="unit_type_id" class="text-xs font-medium text-text-muted block"
-						>Unidad</label
+							>Unidad</label
 						>
 						<select
 							id="unit_type_id"
@@ -138,30 +158,8 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="name" class="text-xs font-medium text-text-muted block"
-						>Nombre</label
-						>
-						<input
-							id="name"
-							v-model="form.name"
-							type="text"
-							placeholder="Ej. Porcelanato Carrara"
-							@input="errors.name = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								errors.name
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						/>
-						<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">
-							{{ errors.name }}
-						</p>
-					</div>
-
-					<div class="space-y-1.5">
 						<label for="purchase_unit" class="text-xs font-medium text-text-muted block"
-						>Unidad de compra</label
+							>Unidad de compra</label
 						>
 						<input
 							id="purchase_unit"
@@ -189,10 +187,11 @@
 					Datos de la variante inicial
 				</h2>
 
-				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				<!-- Grupo 1 — Medida y especificaciones técnicas -->
+				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 					<div class="space-y-1.5">
 						<label for="size" class="text-xs font-medium text-text-muted block"
-						>Medida</label
+							>Medida</label
 						>
 						<input
 							id="size"
@@ -214,7 +213,7 @@
 
 					<div class="space-y-1.5">
 						<label for="pei" class="text-xs font-medium text-text-muted block"
-						>PEI</label
+							>PEI</label
 						>
 						<select
 							id="pei"
@@ -239,13 +238,13 @@
 
 					<div class="space-y-1.5">
 						<label for="ett" class="text-xs font-medium text-text-muted block"
-						>ETT</label
+							>ETT</label
 						>
 						<input
 							id="ett"
 							v-model="variant.ett"
 							type="text"
-							placeholder="Ej. 9.5mm"
+							placeholder="Ej. 1"
 							@input="variantErrors.ett = ''"
 							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
 							:class="
@@ -258,10 +257,110 @@
 							{{ variantErrors.ett }}
 						</p>
 					</div>
+				</div>
+
+				<!-- Grupo 3 — Precio -->
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+					<div class="space-y-1.5">
+						<label for="price_per_box" class="text-xs font-medium text-text-muted block"
+							>Precio por caja</label
+						>
+						<div class="relative">
+							<span
+								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
+								>$</span
+							>
+							<input
+								id="price_per_box"
+								v-model.number="variant.price_per_box"
+								type="number"
+								min="0"
+								step="0.01"
+								placeholder="0.00"
+								@input="variantErrors.price_per_box = ''"
+								class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors pl-6 pr-3 h-[38px] rounded-md"
+								:class="
+									variantErrors.price_per_box
+										? 'border-danger focus:border-danger'
+										: 'border-border focus:border-accent'
+								"
+							/>
+						</div>
+						<p
+							v-if="variantErrors.price_per_box"
+							class="text-danger text-[12px] mt-1.5"
+						>
+							{{ variantErrors.price_per_box }}
+						</p>
+					</div>
+
+					<div class="space-y-1.5">
+						<label for="price_per_m2" class="text-xs font-medium text-text-muted block"
+							>Precio por m²</label
+						>
+						<div class="relative">
+							<span
+								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
+								>$</span
+							>
+							<input
+								id="price_per_m2"
+								v-model.number="variant.price_per_m2"
+								type="number"
+								min="0"
+								step="0.01"
+								placeholder="0.00"
+								@input="variantErrors.price_per_m2 = ''"
+								class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors pl-6 pr-3 h-[38px] rounded-md"
+								:class="
+									variantErrors.price_per_m2
+										? 'border-danger focus:border-danger'
+										: 'border-border focus:border-accent'
+								"
+							/>
+						</div>
+						<p v-if="variantErrors.price_per_m2" class="text-danger text-[12px] mt-1.5">
+							{{ variantErrors.price_per_m2 }}
+						</p>
+					</div>
+				</div>
+
+				<!-- Grupo 2 — Datos por caja -->
+				<div
+					class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 border-t border-border pt-4"
+				>
+					<div class="space-y-1.5">
+						<label
+							for="pieces_per_box"
+							class="text-xs font-medium text-text-muted block"
+							>Piezas por caja</label
+						>
+						<input
+							id="pieces_per_box"
+							v-model.number="variant.pieces_per_box"
+							type="number"
+							min="0"
+							step="1"
+							placeholder="0"
+							@input="variantErrors.pieces_per_box = ''"
+							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
+							:class="
+								variantErrors.pieces_per_box
+									? 'border-danger focus:border-danger'
+									: 'border-border focus:border-accent'
+							"
+						/>
+						<p
+							v-if="variantErrors.pieces_per_box"
+							class="text-danger text-[12px] mt-1.5"
+						>
+							{{ variantErrors.pieces_per_box }}
+						</p>
+					</div>
 
 					<div class="space-y-1.5">
 						<label for="kilos_per_box" class="text-xs font-medium text-text-muted block"
-						>Kilos por caja</label
+							>Kilos por caja</label
 						>
 						<input
 							id="kilos_per_box"
@@ -287,10 +386,34 @@
 					</div>
 
 					<div class="space-y-1.5">
+						<label for="m2_per_box" class="text-xs font-medium text-text-muted block"
+							>m² por caja</label
+						>
+						<input
+							id="m2_per_box"
+							v-model.number="variant.m2_per_box"
+							type="number"
+							min="0"
+							step="0.01"
+							placeholder="0.00"
+							@input="variantErrors.m2_per_box = ''"
+							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
+							:class="
+								variantErrors.m2_per_box
+									? 'border-danger focus:border-danger'
+									: 'border-border focus:border-accent'
+							"
+						/>
+						<p v-if="variantErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
+							{{ variantErrors.m2_per_box }}
+						</p>
+					</div>
+
+					<div class="space-y-1.5">
 						<label
 							for="boxes_per_pallet"
 							class="text-xs font-medium text-text-muted block"
-						>Cajas por tarima</label
+							>Cajas por tarima</label
 						>
 						<input
 							id="boxes_per_pallet"
@@ -314,12 +437,15 @@
 							{{ variantErrors.boxes_per_pallet }}
 						</p>
 					</div>
+				</div>
 
+				<!-- Grupo 4 — Dato interno del negocio, separado del resto (no viene de la hoja del proveedor) -->
+				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
 					<div class="space-y-1.5">
 						<label
 							for="commission_category_id"
 							class="text-xs font-medium text-text-muted block"
-						>Categoría de comisión</label
+							>Categoría de comisión</label
 						>
 						<select
 							id="commission_category_id"
@@ -351,122 +477,6 @@
 							{{ variantErrors.commission_category_id }}
 						</p>
 					</div>
-
-					<div class="space-y-1.5">
-						<label for="price_per_box" class="text-xs font-medium text-text-muted block"
-						>Precio por caja</label
-						>
-						<div class="relative">
-							<span
-								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
-							>$</span
-							>
-							<input
-								id="price_per_box"
-								v-model.number="variant.price_per_box"
-								type="number"
-								min="0"
-								step="0.01"
-								placeholder="0.00"
-								@input="variantErrors.price_per_box = ''"
-								class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors pl-6 pr-3 h-[38px] rounded-md"
-								:class="
-									variantErrors.price_per_box
-										? 'border-danger focus:border-danger'
-										: 'border-border focus:border-accent'
-								"
-							/>
-						</div>
-						<p
-							v-if="variantErrors.price_per_box"
-							class="text-danger text-[12px] mt-1.5"
-						>
-							{{ variantErrors.price_per_box }}
-						</p>
-					</div>
-
-					<div class="space-y-1.5">
-						<label for="price_per_m2" class="text-xs font-medium text-text-muted block"
-						>Precio por m²</label
-						>
-						<div class="relative">
-							<span
-								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted text-sm"
-							>$</span
-							>
-							<input
-								id="price_per_m2"
-								v-model.number="variant.price_per_m2"
-								type="number"
-								min="0"
-								step="0.01"
-								placeholder="0.00"
-								@input="variantErrors.price_per_m2 = ''"
-								class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors pl-6 pr-3 h-[38px] rounded-md"
-								:class="
-									variantErrors.price_per_m2
-										? 'border-danger focus:border-danger'
-										: 'border-border focus:border-accent'
-								"
-							/>
-						</div>
-						<p v-if="variantErrors.price_per_m2" class="text-danger text-[12px] mt-1.5">
-							{{ variantErrors.price_per_m2 }}
-						</p>
-					</div>
-
-					<div class="space-y-1.5">
-						<label
-							for="pieces_per_box"
-							class="text-xs font-medium text-text-muted block"
-						>Piezas por caja</label
-						>
-						<input
-							id="pieces_per_box"
-							v-model.number="variant.pieces_per_box"
-							type="number"
-							min="0"
-							step="1"
-							placeholder="0"
-							@input="variantErrors.pieces_per_box = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.pieces_per_box
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						/>
-						<p
-							v-if="variantErrors.pieces_per_box"
-							class="text-danger text-[12px] mt-1.5"
-						>
-							{{ variantErrors.pieces_per_box }}
-						</p>
-					</div>
-
-					<div class="space-y-1.5">
-						<label for="m2_per_box" class="text-xs font-medium text-text-muted block"
-						>m² por caja</label
-						>
-						<input
-							id="m2_per_box"
-							v-model.number="variant.m2_per_box"
-							type="number"
-							min="0"
-							step="0.01"
-							placeholder="0.00"
-							@input="variantErrors.m2_per_box = ''"
-							class="w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md"
-							:class="
-								variantErrors.m2_per_box
-									? 'border-danger focus:border-danger'
-									: 'border-border focus:border-accent'
-							"
-						/>
-						<p v-if="variantErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
-							{{ variantErrors.m2_per_box }}
-						</p>
-					</div>
 				</div>
 
 				<!-- Colores — lista repetible: cada fila se convierte en su propia variante -->
@@ -485,7 +495,7 @@
 						>
 							<div class="flex items-center justify-between mb-3">
 								<span class="text-xs font-medium text-text-muted"
-								>Color {{ index + 1 }}</span
+									>Color {{ index + 1 }}</span
 								>
 								<button
 									type="button"
@@ -516,7 +526,7 @@
 									<label
 										:for="`color-${row.id}`"
 										class="text-xs font-medium text-text-muted block"
-									>Color</label
+										>Color</label
 									>
 									<input
 										:id="`color-${row.id}`"
@@ -543,7 +553,7 @@
 									<label
 										:for="`stock_boxes-${row.id}`"
 										class="text-xs font-medium text-text-muted block"
-									>Stock inicial (cajas)</label
+										>Stock inicial (cajas)</label
 									>
 									<input
 										:id="`stock_boxes-${row.id}`"
@@ -572,7 +582,7 @@
 									<label
 										:for="`minimum_stock-${row.id}`"
 										class="text-xs font-medium text-text-muted block"
-									>Stock mínimo</label
+										>Stock mínimo</label
 									>
 									<input
 										:id="`minimum_stock-${row.id}`"
@@ -957,9 +967,9 @@ const handleSubmit = async () => {
 			colorRows.value.map((row) =>
 				row.variantId
 					? axios.put(
-						`/api/product-variants/${row.variantId}`,
-						buildVariantPayload(productId, row),
-					)
+							`/api/product-variants/${row.variantId}`,
+							buildVariantPayload(productId, row),
+						)
 					: axios.post("/api/product-variants", buildVariantPayload(productId, row)),
 			),
 		);
