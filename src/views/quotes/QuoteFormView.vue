@@ -59,8 +59,69 @@
 							</button>
 						</div>
 
-						<!-- Sin variante seleccionada: buscador -->
-						<VariantAutocomplete v-if="!row.variant" @select="(option) => selectVariantForRow(row, option)" />
+						<!-- Sin producto seleccionado: buscador -->
+						<ProductAutocomplete
+							v-if="!row.variant && !row.simpleProduct"
+							include-simple-products
+							@select="(option) => selectProductForRow(row, option)"
+						/>
+
+						<!-- Producto simple seleccionado -->
+						<div v-else-if="row.simpleProduct">
+							<div class="flex items-start justify-between gap-3 mb-3">
+								<p class="text-sm text-text flex items-center gap-2">
+									{{ simpleProductFor(row).name }}
+									<span
+										v-if="simpleProductCategoryName(row)"
+										class="text-[10px] text-text-muted border border-border rounded px-1.5 py-0.5"
+									>
+										{{ simpleProductCategoryName(row) }}
+									</span>
+								</p>
+								<button
+									type="button"
+									@click="changeLine(row)"
+									class="text-xs text-accent hover:underline flex-shrink-0 cursor-pointer"
+								>
+									Cambiar
+								</button>
+							</div>
+
+							<p v-if="mergedRowId === row.id" class="text-xs text-success mb-3">
+								Cantidad fusionada con esta línea existente.
+							</p>
+
+							<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+								<div class="space-y-1.5">
+									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (unidades)</label>
+									<InputNumberCustom
+										:id="`quantity-${row.id}`"
+										v-model="row.quantity"
+										:min="1"
+										placeholder="0"
+										:max-fraction-digits="0"
+									/>
+								</div>
+
+								<div class="space-y-1.5">
+									<label class="text-xs font-medium text-text-muted block">Precio unitario</label>
+									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
+										{{ formatCurrency(simpleProductFor(row).price) }}
+									</div>
+								</div>
+
+								<div class="space-y-1.5">
+									<label class="text-xs font-medium text-text-muted block">Subtotal</label>
+									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
+										{{ formatCurrency(lineSubtotal(row)) }}
+									</div>
+								</div>
+							</div>
+
+							<p v-if="hasInsufficientStock(row)" class="text-danger text-[12px] mt-2">
+								Stock insuficiente — consultar disponibilidad sobre pedido.
+							</p>
+						</div>
 
 						<!-- Variante seleccionada -->
 						<div v-else>
@@ -169,15 +230,19 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useInventoryStore } from '@/stores/inventory'
+import { useSimpleProductsStore } from '@/stores/simpleProducts'
+import { useCatalogsStore } from '@/stores/catalogs'
 import { useQuotesStore } from '@/stores/quotes'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
-import VariantAutocomplete from '@/components/widgets/autocompletes/VariantAutocomplete.vue'
+import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
 
 const route = useRoute()
 const router = useRouter()
 const inventory = useInventoryStore()
+const simpleProducts = useSimpleProductsStore()
+const catalogs = useCatalogsStore()
 const quotes = useQuotesStore()
 
 // Modo edición cuando la ruta trae :id (quotes.edit); sin :id es creación.
@@ -189,9 +254,14 @@ onMounted(() => {
 	// Las líneas existentes ya traen su variante en la respuesta del quote, pero
 	// el buscador de "Cambiar" / "+ Agregar producto" sigue dependiendo del
 	// inventario, así que se carga en ambos modos (cacheado vía `initialized`).
-	// VariantAutocomplete también lo carga al montarse; el guard de `loading`
+	// ProductAutocomplete también lo carga al montarse; el guard de `loading`
 	// evita el request duplicado.
 	if (!inventory.initialized && !inventory.loading) inventory.fetchProducts()
+	// Mismo criterio para productos simples: precio y stock "en vivo" de las
+	// líneas simples (y su categoría, vía catálogos) salen de estos stores, no de
+	// la respuesta del quote, que solo trae id/name/price.
+	if (!simpleProducts.initialized && !simpleProducts.loading) simpleProducts.fetchSimpleProducts()
+	if (!catalogs.initialized && !catalogs.loading) catalogs.fetchCatalogs()
 	if (isEdit.value) loadQuote()
 })
 
@@ -217,10 +287,14 @@ async function loadQuote() {
 	form.notes = quote.notes ?? ''
 
 	// Se mapea product.name → lineName para que la variante tenga la misma
-	// forma que las que emite VariantAutocomplete y el template no distinga entre modos.
+	// forma que las que emite ProductAutocomplete y el template no distinga entre modos.
+	// Cada item trae variante O producto simple (arco exclusivo del backend).
 	const loadedLines = (quote.items ?? []).map((item) => ({
 		...createEmptyLine(),
-		variant: { ...item.product_variant, lineName: item.product_variant?.product?.name },
+		variant: item.product_variant
+			? { ...item.product_variant, type: 'variant', lineName: item.product_variant.product?.name }
+			: null,
+		simpleProduct: item.simple_product ? { ...item.simple_product, type: 'simple' } : null,
 		quantity: Number(item.quantity),
 	}))
 	lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()]
@@ -231,10 +305,13 @@ const form = reactive({
 	notes: '',
 })
 
+// Una línea lleva `variant` O `simpleProduct`, nunca ambos — refleja el arco
+// exclusivo product_variant_id / simple_product_id del backend.
 function createEmptyLine() {
 	return {
 		id: crypto.randomUUID(),
 		variant: null,
+		simpleProduct: null,
 		quantity: null,
 	}
 }
@@ -262,23 +339,46 @@ function removeLine(id) {
 
 function changeLine(row) {
 	row.variant = null
+	row.simpleProduct = null
 }
 
-// Si la variante ya existe en otra línea del form, se suma la cantidad nueva
-// a esa línea existente en vez de duplicar la fila (ver AGENT.md — listas
-// repetibles no deben permitir estado duplicado inconsistente).
-function selectVariantForRow(row, option) {
-	const target = lines.value.find((l) => l.variant?.id === option.id)
+// Si el producto (variante o simple) ya existe en otra línea del form, se suma
+// la cantidad nueva a esa línea existente en vez de duplicar la fila (ver
+// AGENT.md — listas repetibles no deben permitir estado duplicado inconsistente).
+// Los ids de variante y de producto simple son de tablas distintas, por eso se
+// compara solo contra el campo del mismo tipo.
+function selectProductForRow(row, option) {
+	const isSimple = option.type === 'simple'
+	const target = lines.value.find((l) =>
+		isSimple ? l.simpleProduct?.id === option.id : l.variant?.id === option.id,
+	)
 
 	if (target) {
 		target.quantity = (Number(target.quantity) || 0) + 1
 		flashMerge(target.id)
 		lines.value = lines.value.filter((l) => l.id !== row.id)
 		if (lines.value.length === 0) lines.value.push(createEmptyLine())
-	} else {
-		row.variant = option
-		row.quantity = row.quantity && row.quantity > 0 ? row.quantity : 1
+		return
 	}
+
+	row.variant = isSimple ? null : option
+	row.simpleProduct = isSimple ? option : null
+
+	// Al "Cambiar" de una variante (m², fraccionaria) a un producto simple, una
+	// cantidad no entera se descarta: el backend rechaza fraccionarios en simples.
+	const keepsQuantity = row.quantity > 0 && (!isSimple || Number.isInteger(row.quantity))
+	row.quantity = keepsQuantity ? row.quantity : 1
+}
+
+// Datos vivos del producto simple (precio, stock, categoría) desde el store; si
+// no está ahí (ej. dado de baja después de cotizar), se usa lo que trae la línea.
+function simpleProductFor(row) {
+	return simpleProducts.simpleProducts.find((p) => p.id === row.simpleProduct.id) ?? row.simpleProduct
+}
+
+function simpleProductCategoryName(row) {
+	const categoryId = simpleProductFor(row).category_id
+	return catalogs.categories.find((c) => c.id === categoryId)?.name ?? ''
 }
 
 function boxesFor(row) {
@@ -287,14 +387,22 @@ function boxesFor(row) {
 }
 
 function hasInsufficientStock(row) {
+	if (row.simpleProduct) {
+		const stock = simpleProductFor(row).stock_quantity
+		if (stock === undefined) return false
+		return (row.quantity || 0) > stock
+	}
+
 	const boxes = boxesFor(row)
 	if (boxes === null) return false
 	return boxes > (row.variant.stock_boxes ?? 0)
 }
 
 function lineSubtotal(row) {
-	if (!row.variant || !row.quantity) return 0
-	return row.quantity * row.variant.price_per_m2
+	if (!row.quantity) return 0
+	if (row.simpleProduct) return row.quantity * simpleProductFor(row).price
+	if (row.variant) return row.quantity * row.variant.price_per_m2
+	return 0
 }
 
 const subtotal = computed(() => lines.value.reduce((sum, row) => sum + lineSubtotal(row), 0))
@@ -312,7 +420,7 @@ const generalError = ref(null)
 const handleSubmit = async () => {
 	generalError.value = null
 
-	const validLines = lines.value.filter((l) => l.variant && l.quantity > 0)
+	const validLines = lines.value.filter((l) => (l.variant || l.simpleProduct) && l.quantity > 0)
 	if (validLines.length === 0) {
 		generalError.value = 'Agrega al menos un producto con cantidad mayor a cero.'
 		return
@@ -324,10 +432,9 @@ const handleSubmit = async () => {
 		const payload = {
 			customer_id: form.customer_id || null,
 			notes: form.notes || null,
-			items: validLines.map((l) => ({
-				product_variant_id: l.variant.id,
-				quantity: l.quantity,
-			})),
+			items: validLines.map((l) => (l.simpleProduct
+				? { simple_product_id: l.simpleProduct.id, quantity: l.quantity }
+				: { product_variant_id: l.variant.id, quantity: l.quantity })),
 		}
 
 		if (isEdit.value) {

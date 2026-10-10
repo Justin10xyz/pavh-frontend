@@ -155,24 +155,41 @@
 							</thead>
 							<tbody>
 								<tr v-for="item in quote.items" :key="item.id">
-									<td>
-										<div class="font-medium text-text">
-											{{ item.product_variant?.product?.name ?? "—" }}
-										</div>
-										<div class="text-text-muted text-[12px]">
-											{{ item.product_variant?.color }} ·
-											{{ item.product_variant?.size }}
-										</div>
-									</td>
-									<td class="text-right text-text">
-										{{ formatQuantity(item.quantity) }} m²
-									</td>
-									<td class="text-right text-text-muted">
-										{{ boxesFor(item) ?? "—" }}
-									</td>
-									<td class="text-right text-text">
-										{{ formatCurrency(item.unit_price) }}/m²
-									</td>
+									<!-- Línea de producto simple: sin color/medida ni cajas, cantidad en unidades -->
+									<template v-if="item.simple_product_id">
+										<td>
+											<div class="font-medium text-text">
+												{{ item.simple_product?.name ?? "—" }}
+											</div>
+										</td>
+										<td class="text-right text-text">
+											{{ formatQuantity(item.quantity) }} uds.
+										</td>
+										<td class="text-right text-text-muted">—</td>
+										<td class="text-right text-text">
+											{{ formatCurrency(item.unit_price) }}
+										</td>
+									</template>
+									<template v-else>
+										<td>
+											<div class="font-medium text-text">
+												{{ item.product_variant?.product?.name ?? "—" }}
+											</div>
+											<div class="text-text-muted text-[12px]">
+												{{ item.product_variant?.color }} ·
+												{{ item.product_variant?.size }}
+											</div>
+										</td>
+										<td class="text-right text-text">
+											{{ formatQuantity(item.quantity) }} m²
+										</td>
+										<td class="text-right text-text-muted">
+											{{ boxesFor(item) ?? "—" }}
+										</td>
+										<td class="text-right text-text">
+											{{ formatCurrency(item.unit_price) }}/m²
+										</td>
+									</template>
 									<td class="text-right text-text">
 										{{ formatCurrency(item.line_total) }}
 									</td>
