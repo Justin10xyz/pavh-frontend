@@ -38,6 +38,19 @@ export const useCatalogsStore = defineStore('catalogs', () => {
 		}
 	}
 
+	// Mutación puntual: agrega la categoría recién creada sin refetch completo.
+	// El backend lista categorías por id, así que la nueva va al final.
+	function addCategory(category) {
+		categories.value.push(category)
+	}
+
+	// Mutación puntual: reemplaza en su lugar los datos de la categoría editada,
+	// así los selects que ya la muestran se actualizan sin refetch.
+	function updateCategory(id, payload) {
+		const category = categories.value.find((c) => c.id === id)
+		if (category) Object.assign(category, payload)
+	}
+
 	return {
 		suppliers,
 		categories,
@@ -47,5 +60,7 @@ export const useCatalogsStore = defineStore('catalogs', () => {
 		error,
 		initialized,
 		fetchCatalogs,
+		addCategory,
+		updateCategory,
 	}
 })

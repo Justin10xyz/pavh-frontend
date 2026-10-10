@@ -64,8 +64,74 @@
 							</button>
 						</div>
 
-						<!-- Sin variante seleccionada: buscador -->
-						<VariantAutocomplete v-if="!row.variant" @select="(option) => selectVariantForRow(row, option)" />
+						<!-- Sin producto seleccionado: buscador -->
+						<ProductAutocomplete
+							v-if="!row.variant && !row.simpleProduct"
+							include-simple-products
+							@select="(option) => selectProductForRow(row, option)"
+						/>
+
+						<!-- Producto simple seleccionado -->
+						<div v-else-if="row.simpleProduct">
+							<div class="flex items-start justify-between gap-3 mb-3">
+								<p class="text-sm text-text flex items-center gap-2">
+									{{ simpleProductFor(row).name }}
+									<span
+										v-if="simpleProductCategoryName(row)"
+										class="text-[10px] text-text-muted border border-border rounded px-1.5 py-0.5"
+									>
+										{{ simpleProductCategoryName(row) }}
+									</span>
+								</p>
+								<button
+									type="button"
+									@click="changeLine(row)"
+									class="text-xs text-accent hover:underline flex-shrink-0 cursor-pointer"
+								>
+									Cambiar
+								</button>
+							</div>
+
+							<p v-if="mergedRowId === row.id" class="text-xs text-success mb-3">
+								Cantidad fusionada con esta línea existente.
+							</p>
+
+							<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+								<div class="space-y-1.5">
+									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (unidades)</label>
+									<InputNumberCustom
+										:id="`quantity-${row.id}`"
+										v-model="row.quantity"
+										:min="1"
+										placeholder="0"
+										:max-fraction-digits="0"
+									/>
+								</div>
+
+								<div class="space-y-1.5">
+									<label :for="`unit-price-${row.id}`" class="text-xs font-medium text-text-muted block">Precio unitario</label>
+									<InputNumberCustom
+										:id="`unit-price-${row.id}`"
+										v-model="row.unit_price"
+										:min="0"
+										placeholder="$0.00"
+										mode="currency"
+										currency="MXN"
+									/>
+								</div>
+
+								<div class="space-y-1.5">
+									<label class="text-xs font-medium text-text-muted block">Subtotal</label>
+									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
+										{{ formatCurrency(lineSubtotal(row)) }}
+									</div>
+								</div>
+							</div>
+
+							<p v-if="hasInsufficientStock(row)" class="text-danger text-[12px] mt-2">
+								Stock insuficiente — la venta no podrá registrarse con esta cantidad.
+							</p>
+						</div>
 
 						<!-- Variante seleccionada -->
 						<div v-else>
@@ -89,14 +155,12 @@
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
 								<div class="space-y-1.5">
 									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (m²)</label>
-									<input
+									<InputNumberCustom
 										:id="`quantity-${row.id}`"
-										v-model.number="row.quantity"
-										type="number"
-										min="0.01"
-										step="0.01"
+										v-model="row.quantity"
+										:min="0.01"
 										placeholder="0.00"
-										class="w-full bg-surface border border-border text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors px-3 h-[38px] rounded-md"
+										:max-fraction-digits="2"
 									/>
 								</div>
 
@@ -109,14 +173,13 @@
 
 								<div class="space-y-1.5">
 									<label :for="`unit-price-${row.id}`" class="text-xs font-medium text-text-muted block">Precio unitario (m²)</label>
-									<input
+									<InputNumberCustom
 										:id="`unit-price-${row.id}`"
-										v-model.number="row.unit_price"
-										type="number"
-										min="0"
-										step="0.01"
-										placeholder="0.00"
-										class="w-full bg-surface border border-border text-sm text-text placeholder-text-muted focus:outline-none focus:border-accent transition-colors px-3 h-[38px] rounded-md"
+										v-model="row.unit_price"
+										:min="0"
+										placeholder="$0.00"
+										mode="currency"
+										currency="MXN"
 									/>
 								</div>
 
@@ -191,14 +254,25 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/lib/axios'
 import { useInventoryStore } from '@/stores/inventory'
+import { useSimpleProductsStore } from '@/stores/simpleProducts'
+import { useCatalogsStore } from '@/stores/catalogs'
 import { useSalesStore } from '@/stores/sales'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
-import VariantAutocomplete from '@/components/widgets/autocompletes/VariantAutocomplete.vue'
+import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
+import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 
 const route = useRoute()
 const router = useRouter()
 const sales = useSalesStore()
 const inventory = useInventoryStore()
+const simpleProducts = useSimpleProductsStore()
+const catalogs = useCatalogsStore()
+
+// Precio de lista, stock y categoría de las líneas simples salen de estos
+// stores (cacheados vía `initialized`); ProductAutocomplete también los carga,
+// el guard de `loading` evita el request duplicado.
+if (!simpleProducts.initialized && !simpleProducts.loading) simpleProducts.fetchSimpleProducts()
+if (!catalogs.initialized && !catalogs.loading) catalogs.fetchCatalogs()
 
 const form = reactive({
 	customer_id: '',
@@ -217,40 +291,55 @@ async function loadConversion() {
 	try {
 		const { data } = await axios.get(`/api/quotes/${quoteId.value}/convert`)
 
-		// /convert solo trae product_variant_id; la variante completa (color,
-		// medida, stock…) se resuelve contra el inventario, con la misma forma
-		// que emite VariantAutocomplete (ver también QuoteFormView@loadQuote).
+		// /convert solo trae product_variant_id o simple_product_id (arco
+		// exclusivo); el producto completo se resuelve contra su propio caché —
+		// variantes contra inventory.products, simples contra simpleProducts —
+		// con la misma forma que emite ProductAutocomplete (ver también
+		// QuoteFormView@loadQuote). Cada store se carga solo si hay líneas de su tipo.
+		const items = data.data.items ?? []
+		const hasVariantItems = items.some((item) => item.product_variant_id)
+		const hasSimpleItems = items.some((item) => item.simple_product_id)
+
 		let inventoryIsFresh = false
-		if (!inventory.initialized) {
+		if (hasVariantItems && !inventory.initialized) {
 			await inventory.fetchProducts()
 			inventoryIsFresh = true
 		}
-		if (!inventory.initialized) {
+		if (hasVariantItems && !inventory.initialized) {
 			conversionError.value = inventory.error || 'No se pudieron cargar los productos.'
 			return
 		}
 
-		const items = data.data.items ?? []
+		let simpleProductsAreFresh = false
+		if (hasSimpleItems && !simpleProducts.initialized) {
+			await simpleProducts.fetchSimpleProducts()
+			simpleProductsAreFresh = true
+		}
+		if (hasSimpleItems && !simpleProducts.initialized) {
+			conversionError.value = simpleProducts.error || 'No se pudieron cargar los productos.'
+			return
+		}
+
 		let resolved = resolveConversionLines(items)
 
-		// Respaldo: las variantes dadas de baja ya las rechaza el backend con 422.
-		// Esto cubre una variante que existe en BD pero no en el inventory.products
-		// cacheado (ej. creada después de cargar el store): se refresca el
-		// inventario una sola vez (salvo que se acabe de cargar) y se reintenta.
-		if (resolved.missingVariantIds.length > 0 && !inventoryIsFresh) {
-			await inventory.fetchProducts()
+		// Respaldo: los productos dados de baja ya los rechaza el backend con 422.
+		// Esto cubre uno que existe en BD pero no en el caché (ej. creado después
+		// de cargar el store): se refresca ese store una sola vez (salvo que se
+		// acabe de cargar) y se reintenta.
+		const refetches = []
+		if (resolved.missingVariantIds.length > 0 && !inventoryIsFresh) refetches.push(inventory.fetchProducts())
+		if (resolved.missingSimpleProductIds.length > 0 && !simpleProductsAreFresh) refetches.push(simpleProducts.fetchSimpleProducts())
+		if (refetches.length > 0) {
+			await Promise.all(refetches)
 			resolved = resolveConversionLines(items)
 		}
 
-		const { loadedLines, missingVariantIds } = resolved
+		const { loadedLines, missingVariantIds, missingSimpleProductIds } = resolved
 
 		// Si aun así falta, se bloquea. Solo aquí el mensaje se arma en el
 		// frontend, con el id porque /convert no trae más datos.
-		if (missingVariantIds.length > 0) {
-			const ids = missingVariantIds.map((id) => `#${id}`).join(', ')
-			conversionError.value = missingVariantIds.length === 1
-				? `La variante ${ids} de esta cotización ya no está disponible en inventario. No se puede convertir a venta.`
-				: `Las variantes ${ids} de esta cotización ya no están disponibles en inventario. No se puede convertir a venta.`
+		if (missingVariantIds.length > 0 || missingSimpleProductIds.length > 0) {
+			conversionError.value = missingProductsMessage(missingVariantIds, missingSimpleProductIds)
 			return
 		}
 
@@ -271,23 +360,57 @@ async function loadConversion() {
 function resolveConversionLines(items) {
 	const loadedLines = []
 	const missingVariantIds = []
+	const missingSimpleProductIds = []
 
 	for (const item of items) {
-		const variant = findInventoryVariantWithLine(item.product_variant_id)
-		if (!variant) {
-			missingVariantIds.push(item.product_variant_id)
-			continue
-		}
-
-		loadedLines.push({
+		const line = {
 			...createEmptyLine(),
-			variant,
 			quantity: Number(item.quantity),
 			unit_price: Number(item.unit_price),
-		})
+		}
+
+		if (item.simple_product_id) {
+			const simpleProduct = findSimpleProduct(item.simple_product_id)
+			if (!simpleProduct) {
+				missingSimpleProductIds.push(item.simple_product_id)
+				continue
+			}
+			line.simpleProduct = { ...simpleProduct, type: 'simple' }
+		} else {
+			const variant = findInventoryVariantWithLine(item.product_variant_id)
+			if (!variant) {
+				missingVariantIds.push(item.product_variant_id)
+				continue
+			}
+			line.variant = { ...variant, type: 'variant' }
+		}
+
+		loadedLines.push(line)
 	}
 
-	return { loadedLines, missingVariantIds }
+	return { loadedLines, missingVariantIds, missingSimpleProductIds }
+}
+
+function missingProductsMessage(variantIds, simpleProductIds) {
+	const parts = []
+
+	if (variantIds.length > 0) {
+		const ids = variantIds.map((id) => `#${id}`).join(', ')
+		parts.push(variantIds.length === 1 ? `la variante ${ids}` : `las variantes ${ids}`)
+	}
+	if (simpleProductIds.length > 0) {
+		const ids = simpleProductIds.map((id) => `#${id}`).join(', ')
+		parts.push(simpleProductIds.length === 1 ? `el producto ${ids}` : `los productos ${ids}`)
+	}
+
+	const plural = variantIds.length + simpleProductIds.length > 1
+	const subject = parts.join(' y ')
+
+	return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} de esta cotización ya no ${plural ? 'están disponibles' : 'está disponible'} en inventario. No se puede convertir a venta.`
+}
+
+function findSimpleProduct(simpleProductId) {
+	return simpleProducts.simpleProducts.find((p) => p.id === simpleProductId) ?? null
 }
 
 function findInventoryVariantWithLine(variantId) {
@@ -298,10 +421,13 @@ function findInventoryVariantWithLine(variantId) {
 	return null
 }
 
+// Una línea lleva `variant` O `simpleProduct`, nunca ambos — refleja el arco
+// exclusivo product_variant_id / simple_product_id del backend.
 function createEmptyLine() {
 	return {
 		id: crypto.randomUUID(),
 		variant: null,
+		simpleProduct: null,
 		quantity: null,
 		unit_price: null,
 	}
@@ -330,26 +456,49 @@ function removeLine(id) {
 
 function changeLine(row) {
 	row.variant = null
+	row.simpleProduct = null
 }
 
-// Misma fusión que QuoteFormView: si la variante ya está en otra línea se suma
-// la cantidad ahí (conservando el precio que ya se haya capturado en esa línea)
-// en vez de duplicar la fila.
-function selectVariantForRow(row, option) {
-	const target = lines.value.find((l) => l.variant?.id === option.id)
+// Misma fusión que QuoteFormView: si el producto (variante o simple) ya está en
+// otra línea se suma la cantidad ahí (conservando el precio que ya se haya
+// capturado en esa línea) en vez de duplicar la fila. Los ids son de tablas
+// distintas, por eso se compara solo contra el campo del mismo tipo.
+function selectProductForRow(row, option) {
+	const isSimple = option.type === 'simple'
+	const target = lines.value.find((l) =>
+		isSimple ? l.simpleProduct?.id === option.id : l.variant?.id === option.id,
+	)
 
 	if (target) {
 		target.quantity = (Number(target.quantity) || 0) + 1
 		flashMerge(target.id)
 		lines.value = lines.value.filter((l) => l.id !== row.id)
 		if (lines.value.length === 0) lines.value.push(createEmptyLine())
-	} else {
-		row.variant = option
-		row.quantity = row.quantity && row.quantity > 0 ? row.quantity : 1
-		// En venta directa el backend sí acepta unit_price del cliente: se
-		// precarga con el precio de lista como valor inicial editable.
-		row.unit_price = Number(option.price_per_m2)
+		return
 	}
+
+	row.variant = isSimple ? null : option
+	row.simpleProduct = isSimple ? option : null
+
+	// Al "Cambiar" de una variante (m², fraccionaria) a un producto simple, una
+	// cantidad no entera se descarta: el backend rechaza fraccionarios en simples.
+	const keepsQuantity = row.quantity > 0 && (!isSimple || Number.isInteger(row.quantity))
+	row.quantity = keepsQuantity ? row.quantity : 1
+
+	// En venta el backend sí acepta unit_price del cliente: se precarga con el
+	// precio de lista (por m² o por unidad) como valor inicial editable.
+	row.unit_price = Number(isSimple ? option.price : option.price_per_m2)
+}
+
+// Datos vivos del producto simple (stock, categoría) desde el store; si no
+// está ahí, se usa lo que trae la línea.
+function simpleProductFor(row) {
+	return findSimpleProduct(row.simpleProduct.id) ?? row.simpleProduct
+}
+
+function simpleProductCategoryName(row) {
+	const categoryId = simpleProductFor(row).category_id
+	return catalogs.categories.find((c) => c.id === categoryId)?.name ?? ''
 }
 
 function boxesFor(row) {
@@ -357,15 +506,22 @@ function boxesFor(row) {
 	return Math.ceil((row.quantity || 0) / row.variant.m2_per_box)
 }
 
-// Solo UX: el guard real es ProductVariant::hasSufficientStock() en el backend.
+// Solo UX: el guard real es hasSufficientStock() de ProductVariant/SimpleProduct
+// en el backend.
 function hasInsufficientStock(row) {
+	if (row.simpleProduct) {
+		const stock = simpleProductFor(row).stock_quantity
+		if (stock === undefined) return false
+		return (row.quantity || 0) > stock
+	}
+
 	const boxes = boxesFor(row)
 	if (boxes === null) return false
 	return boxes > (row.variant.stock_boxes ?? 0)
 }
 
 function lineSubtotal(row) {
-	if (!row.variant || !row.quantity || !row.unit_price) return 0
+	if (!(row.variant || row.simpleProduct) || !row.quantity || !row.unit_price) return 0
 	return row.quantity * row.unit_price
 }
 
@@ -393,6 +549,7 @@ function syncInventoryStock(items) {
 	const variantsById = new Map()
 
 	for (const item of items) {
+		if (!item.product_variant_id) continue
 		const variant = findInventoryVariant(item.product_variant_id)
 		if (!variant?.m2_per_box) continue
 
@@ -407,6 +564,25 @@ function syncInventoryStock(items) {
 		const lowStock = variant.minimum_stock !== null && stockBoxes <= variant.minimum_stock
 
 		inventory.updateVariantStock(variantId, { stock_boxes: stockBoxes, low_stock: lowStock })
+	}
+}
+
+// Mismo criterio para productos simples, sin conversión de unidad: `quantity`
+// ya es la unidad física (SaleController@store descuenta igual, agregando por
+// producto). Sin store cargado no hay nada que sincronizar.
+function syncSimpleProductsStock(items) {
+	if (!simpleProducts.initialized) return
+
+	const unitsByProduct = new Map()
+	for (const item of items) {
+		if (!item.simple_product_id) continue
+		unitsByProduct.set(item.simple_product_id, (unitsByProduct.get(item.simple_product_id) ?? 0) + item.quantity)
+	}
+
+	for (const [productId, units] of unitsByProduct) {
+		const product = findSimpleProduct(productId)
+		if (!product) continue
+		simpleProducts.updateSimpleProductStock(productId, { stock_quantity: Number(product.stock_quantity) - units })
 	}
 }
 
@@ -428,7 +604,7 @@ const handleSubmit = async () => {
 	generalError.value = null
 	successMessage.value = null
 
-	const validLines = lines.value.filter((l) => l.variant && l.quantity > 0)
+	const validLines = lines.value.filter((l) => (l.variant || l.simpleProduct) && l.quantity > 0)
 	if (validLines.length === 0) {
 		generalError.value = 'Agrega al menos un producto con cantidad mayor a cero.'
 		return
@@ -441,7 +617,7 @@ const handleSubmit = async () => {
 			customer_id: form.customer_id || null,
 			...(quoteId.value ? { quote_id: Number(quoteId.value) } : {}),
 			items: validLines.map((l) => ({
-				product_variant_id: l.variant.id,
+				...(l.simpleProduct ? { simple_product_id: l.simpleProduct.id } : { product_variant_id: l.variant.id }),
 				quantity: l.quantity,
 				unit_price: l.unit_price,
 			})),
@@ -449,6 +625,7 @@ const handleSubmit = async () => {
 
 		const sale = await sales.createSale(payload)
 		syncInventoryStock(payload.items)
+		syncSimpleProductsStock(payload.items)
 
 		// Una conversión no es flujo de mostrador repetido: se vuelve al detalle
 		// de la cotización (que se refetchea al montar y ya mostrará "Convertida").
@@ -461,8 +638,9 @@ const handleSubmit = async () => {
 		successMessage.value = `Venta ${sale.folio} registrada correctamente.`
 	} catch (err) {
 		console.error(err)
-		// 422 del backend (stock insuficiente, variante sin m2_per_box, o
-		// validación del Form Request) ya trae un mensaje listo para mostrar.
+		// 422 del backend (stock insuficiente, variante sin m2_per_box, cantidad
+		// fraccionaria en un producto simple, o validación del Form Request) ya
+		// trae un mensaje listo para mostrar.
 		generalError.value = err.response?.data?.message || 'No se pudo registrar la venta. Intenta de nuevo.'
 	} finally {
 		submitting.value = false

@@ -1,15 +1,16 @@
 <template>
-	<header class="h-[52px] bg-surface border-b border-border flex items-center justify-between px-6 shrink-0">
-		<h1 class="text-sm font-medium text-text">{{ pageTitle }}</h1>
+	<header class="h-13 bg-surface border-b border-border flex items-center justify-between gap-4 px-4 sm:px-6 shrink-0">
+		<h1 class="min-w-0 truncate text-sm font-medium text-text">{{ pageTitle }}</h1>
 
-		<div class="relative" ref="userMenuRef">
+		<div class="relative shrink-0" ref="userMenuRef">
 			<button
 				@click="toggleUserMenu"
-				class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg transition-colors duration-150 cursor-pointer focus:outline-none select-none"
+				class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-bg transition-colors duration-150 cursor-pointer focus:outline-none select-none"
 				aria-haspopup="true"
 				:aria-expanded="isUserMenuOpen"
 			>
-				<span class="text-sm font-medium text-text-muted">{{ userName }}</span>
+				<!-- Por debajo de `sm` solo se muestran las iniciales; el nombre completo sigue en el menú. -->
+				<span class="hidden sm:block max-w-48 truncate text-sm font-medium text-text-muted">{{ userName }}</span>
 				<div class="h-8 w-8 rounded-full bg-primary text-white text-xs font-semibold flex items-center justify-center shadow-sm">
 					{{ userInitials }}
 				</div>
@@ -27,10 +28,10 @@
 			>
 				<div
 					v-if="isUserMenuOpen"
-					class="absolute right-0 mt-1.5 w-56 bg-surface rounded-xl border border-border shadow-lg py-1 z-50 origin-top-right focus:outline-none"
+					class="absolute right-0 mt-1.5 w-56 max-w-[calc(100vw-2rem)] bg-surface rounded-md border border-border shadow-lg py-1 z-50 origin-top-right focus:outline-none"
 				>
 					<div class="px-4 py-2.5 border-b border-border">
-						<p class="text-[10px] uppercase tracking-wider font-semibold text-text-muted">Conectado como</p>
+						<p class="text-[0.625rem] uppercase tracking-wider font-semibold text-text-muted">Conectado como</p>
 						<p class="text-sm font-semibold text-text truncate mt-0.5">{{ userName }}</p>
 						<p v-if="userEmail" class="text-xs text-text-muted truncate">{{ userEmail }}</p>
 					</div>

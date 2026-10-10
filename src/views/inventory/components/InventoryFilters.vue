@@ -9,28 +9,24 @@
 				<circle cx="11" cy="11" r="7" />
 				<line x1="21" y1="21" x2="16.65" y2="16.65" />
 			</svg>
-			<input
+			<InputTextCustom
 				v-model="searchQuery"
-				type="text"
-				placeholder="Buscar por línea, color o código…"
-				class="w-full pl-8 pr-3 py-2 text-sm bg-surface border border-border rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
+				:placeholder="searchPlaceholder"
+				class="pl-8"
 			/>
 		</div>
 
-		<select
-			v-model="selectedCategory"
-			class="py-2 px-3 text-sm bg-surface border border-border rounded-md text-text focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
-		>
-			<option value="">Todas las categorías</option>
-			<option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ cat }}</option>
-		</select>
-
-		<label class="flex items-center gap-2 text-sm text-text select-none cursor-pointer">
-			<input
-				type="checkbox"
-				v-model="lowStockOnly"
-				class="w-4 h-4 rounded border-border text-accent focus:ring-accent"
+		<div class="w-full sm:w-56">
+			<SelectCustom
+				v-model="selectedCategory"
+				:options="categoryOptions"
+				placeholder="Todas las categorías"
+				allow-empty
 			/>
+		</div>
+
+		<label v-if="showLowStockFilter" class="flex items-center gap-2 text-sm text-text select-none cursor-pointer">
+			<CheckboxCustom v-model="lowStockOnly" />
 			Solo stock bajo
 		</label>
 
@@ -47,12 +43,24 @@
 
 <script setup>
 import { computed } from 'vue'
+import SelectCustom from '@/components/widgets/SelectCustom.vue'
+import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
+import CheckboxCustom from '@/components/widgets/CheckboxCustom.vue'
 
 defineProps({
 	categoryOptions: {
 		type: Array,
 		required: true,
-	}
+	},
+	searchPlaceholder: {
+		type: String,
+		default: 'Buscar por línea, color o código…',
+	},
+	// Los productos simples no tienen stock mínimo, así que no aplica "stock bajo".
+	showLowStockFilter: {
+		type: Boolean,
+		default: true,
+	},
 })
 
 const emit = defineEmits(['clear-filters'])
