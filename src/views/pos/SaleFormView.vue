@@ -65,7 +65,7 @@
 						</div>
 
 						<!-- Sin variante seleccionada: buscador -->
-						<VariantAutocomplete v-if="!row.variant" @select="(option) => selectVariantForRow(row, option)" />
+						<ProductAutocomplete v-if="!row.variant" @select="(option) => selectVariantForRow(row, option)" />
 
 						<!-- Variante seleccionada -->
 						<div v-else>
@@ -190,7 +190,7 @@ import axios from '@/lib/axios'
 import { useInventoryStore } from '@/stores/inventory'
 import { useSalesStore } from '@/stores/sales'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
-import VariantAutocomplete from '@/components/widgets/autocompletes/VariantAutocomplete.vue'
+import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 
 const route = useRoute()
@@ -217,7 +217,7 @@ async function loadConversion() {
 
 		// /convert solo trae product_variant_id; la variante completa (color,
 		// medida, stock…) se resuelve contra el inventario, con la misma forma
-		// que emite VariantAutocomplete (ver también QuoteFormView@loadQuote).
+		// que emite ProductAutocomplete (ver también QuoteFormView@loadQuote).
 		let inventoryIsFresh = false
 		if (!inventory.initialized) {
 			await inventory.fetchProducts()

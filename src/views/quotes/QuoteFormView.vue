@@ -60,7 +60,7 @@
 						</div>
 
 						<!-- Sin variante seleccionada: buscador -->
-						<VariantAutocomplete v-if="!row.variant" @select="(option) => selectVariantForRow(row, option)" />
+						<ProductAutocomplete v-if="!row.variant" @select="(option) => selectVariantForRow(row, option)" />
 
 						<!-- Variante seleccionada -->
 						<div v-else>
@@ -171,7 +171,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useInventoryStore } from '@/stores/inventory'
 import { useQuotesStore } from '@/stores/quotes'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
-import VariantAutocomplete from '@/components/widgets/autocompletes/VariantAutocomplete.vue'
+import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
 
@@ -189,7 +189,7 @@ onMounted(() => {
 	// Las líneas existentes ya traen su variante en la respuesta del quote, pero
 	// el buscador de "Cambiar" / "+ Agregar producto" sigue dependiendo del
 	// inventario, así que se carga en ambos modos (cacheado vía `initialized`).
-	// VariantAutocomplete también lo carga al montarse; el guard de `loading`
+	// ProductAutocomplete también lo carga al montarse; el guard de `loading`
 	// evita el request duplicado.
 	if (!inventory.initialized && !inventory.loading) inventory.fetchProducts()
 	if (isEdit.value) loadQuote()
@@ -217,7 +217,7 @@ async function loadQuote() {
 	form.notes = quote.notes ?? ''
 
 	// Se mapea product.name → lineName para que la variante tenga la misma
-	// forma que las que emite VariantAutocomplete y el template no distinga entre modos.
+	// forma que las que emite ProductAutocomplete y el template no distinga entre modos.
 	const loadedLines = (quote.items ?? []).map((item) => ({
 		...createEmptyLine(),
 		variant: { ...item.product_variant, lineName: item.product_variant?.product?.name },
