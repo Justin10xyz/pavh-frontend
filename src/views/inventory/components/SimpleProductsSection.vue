@@ -1,22 +1,13 @@
 <template>
 	<div>
-		<div class="flex items-start gap-3">
-			<InventoryFilters
-				v-model:searchQuery="searchQuery"
-				v-model:selectedCategory="selectedCategory"
-				:categoryOptions="categoryOptions"
-				search-placeholder="Buscar por nombre…"
-				:show-low-stock-filter="false"
-				class="flex-1"
-				@clear-filters="clearFilters"
-			/>
-			<RouterLink
-				:to="{ name: 'inventory.simpleProducts.create' }"
-				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center shrink-0 select-none"
-			>
-				Nuevo producto
-			</RouterLink>
-		</div>
+		<InventoryFilters
+			v-model:searchQuery="searchQuery"
+			v-model:selectedCategory="selectedCategory"
+			:categoryOptions="categoryOptions"
+			search-placeholder="Buscar por nombre…"
+			:show-low-stock-filter="false"
+			@clear-filters="clearFilters"
+		/>
 
 		<div v-if="simpleProducts.loading" class="text-text-muted text-sm">Cargando productos…</div>
 		<div v-else-if="simpleProducts.error" class="text-danger text-sm">{{ simpleProducts.error }}</div>
