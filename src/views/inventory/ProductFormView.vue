@@ -194,6 +194,7 @@
 							:id="`pei-${group.id}`"
 							v-model="group.spec.pei"
 							:options="peiOptions"
+							keep-unknown-value
 							:error="group.specErrors.pei"
 							placeholder="Selecciona un PEI"
 							@change="group.specErrors.pei = ''"
@@ -374,7 +375,10 @@
 					     sm los labels pasan a sr-only (siguen asociados al input) y el
 					     encabezado de columnas toma su lugar. Header y filas comparten la
 					     misma estructura (grid de 3 columnas + hueco del botón) para alinear. -->
-					<div class="border border-border rounded-md overflow-hidden">
+					<!-- `relative`: los labels `sm:sr-only` son `position: absolute`; sin un
+					     ancestro posicionado se ubican contra el documento, escapan del scroll
+					     de <main> (AppLayout) y alargan el <body>, descuadrando el layout. -->
+					<div class="relative border border-border rounded-md overflow-hidden">
 						<div
 							class="hidden sm:flex items-center gap-2 bg-bg border-b border-border px-3 py-2"
 							aria-hidden="true"
