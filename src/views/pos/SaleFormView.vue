@@ -286,24 +286,53 @@
 				</div>
 			</div>
 
-			<!-- Junto a las acciones (no arriba del form): con varias líneas, el inicio
-			     del form queda fuera de vista al presionar Registrar. -->
-			<p v-if="generalError" role="alert" class="text-danger text-sm flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
-				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-				</svg>
-				{{ generalError }}
-			</p>
+			<!-- Barra fija al fondo: con varias líneas, total y acciones quedan a la
+			     vista sin bajar hasta el final del form (relevante en tablet de
+			     mostrador). El error de registro va aquí, junto a las acciones.
+			     z-[1]: encima de las filas, pero debajo del dropdown del buscador (z-10). -->
+			<div class="sticky bottom-0 z-[1] space-y-3 bg-surface border border-border rounded-md px-4 py-3">
+				<p v-if="generalError" role="alert" class="text-danger text-sm flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+					<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+					</svg>
+					{{ generalError }}
+				</p>
 
-			<!-- Acciones -->
-			<div class="flex items-center justify-end gap-3">
-				<button
-					type="submit"
-					:disabled="submitting"
-					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
-				>
-					{{ submitting ? 'Registrando…' : 'Registrar venta' }}
-				</button>
+				<div class="flex flex-wrap items-center justify-between gap-3">
+					<p class="text-sm text-text-muted" aria-live="polite">
+						{{ productCount }} {{ productCount === 1 ? 'producto' : 'productos' }}
+						<span aria-hidden="true">·</span>
+						Total <span class="font-semibold text-primary tabular-nums">{{ formatCurrency(total) }}</span>
+					</p>
+
+					<div class="flex items-center gap-3">
+						<!-- Conversión: volver a la cotización (pasa por la confirmación de
+						     salida si hay cambios). Venta directa: limpiar para empezar otra. -->
+						<RouterLink
+							v-if="quoteId"
+							:to="{ name: 'quotes.show', params: { id: quoteId } }"
+							class="inline-flex items-center bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none"
+						>
+							Cancelar
+						</RouterLink>
+						<button
+							v-else
+							type="button"
+							:disabled="!isDirty"
+							@click="requestClear"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+						>
+							Limpiar
+						</button>
+						<button
+							type="submit"
+							:disabled="submitting"
+							class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							{{ submitting ? 'Registrando…' : 'Registrar venta' }}
+						</button>
+					</div>
+				</div>
 			</div>
 		</form>
 
@@ -335,7 +364,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
@@ -611,6 +640,17 @@ function changeLine(row) {
 	row.simpleProduct = null
 }
 
+// Sin mouse: tras elegir un producto el foco pasa a su cantidad. En una variante
+// nueva va a "m² requeridos" (el cliente suele pedir en m² y de ahí salen las
+// cajas); en una fusión, a las cajas/unidades que acaban de sumar uno.
+async function focusLineQuantity(row, { merged = false } = {}) {
+	await nextTick()
+	const field = !merged && row.variant && Number(row.variant.m2_per_box) > 0 ? 'requested' : 'quantity'
+	const input = document.getElementById(`${field}-${row.id}`)
+	input?.focus()
+	input?.select()
+}
+
 // Misma fusión que QuoteFormView: si el producto (variante o simple) ya está en
 // otra línea se suma la cantidad ahí (conservando el precio que ya se haya
 // capturado en esa línea) en vez de duplicar la fila. Los ids son de tablas
@@ -626,6 +666,7 @@ function selectProductForRow(row, option) {
 		flashMerge(target.id)
 		lines.value = lines.value.filter((l) => l.id !== row.id)
 		if (lines.value.length === 0) lines.value.push(createEmptyLine())
+		focusLineQuantity(target, { merged: true })
 		return
 	}
 
@@ -642,6 +683,8 @@ function selectProductForRow(row, option) {
 	// En venta el backend sí acepta unit_price del cliente: se precarga con el
 	// precio de lista (por m² o por unidad) como valor inicial editable.
 	row.unit_price = Number(isSimple ? option.price : option.price_per_m2)
+
+	focusLineQuantity(row)
 }
 
 // Datos vivos del producto simple (stock, categoría) desde el store; si no
@@ -743,6 +786,7 @@ function lineSubtotal(row) {
 
 const subtotal = computed(() => lines.value.reduce((sum, row) => sum + lineSubtotal(row), 0))
 const total = computed(() => subtotal.value) // sin impuestos por ahora, igual que Cotizaciones
+const productCount = computed(() => lines.value.filter(hasProduct).length)
 
 const submitting = ref(false)
 const generalError = ref(null)
@@ -837,6 +881,19 @@ function resetForm() {
 	mergedRowId.value = null
 	submitAttempted.value = false
 	savedSnapshot.value = serializeForm()
+}
+
+// Limpiar no navega, así que no pasa por la confirmación de salida: pide la
+// suya (solo se habilita con cambios, ver isDirty).
+function requestClear() {
+	confirm.require({
+		header: 'Limpiar venta',
+		message: 'Se quitarán el cliente y los productos capturados.',
+		accept: () => {
+			generalError.value = null
+			resetForm()
+		},
+	})
 }
 
 const handleSubmit = async () => {
