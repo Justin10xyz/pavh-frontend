@@ -129,8 +129,12 @@
 								</div>
 							</div>
 
-							<p v-if="hasInsufficientStock(row)" class="text-danger text-xs mt-2">
-								Stock insuficiente — consultar disponibilidad sobre pedido.
+							<p
+								v-if="hasInsufficientStock(row)"
+								class="mt-3 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
+							>
+								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
+								<span>{{ stockWarning(row) }}</span>
 							</p>
 						</div>
 
@@ -189,8 +193,12 @@
 								</div>
 							</div>
 
-							<p v-if="hasInsufficientStock(row)" class="text-danger text-xs mt-2">
-								Stock insuficiente — consultar disponibilidad sobre pedido.
+							<p
+								v-if="hasInsufficientStock(row)"
+								class="mt-3 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
+							>
+								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
+								<span>{{ stockWarning(row) }}</span>
 							</p>
 						</div>
 					</div>
@@ -288,6 +296,7 @@ import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 import { formatCurrency } from '@/lib/formatCurrency'
+import { formatQuantity } from '@/lib/formatQuantity'
 import { useNotify } from '@/composables/useNotify'
 
 const route = useRoute()
@@ -494,6 +503,18 @@ function hasInsufficientStock(row) {
 	const boxes = boxesFor(row)
 	if (boxes === null) return false
 	return boxes > (row.variant.stock_boxes ?? 0)
+}
+
+// Es un aviso, no un error: la cotización se puede guardar igual (el stock se
+// valida hasta convertirla en venta).
+function stockWarning(row) {
+	if (row.simpleProduct) {
+		const stock = simpleProductFor(row).stock_quantity
+		return `Stock insuficiente: hay ${formatQuantity(stock)} uds. y se cotizan ${formatQuantity(row.quantity)}. Consultar disponibilidad sobre pedido.`
+	}
+
+	const stock = row.variant.stock_boxes ?? 0
+	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se requieren ${boxesFor(row)}. Consultar disponibilidad sobre pedido.`
 }
 
 function lineSubtotal(row) {
