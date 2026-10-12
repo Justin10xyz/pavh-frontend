@@ -251,6 +251,7 @@ import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutoc
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
 import { formatCurrency } from '@/lib/formatCurrency'
+import { useNotify } from '@/composables/useNotify'
 
 const route = useRoute()
 const router = useRouter()
@@ -258,6 +259,7 @@ const inventory = useInventoryStore()
 const simpleProducts = useSimpleProductsStore()
 const catalogs = useCatalogsStore()
 const quotes = useQuotesStore()
+const notify = useNotify()
 
 // Modo edición cuando la ruta trae :id (quotes.edit); sin :id es creación.
 const quoteId = computed(() => route.params.id ?? null)
@@ -472,11 +474,13 @@ const handleSubmit = async () => {
 		}
 
 		if (isEdit.value) {
-			await quotes.updateQuote(quoteId.value, payload)
+			const updated = await quotes.updateQuote(quoteId.value, payload)
+			notify.success(`Cotización ${updated.folio} actualizada`)
 			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
 		} else {
 			// Al detalle, no al listado: lo siguiente suele ser descargar o compartir el PDF.
 			const created = await quotes.createQuote(payload)
+			notify.success(`Cotización ${created.folio} guardada`)
 			router.push({ name: 'quotes.show', params: { id: created.id } })
 		}
 	} catch (err) {

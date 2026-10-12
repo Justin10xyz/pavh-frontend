@@ -269,6 +269,7 @@ import { useConfirm } from "primevue/useconfirm";
 import { useQuotesStore } from "@/stores/quotes";
 import { statusClasses } from "@/lib/quoteStatus";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
+import { useNotify } from "@/composables/useNotify";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
 
@@ -276,6 +277,7 @@ const route = useRoute();
 const router = useRouter();
 const quotes = useQuotesStore();
 const confirm = useConfirm();
+const notify = useNotify();
 
 const cancelling = ref(false);
 const cancelError = ref(null);
@@ -345,7 +347,8 @@ async function cancelQuote() {
 	cancelError.value = null;
 
 	try {
-		await quotes.cancelQuote(quote.value.id);
+		const cancelled = await quotes.cancelQuote(quote.value.id);
+		notify.success(`Cotización ${cancelled.folio} cancelada`);
 	} catch (err) {
 		console.error(err);
 		cancelError.value =
