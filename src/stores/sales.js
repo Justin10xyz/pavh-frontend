@@ -6,11 +6,8 @@ export const useSalesStore = defineStore('sales', () => {
 	const sales = ref([])
 	const loading = ref(false)
 	const error = ref(null)
-	// Solo indica que ya hubo una carga inicial (para que la vista evite un
-	// doble-fetch al montar). NO bloquea fetchSales(): a diferencia de
-	// inventory/quotes, cada cambio de rango de fechas es una consulta distinta
-	// y siempre debe ir al backend.
-	const initialized = ref(false)
+	// Sin flag `initialized`: a diferencia de inventory/quotes, cada cambio de
+	// rango de fechas es una consulta distinta y siempre debe ir al backend.
 
 	// Si el usuario cambia el filtro antes de que responda la consulta anterior,
 	// solo la respuesta más reciente puede escribir en el estado.
@@ -39,7 +36,6 @@ export const useSalesStore = defineStore('sales', () => {
 			const { data } = await axios.get('/api/sales', { params })
 			if (requestId !== lastRequestId) return
 			sales.value = data.data
-			initialized.value = true
 		} catch (err) {
 			if (requestId !== lastRequestId) return
 			error.value = 'No se pudieron cargar las ventas.'
@@ -87,7 +83,6 @@ export const useSalesStore = defineStore('sales', () => {
 		sales,
 		loading,
 		error,
-		initialized,
 		listQuery,
 		currentSale,
 		currentSaleLoading,
