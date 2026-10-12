@@ -1,7 +1,7 @@
 <template>
 	<Dialog v-model:visible="visible" modal :pt="{ mask: { class: 'bg-primary/50' } }" @hide="reset">
 		<template #container="{ closeCallback }">
-			<div v-if="url" class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+			<div v-if="url" class="bg-surface border border-border rounded-md p-4 sm:p-5 w-95 max-w-[90vw]">
 				<div class="flex items-center justify-between mb-4">
 					<h3 class="font-serif text-base text-primary">Ajustar stock</h3>
 					<button type="button" @click="closeCallback" class="text-text-muted hover:text-text transition-colors" aria-label="Cerrar">
@@ -18,7 +18,7 @@
 					<button
 						type="button"
 						@click="stockAdjustType = 'add'"
-						class="flex-1 h-[38px] rounded-md text-sm font-medium border transition-colors"
+						class="flex-1 h-10 rounded-md text-sm font-medium border transition-colors"
 						:class="stockAdjustType === 'add' ? 'bg-success/10 border-success text-success' : 'border-border text-text-muted hover:text-text'"
 					>
 						Agregar
@@ -26,7 +26,7 @@
 					<button
 						type="button"
 						@click="stockAdjustType = 'subtract'"
-						class="flex-1 h-[38px] rounded-md text-sm font-medium border transition-colors"
+						class="flex-1 h-10 rounded-md text-sm font-medium border transition-colors"
 						:class="stockAdjustType === 'subtract' ? 'bg-danger/10 border-danger text-danger' : 'border-border text-text-muted hover:text-text'"
 					>
 						Quitar
@@ -50,7 +50,7 @@
 					<button
 						type="button"
 						@click="closeCallback"
-						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 					>
 						Cancelar
 					</button>
@@ -58,7 +58,7 @@
 						type="button"
 						@click="submitStockAdjust"
 						:disabled="!isStockAdjustValid || stockAdjustSubmitting"
-						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 					>
 						{{ stockAdjustSubmitting ? 'Aplicando…' : 'Aplicar' }}
 					</button>

@@ -257,13 +257,16 @@ import { useInventoryStore } from '@/stores/inventory'
 import { useSimpleProductsStore } from '@/stores/simpleProducts'
 import { useCatalogsStore } from '@/stores/catalogs'
 import { useSalesStore } from '@/stores/sales'
+import { useQuotesStore } from '@/stores/quotes'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
 import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
+import { formatCurrency } from '@/lib/formatCurrency'
 
 const route = useRoute()
 const router = useRouter()
 const sales = useSalesStore()
+const quotes = useQuotesStore()
 const inventory = useInventoryStore()
 const simpleProducts = useSimpleProductsStore()
 const catalogs = useCatalogsStore()
@@ -528,12 +531,6 @@ function lineSubtotal(row) {
 const subtotal = computed(() => lines.value.reduce((sum, row) => sum + lineSubtotal(row), 0))
 const total = computed(() => subtotal.value) // sin impuestos por ahora, igual que Cotizaciones
 
-const currencyFormatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
-
-function formatCurrency(value) {
-	return currencyFormatter.format(Number(value) || 0)
-}
-
 const submitting = ref(false)
 const generalError = ref(null)
 const successMessage = ref(null)
@@ -629,7 +626,9 @@ const handleSubmit = async () => {
 
 		// Una conversión no es flujo de mostrador repetido: se vuelve al detalle
 		// de la cotización (que se refetchea al montar y ya mostrará "Convertida").
+		// El listado cacheado no se refetchea, así que se actualiza in-place.
 		if (quoteId.value) {
+			quotes.markQuoteConverted(quoteId.value)
 			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
 			return
 		}

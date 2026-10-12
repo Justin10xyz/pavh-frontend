@@ -3,7 +3,7 @@
 		<div class="flex items-center justify-between px-5 py-3 border-b border-border">
 			<h2 id="active-quotes-heading" class="text-sm font-medium text-text">Cotizaciones activas</h2>
 			<router-link
-				:to="{ name: 'quotes' }"
+				:to="{ name: 'quotes', query: { estado: 'Borrador' } }"
 				class="text-xs text-text-muted hover:text-text focus:outline-none focus-visible:underline transition-colors"
 			>
 				Ver todo

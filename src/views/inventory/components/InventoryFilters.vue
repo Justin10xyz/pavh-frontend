@@ -1,19 +1,19 @@
 <template>
 	<div class="flex flex-wrap items-center gap-3 mb-4">
-		<div class="relative flex-1 min-w-[220px]">
+		<div class="relative flex-1 min-w-56">
 			<svg
 				class="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
-				width="14" height="14" viewBox="0 0 24 24" fill="none"
-				stroke="currentColor" stroke-width="2"
+				width="14"
+				height="14"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
 			>
 				<circle cx="11" cy="11" r="7" />
 				<line x1="21" y1="21" x2="16.65" y2="16.65" />
 			</svg>
-			<InputTextCustom
-				v-model="searchQuery"
-				:placeholder="searchPlaceholder"
-				class="pl-8"
-			/>
+			<InputTextCustom v-model="searchQuery" :placeholder="searchPlaceholder" class="pl-8" />
 		</div>
 
 		<div class="w-full sm:w-56">
@@ -25,7 +25,10 @@
 			/>
 		</div>
 
-		<label v-if="showLowStockFilter" class="flex items-center gap-2 text-sm text-text select-none cursor-pointer">
+		<label
+			v-if="showLowStockFilter"
+			class="flex items-center gap-2 text-sm text-text select-none cursor-pointer"
+		>
 			<CheckboxCustom v-model="lowStockOnly" />
 			Solo stock bajo
 		</label>
@@ -33,7 +36,7 @@
 		<button
 			v-if="hasActiveFilters"
 			type="button"
-			class="text-xs text-text-muted hover:text-text underline"
+			class="text-xs text-text-muted hover:text-text underline cursor-pointer"
 			@click="emit('clear-filters')"
 		>
 			Limpiar filtros
@@ -42,10 +45,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import SelectCustom from '@/components/widgets/SelectCustom.vue'
-import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
-import CheckboxCustom from '@/components/widgets/CheckboxCustom.vue'
+import { computed } from "vue";
+import SelectCustom from "@/components/widgets/SelectCustom.vue";
+import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
+import CheckboxCustom from "@/components/widgets/CheckboxCustom.vue";
 
 defineProps({
 	categoryOptions: {
@@ -54,22 +57,22 @@ defineProps({
 	},
 	searchPlaceholder: {
 		type: String,
-		default: 'Buscar por línea, color o código…',
+		default: "Buscar por línea, color o código…",
 	},
 	// Los productos simples no tienen stock mínimo, así que no aplica "stock bajo".
 	showLowStockFilter: {
 		type: Boolean,
 		default: true,
 	},
-})
+});
 
-const emit = defineEmits(['clear-filters'])
+const emit = defineEmits(["clear-filters"]);
 
-const searchQuery = defineModel('searchQuery', { type: String, default: '' })
-const selectedCategory = defineModel('selectedCategory', { type: String, default: '' })
-const lowStockOnly = defineModel('lowStockOnly', { type: Boolean, default: false })
+const searchQuery = defineModel("searchQuery", { type: String, default: "" });
+const selectedCategory = defineModel("selectedCategory", { type: String, default: "" });
+const lowStockOnly = defineModel("lowStockOnly", { type: Boolean, default: false });
 
 const hasActiveFilters = computed(
-	() => searchQuery.value !== '' || selectedCategory.value !== '' || lowStockOnly.value
-)
+	() => searchQuery.value !== "" || selectedCategory.value !== "" || lowStockOnly.value,
+);
 </script>

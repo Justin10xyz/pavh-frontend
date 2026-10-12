@@ -2,29 +2,14 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from '@/lib/axios'
 import { useInventoryStore } from '@/stores/inventory'
+import { dateRangeFor } from '@/lib/dateRanges'
 
-// Fecha local en YYYY-MM-DD; toISOString() la convertiría a UTC y en la noche
-// podría correrse al día siguiente. Mismo criterio que SalesView.vue.
-function toDateParam(date) {
-	const y = date.getFullYear()
-	const m = String(date.getMonth() + 1).padStart(2, '0')
-	const d = String(date.getDate()).padStart(2, '0')
-	return `${y}-${m}-${d}`
-}
-
-// Rangos de calendario terminando hoy; la semana empieza en lunes (igual que
-// los filtros rápidos de SalesView.vue, para que los montos coincidan).
+// Mismos rangos que los filtros rápidos de SalesView.vue, para que los montos coincidan.
 function dashboardRanges() {
-	const today = new Date()
-	const to = toDateParam(today)
-
-	const monday = new Date(today)
-	monday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
-
 	return {
-		today: { from: to, to },
-		week: { from: toDateParam(monday), to },
-		month: { from: toDateParam(new Date(today.getFullYear(), today.getMonth(), 1)), to },
+		today: dateRangeFor('today'),
+		week: dateRangeFor('week'),
+		month: dateRangeFor('month'),
 	}
 }
 
@@ -40,6 +25,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
 	const salesSummary = ref({ today: 0, week: 0, month: 0 })
 	const activeQuotes = ref([])
+	const topProducts = ref([])
 
 	// Loading/error por widget: cada sección puede fallar sin ocultar a las otras.
 	const salesLoading = ref(false)
@@ -48,11 +34,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
 	const lowStockError = ref(null)
 	const activeQuotesLoading = ref(false)
 	const activeQuotesError = ref(null)
+	const topProductsLoading = ref(false)
+	const topProductsError = ref(null)
 
 	// Sin `initialized`: el dashboard se refresca en cada visita (mismo criterio
 	// que sales.js). Si se vuelve a llamar antes de que responda la anterior,
 	// solo la más reciente puede escribir en el estado.
 	let lastRequestId = 0
+	// Contador propio: Productos más vendidos se vuelve a pedir al cambiar su
+	// filtro de fecha, y eso no debe descartar las cargas en curso de los otros
+	// widgets (ni al revés).
+	let lastTopProductsRequestId = 0
 
 	// Derivado del store de Inventario (no copiado): así refleja también los
 	// ajustes de stock in-place que se hagan desde Inventario o POS.
@@ -97,22 +89,30 @@ export const useDashboardStore = defineStore('dashboard', () => {
 		return data.data.filter((quote) => quote.status === 'Borrador')
 	}
 
-	// Corre una de las tres cargas con su propio loading/error. Si falla, sus
-	// datos no se tocan (se quedan en su valor anterior o vacío).
-	async function loadSection(requestId, { loading, error, message, load, apply }) {
+	// Sin from/to (filtro "Todas") el backend no filtra por fecha. El backend ya
+	// ordena por monto y limita a 5 filas.
+	async function fetchTopProductsData(range) {
+		const { data } = await axios.get('/api/dashboard/top-products', { params: range ?? {} })
+		return data.data
+	}
+
+	// Corre una carga con su propio loading/error. `isCurrent` indica si sigue
+	// siendo la petición más reciente de su contador. Si falla, sus datos no se
+	// tocan (se quedan en su valor anterior o vacío).
+	async function loadSection(isCurrent, { loading, error, message, load, apply }) {
 		loading.value = true
 		error.value = null
 
 		try {
 			const result = await load()
-			if (requestId !== lastRequestId) return
+			if (!isCurrent()) return
 			apply?.(result)
 		} catch (err) {
-			if (requestId !== lastRequestId) return
+			if (!isCurrent()) return
 			error.value = message
 			console.error(err)
 		} finally {
-			if (requestId === lastRequestId) loading.value = false
+			if (isCurrent()) loading.value = false
 		}
 	}
 
@@ -120,9 +120,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
 	// estado en cuanto responde, sin esperar a las demás.
 	async function fetchDashboardData() {
 		const requestId = ++lastRequestId
+		const isCurrent = () => requestId === lastRequestId
 
 		await Promise.allSettled([
-			loadSection(requestId, {
+			loadSection(isCurrent, {
 				loading: salesLoading,
 				error: salesError,
 				message: 'No se pudo cargar el resumen de ventas.',
@@ -130,13 +131,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
 				apply: (summary) => { salesSummary.value = summary },
 			}),
 			// lowStockVariants es un computed sobre Inventario, no hay nada que asignar.
-			loadSection(requestId, {
+			loadSection(isCurrent, {
 				loading: lowStockLoading,
 				error: lowStockError,
 				message: 'No se pudieron cargar las alertas de stock bajo.',
 				load: ensureInventory,
 			}),
-			loadSection(requestId, {
+			loadSection(isCurrent, {
 				loading: activeQuotesLoading,
 				error: activeQuotesError,
 				message: 'No se pudieron cargar las cotizaciones activas.',
@@ -146,16 +147,35 @@ export const useDashboardStore = defineStore('dashboard', () => {
 		])
 	}
 
+	// `range` es { from, to } o null (sin filtro), según el filtro de fecha activo
+	// del widget. Separado de fetchDashboardData() porque se vuelve a llamar sola
+	// al cambiar el filtro.
+	async function fetchTopProducts(range) {
+		const requestId = ++lastTopProductsRequestId
+
+		await loadSection(() => requestId === lastTopProductsRequestId, {
+			loading: topProductsLoading,
+			error: topProductsError,
+			message: 'No se pudieron cargar los productos más vendidos.',
+			load: () => fetchTopProductsData(range),
+			apply: (products) => { topProducts.value = products },
+		})
+	}
+
 	return {
 		salesSummary,
 		lowStockVariants,
 		activeQuotes,
+		topProducts,
 		salesLoading,
 		salesError,
 		lowStockLoading,
 		lowStockError,
 		activeQuotesLoading,
 		activeQuotesError,
+		topProductsLoading,
+		topProductsError,
 		fetchDashboardData,
+		fetchTopProducts,
 	}
 })

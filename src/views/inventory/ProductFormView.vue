@@ -1,14 +1,24 @@
 <template>
 	<div class="p-2 max-w-4xl">
-		<div class="mb-4">
-			<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
-			<p class="text-sm text-text-muted mt-0.5">
-				{{
-					isEditMode
-						? "Actualiza los datos de la línea y sus variantes."
-						: "Captura la línea de producto junto con su primera variante."
-				}}
-			</p>
+		<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+			<div>
+				<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
+				<p class="text-sm text-text-muted mt-0.5">
+					{{
+						isEditMode
+							? "Actualiza los datos de la línea y sus variantes."
+							: "Captura la línea de producto junto con su primera variante."
+					}}
+				</p>
+			</div>
+			<button
+				type="button"
+				@click="handleCancel"
+				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+			>
+				<i class="ti ti-arrow-left text-sm"></i>
+				Volver
+			</button>
 		</div>
 
 		<p
@@ -117,54 +127,94 @@
 				</div>
 			</div>
 
-			<!-- Sección 2 — Datos de la variante inicial -->
-			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">
-					Datos de la variante inicial
-				</h2>
+			<!-- Sección 2 — Una tarjeta por medida: su ficha técnica + sus colores -->
+			<div
+				v-for="(group, index) in variantGroups"
+				:key="group.id"
+				class="bg-surface border border-border rounded-md p-5 sm:p-6"
+			>
+				<div class="flex items-center justify-between gap-3 mb-4">
+					<!-- Mismo criterio que el encabezado de cada medida en InventoryTable.vue:
+					     la medida sola no basta (puede repetirse con otro PEI/ETT/precio). -->
+					<h2 class="flex flex-wrap items-center gap-2 text-sm">
+						<span class="font-medium text-text">
+							{{ group.spec.size || `Medida nueva ${index + 1}` }}
+						</span>
+						<span
+							v-if="group.spec.pei"
+							class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
+						>PEI {{ group.spec.pei }}</span
+						>
+						<span
+							v-if="group.spec.ett"
+							class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
+						>ETT {{ group.spec.ett }}</span
+						>
+						<span
+							v-if="group.spec.price_per_box !== null && group.spec.price_per_box !== ''"
+							class="font-semibold text-primary tabular-nums"
+						>{{ formatCurrency(group.spec.price_per_box) }}/caja</span
+						>
+						<span class="text-xs text-text-muted">
+							· {{ group.colorRows.length }}
+							{{ group.colorRows.length === 1 ? "color" : "colores" }}
+						</span>
+					</h2>
+					<!-- Solo medidas sin variantes guardadas: quitar una guardada sería
+					     borrar variantes, fuera del alcance de este form. -->
+					<button
+						v-if="canRemoveGroup(group)"
+						type="button"
+						@click="removeVariantGroup(group.id)"
+						class="text-xs text-text-muted hover:text-danger underline transition-colors cursor-pointer"
+					>
+						Quitar medida
+					</button>
+				</div>
 
 				<!-- Grupo 1 — Medida y especificaciones técnicas -->
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 					<div class="space-y-1.5">
-						<FieldLabel html-for="size" text="Medida" required />
+						<FieldLabel :html-for="`size-${group.id}`" text="Medida" required />
 						<InputTextCustom
-							id="size"
-							v-model="variant.size"
-							:error="variantErrors.size"
+							:id="`size-${group.id}`"
+							v-model="group.spec.size"
+							:error="group.specErrors.size"
 							placeholder="Ej. 60X120"
-							@input="variantErrors.size = ''"
+							@input="group.specErrors.size = ''"
 						/>
-						<p v-if="variantErrors.size" class="text-danger text-[12px] mt-1.5">
-							{{ variantErrors.size }}
+						<p v-if="group.specErrors.size" class="text-danger text-[12px] mt-1.5">
+							{{ group.specErrors.size }}
 						</p>
 					</div>
 
 					<div class="space-y-1.5">
-						<FieldLabel html-for="pei" text="PEI" />
+						<FieldLabel :html-for="`pei-${group.id}`" text="PEI" />
 						<SelectCustom
-							id="pei"
-							v-model="variant.pei"
+							:id="`pei-${group.id}`"
+							v-model="group.spec.pei"
 							:options="peiOptions"
-							:error="variantErrors.pei"
+							keep-unknown-value
+							:error="group.specErrors.pei"
 							placeholder="Selecciona un PEI"
-							@change="variantErrors.pei = ''"
+							@change="group.specErrors.pei = ''"
 						/>
-						<p v-if="variantErrors.pei" class="text-danger text-[12px] mt-1.5">
-							{{ variantErrors.pei }}
+						<p v-if="group.specErrors.pei" class="text-danger text-[12px] mt-1.5">
+							{{ group.specErrors.pei }}
 						</p>
 					</div>
 
 					<div class="space-y-1.5">
-						<FieldLabel html-for="ett" text="ETT" />
+						<FieldLabel :html-for="`ett-${group.id}`" text="ETT" />
 						<InputTextCustom
-							id="ett"
-							v-model="variant.ett"
-							:error="variantErrors.ett"
+							:id="`ett-${group.id}`"
+							v-model="group.spec.ett"
+							:error="group.specErrors.ett"
 							placeholder="Ej. 1"
-							@input="variantErrors.ett = ''"
+							@input="group.specErrors.ett = ''"
 						/>
-						<p v-if="variantErrors.ett" class="text-danger text-[12px] mt-1.5">
-							{{ variantErrors.ett }}
+						<p v-if="group.specErrors.ett" class="text-danger text-[12px] mt-1.5">
+							{{ group.specErrors.ett }}
 						</p>
 					</div>
 				</div>
@@ -172,39 +222,39 @@
 				<!-- Grupo 3 — Precio -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 border-t border-border pt-4">
 					<div class="space-y-1.5">
-						<FieldLabel html-for="price_per_box" text="Precio por caja" required />
+						<FieldLabel :html-for="`price_per_box-${group.id}`" text="Precio por caja" required />
 						<InputNumberCustom
-							id="price_per_box"
-							v-model="variant.price_per_box"
-							:error="variantErrors.price_per_box"
+							:id="`price_per_box-${group.id}`"
+							v-model="group.spec.price_per_box"
+							:error="group.specErrors.price_per_box"
 							:min="0"
 							placeholder="$0.00"
-							@input="variantErrors.price_per_box = ''"
+							@input="group.specErrors.price_per_box = ''"
 							mode="currency"
 							currency="MXN"
 						/>
 						<p
-							v-if="variantErrors.price_per_box"
+							v-if="group.specErrors.price_per_box"
 							class="text-danger text-[12px] mt-1.5"
 						>
-							{{ variantErrors.price_per_box }}
+							{{ group.specErrors.price_per_box }}
 						</p>
 					</div>
 
 					<div class="space-y-1.5">
-						<FieldLabel html-for="price_per_m2" text="Precio por m²" required />
+						<FieldLabel :html-for="`price_per_m2-${group.id}`" text="Precio por m²" required />
 						<InputNumberCustom
-							id="price_per_m2"
-							v-model="variant.price_per_m2"
-							:error="variantErrors.price_per_m2"
+							:id="`price_per_m2-${group.id}`"
+							v-model="group.spec.price_per_m2"
+							:error="group.specErrors.price_per_m2"
 							:min="0"
 							placeholder="$0.00"
-							@input="variantErrors.price_per_m2 = ''"
+							@input="group.specErrors.price_per_m2 = ''"
 							mode="currency"
 							currency="MXN"
 						/>
-						<p v-if="variantErrors.price_per_m2" class="text-danger text-[12px] mt-1.5">
-							{{ variantErrors.price_per_m2 }}
+						<p v-if="group.specErrors.price_per_m2" class="text-danger text-[12px] mt-1.5">
+							{{ group.specErrors.price_per_m2 }}
 						</p>
 					</div>
 				</div>
@@ -212,75 +262,75 @@
 				<!-- Grupo 2 — Datos por caja -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
 					<div class="space-y-1.5">
-						<FieldLabel html-for="pieces_per_box" text="Piezas por caja" required />
+						<FieldLabel :html-for="`pieces_per_box-${group.id}`" text="Piezas por caja" required />
 						<InputNumberCustom
-							id="pieces_per_box"
-							v-model="variant.pieces_per_box"
-							:error="variantErrors.pieces_per_box"
+							:id="`pieces_per_box-${group.id}`"
+							v-model="group.spec.pieces_per_box"
+							:error="group.specErrors.pieces_per_box"
 							:min="0"
 							placeholder="0"
-							@input="variantErrors.pieces_per_box = ''"
+							@input="group.specErrors.pieces_per_box = ''"
 							:max-fraction-digits="0"
 						/>
 						<p
-							v-if="variantErrors.pieces_per_box"
+							v-if="group.specErrors.pieces_per_box"
 							class="text-danger text-[12px] mt-1.5"
 						>
-							{{ variantErrors.pieces_per_box }}
+							{{ group.specErrors.pieces_per_box }}
 						</p>
 					</div>
 
 					<div class="space-y-1.5">
-						<FieldLabel html-for="kilos_per_box" text="Kilos por caja" />
+						<FieldLabel :html-for="`kilos_per_box-${group.id}`" text="Kilos por caja" />
 						<InputNumberCustom
-							id="kilos_per_box"
-							v-model="variant.kilos_per_box"
-							:error="variantErrors.kilos_per_box"
+							:id="`kilos_per_box-${group.id}`"
+							v-model="group.spec.kilos_per_box"
+							:error="group.specErrors.kilos_per_box"
 							:min="0"
 							placeholder="0.00"
-							@input="variantErrors.kilos_per_box = ''"
+							@input="group.specErrors.kilos_per_box = ''"
 							:max-fraction-digits="2"
 						/>
 						<p
-							v-if="variantErrors.kilos_per_box"
+							v-if="group.specErrors.kilos_per_box"
 							class="text-danger text-[12px] mt-1.5"
 						>
-							{{ variantErrors.kilos_per_box }}
+							{{ group.specErrors.kilos_per_box }}
 						</p>
 					</div>
 
 					<div class="space-y-1.5">
-						<FieldLabel html-for="m2_per_box" text="m² por caja" required />
+						<FieldLabel :html-for="`m2_per_box-${group.id}`" text="m² por caja" required />
 						<InputNumberCustom
-							id="m2_per_box"
-							v-model="variant.m2_per_box"
-							:error="variantErrors.m2_per_box"
+							:id="`m2_per_box-${group.id}`"
+							v-model="group.spec.m2_per_box"
+							:error="group.specErrors.m2_per_box"
 							:min="0"
 							placeholder="0.00"
-							@input="variantErrors.m2_per_box = ''"
+							@input="group.specErrors.m2_per_box = ''"
 							:max-fraction-digits="2"
 						/>
-						<p v-if="variantErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
-							{{ variantErrors.m2_per_box }}
+						<p v-if="group.specErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
+							{{ group.specErrors.m2_per_box }}
 						</p>
 					</div>
 
 					<div class="space-y-1.5">
-						<FieldLabel html-for="boxes_per_pallet" text="Cajas por tarima" />
+						<FieldLabel :html-for="`boxes_per_pallet-${group.id}`" text="Cajas por tarima" />
 						<InputNumberCustom
-							id="boxes_per_pallet"
-							v-model="variant.boxes_per_pallet"
-							:error="variantErrors.boxes_per_pallet"
+							:id="`boxes_per_pallet-${group.id}`"
+							v-model="group.spec.boxes_per_pallet"
+							:error="group.specErrors.boxes_per_pallet"
 							:min="0"
 							placeholder="0"
-							@input="variantErrors.boxes_per_pallet = ''"
+							@input="group.specErrors.boxes_per_pallet = ''"
 							:max-fraction-digits="0"
 						/>
 						<p
-							v-if="variantErrors.boxes_per_pallet"
+							v-if="group.specErrors.boxes_per_pallet"
 							class="text-danger text-[12px] mt-1.5"
 						>
-							{{ variantErrors.boxes_per_pallet }}
+							{{ group.specErrors.boxes_per_pallet }}
 						</p>
 					</div>
 				</div>
@@ -289,25 +339,25 @@
 				<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
 					<div class="space-y-1.5">
 						<FieldLabel
-							html-for="commission_category_id"
+							:html-for="`commission_category_id-${group.id}`"
 							text="Categoría de comisión"
 						/>
 						<SelectCustom
-							id="commission_category_id"
-							v-model="variant.commission_category_id"
+							:id="`commission_category_id-${group.id}`"
+							v-model="group.spec.commission_category_id"
 							:options="catalogs.commissionCategories"
 							option-label="code"
 							:loading="catalogs.loading"
-							:error="variantErrors.commission_category_id"
+							:error="group.specErrors.commission_category_id"
 							placeholder="Sin categoría"
 							allow-empty
-							@change="variantErrors.commission_category_id = ''"
+							@change="group.specErrors.commission_category_id = ''"
 						/>
 						<p
-							v-if="variantErrors.commission_category_id"
+							v-if="group.specErrors.commission_category_id"
 							class="text-danger text-[12px] mt-1.5"
 						>
-							{{ variantErrors.commission_category_id }}
+							{{ group.specErrors.commission_category_id }}
 						</p>
 					</div>
 				</div>
@@ -320,22 +370,120 @@
 						Colores
 					</h3>
 
-					<div class="space-y-3">
+					<!-- Tabla compacta: encabezado una vez y una fila delgada por color. Por
+					     debajo de sm cada fila apila sus 3 campos con su label visible; desde
+					     sm los labels pasan a sr-only (siguen asociados al input) y el
+					     encabezado de columnas toma su lugar. Header y filas comparten la
+					     misma estructura (grid de 3 columnas + hueco del botón) para alinear. -->
+					<!-- `relative`: los labels `sm:sr-only` son `position: absolute`; sin un
+					     ancestro posicionado se ubican contra el documento, escapan del scroll
+					     de <main> (AppLayout) y alargan el <body>, descuadrando el layout. -->
+					<div class="relative border border-border rounded-md overflow-hidden">
 						<div
-							v-for="(row, index) in colorRows"
-							:key="row.id"
-							class="border border-border rounded-md p-4"
+							class="hidden sm:flex items-center gap-2 bg-bg border-b border-border px-3 py-2"
+							aria-hidden="true"
 						>
-							<div class="flex items-center justify-between mb-3">
-								<span class="text-xs font-medium text-text-muted"
-									>Color {{ index + 1 }}</span
+							<div
+								class="flex-1 grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
+							>
+								<span>Color<span class="text-danger ml-0.5">*</span></span>
+								<span>Stock (cajas)<span class="text-danger ml-0.5">*</span></span>
+								<span>Stock mínimo<span class="text-danger ml-0.5">*</span></span>
+							</div>
+							<span class="w-8 shrink-0"></span>
+						</div>
+
+						<div class="divide-y divide-border">
+							<div
+								v-for="row in group.colorRows"
+								:key="row.id"
+								class="flex items-start gap-2 px-3 py-3 sm:py-2"
+							>
+								<div
+									class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3"
 								>
+									<div class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`color-${row.id}`"
+											text="Color"
+											required
+											class="sm:sr-only"
+										/>
+										<InputTextCustom
+											:id="`color-${row.id}`"
+											v-model="row.color"
+											:error="row.errors.color"
+											placeholder="Ej. Blanco"
+											@input="row.errors.color = ''"
+										/>
+										<p v-if="row.errors.color" class="text-danger text-xs mt-1.5">
+											{{ row.errors.color }}
+										</p>
+									</div>
+
+									<!-- Variante existente: stock de solo lectura, se ajusta desde
+									     Inventario (diálogo con historial), no desde este form. -->
+									<div v-if="row.variantId" class="space-y-1.5 sm:space-y-0">
+										<span class="text-xs font-medium text-text-muted block sm:sr-only">
+											Stock actual (cajas)
+										</span>
+										<p
+											class="h-[2.375rem] flex items-center text-sm text-text tabular-nums"
+											title="Se ajusta desde Inventario con «Ajustar stock»"
+										>
+											{{ row.stock_boxes }} cj
+										</p>
+									</div>
+									<div v-else class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`stock_boxes-${row.id}`"
+											text="Stock inicial (cajas)"
+											required
+											class="sm:sr-only"
+										/>
+										<InputNumberCustom
+											:id="`stock_boxes-${row.id}`"
+											v-model="row.stock_boxes"
+											:error="row.errors.stock_boxes"
+											:min="0"
+											placeholder="0"
+											@input="row.errors.stock_boxes = ''"
+											:max-fraction-digits="0"
+										/>
+										<p v-if="row.errors.stock_boxes" class="text-danger text-xs mt-1.5">
+											{{ row.errors.stock_boxes }}
+										</p>
+									</div>
+
+									<div class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`minimum_stock-${row.id}`"
+											text="Stock mínimo"
+											required
+											class="sm:sr-only"
+										/>
+										<InputNumberCustom
+											:id="`minimum_stock-${row.id}`"
+											v-model="row.minimum_stock"
+											:error="row.errors.minimum_stock"
+											:min="0"
+											placeholder="0"
+											@input="row.errors.minimum_stock = ''"
+											:max-fraction-digits="0"
+										/>
+										<p v-if="row.errors.minimum_stock" class="text-danger text-xs mt-1.5">
+											{{ row.errors.minimum_stock }}
+										</p>
+									</div>
+								</div>
+
+								<!-- Mismo alto que los inputs para quedar centrado con ellos desde sm -->
 								<button
 									type="button"
-									@click="removeColorRow(row.id)"
-									:disabled="colorRows.length === 1 || deletingRowId === row.id"
-									class="text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors"
-									aria-label="Eliminar color"
+									@click="removeColorRow(group, row.id)"
+									:disabled="group.colorRows.length === 1 || deletingRowId === row.id"
+									class="w-8 h-[2.375rem] shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
+									:aria-label="row.color ? `Eliminar color ${row.color}` : 'Eliminar color'"
 									title="Eliminar color"
 								>
 									<svg
@@ -344,6 +492,7 @@
 										viewBox="0 0 24 24"
 										stroke="currentColor"
 										stroke-width="2"
+										aria-hidden="true"
 									>
 										<path
 											stroke-linecap="round"
@@ -353,87 +502,26 @@
 									</svg>
 								</button>
 							</div>
-
-							<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-								<div class="space-y-1.5">
-									<FieldLabel
-										:html-for="`color-${row.id}`"
-										text="Color"
-										required
-									/>
-									<InputTextCustom
-										:id="`color-${row.id}`"
-										v-model="row.color"
-										:error="row.errors.color"
-										placeholder="Ej. Blanco"
-										@input="row.errors.color = ''"
-									/>
-									<p
-										v-if="row.errors.color"
-										class="text-danger text-[12px] mt-1.5"
-									>
-										{{ row.errors.color }}
-									</p>
-								</div>
-
-								<div class="space-y-1.5">
-									<FieldLabel
-										:html-for="`stock_boxes-${row.id}`"
-										text="Stock inicial (cajas)"
-										required
-									/>
-									<InputNumberCustom
-										:id="`stock_boxes-${row.id}`"
-										v-model="row.stock_boxes"
-										:error="row.errors.stock_boxes"
-										:min="0"
-										placeholder="0"
-										@input="row.errors.stock_boxes = ''"
-										:max-fraction-digits="0"
-									/>
-									<p
-										v-if="row.errors.stock_boxes"
-										class="text-danger text-[12px] mt-1.5"
-									>
-										{{ row.errors.stock_boxes }}
-									</p>
-								</div>
-
-								<div class="space-y-1.5">
-									<FieldLabel
-										:html-for="`minimum_stock-${row.id}`"
-										text="Stock mínimo"
-										required
-									/>
-									<InputNumberCustom
-										:id="`minimum_stock-${row.id}`"
-										v-model="row.minimum_stock"
-										:error="row.errors.minimum_stock"
-										:min="0"
-										placeholder="0"
-										@input="row.errors.minimum_stock = ''"
-										:max-fraction-digits="0"
-									/>
-									<p
-										v-if="row.errors.minimum_stock"
-										class="text-danger text-[12px] mt-1.5"
-									>
-										{{ row.errors.minimum_stock }}
-									</p>
-								</div>
-							</div>
 						</div>
 					</div>
 
 					<button
 						type="button"
-						@click="addColorRow"
+						@click="addColorRow(group)"
 						class="mt-3 w-full border border-dashed border-border rounded-md py-2 text-sm text-text-muted hover:text-text hover:border-accent transition-colors select-none cursor-pointer"
 					>
 						+ Agregar color
 					</button>
 				</div>
 			</div>
+
+			<button
+				type="button"
+				@click="addVariantGroup"
+				class="w-full border border-dashed border-border rounded-md py-3 text-sm text-text-muted hover:text-text hover:border-accent bg-surface transition-colors select-none cursor-pointer"
+			>
+				+ Agregar medida
+			</button>
 
 			<!-- Acciones -->
 			<div class="flex items-center justify-end gap-3">
@@ -499,6 +587,8 @@ import { useInventoryStore } from "@/stores/inventory";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
+import { groupVariants } from "@/lib/groupVariants";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 const route = useRoute();
 const router = useRouter();
@@ -532,32 +622,6 @@ const errors = reactive({
 	purchase_unit: "",
 });
 
-const variant = reactive({
-	size: "",
-	pei: "",
-	ett: "",
-	kilos_per_box: null,
-	boxes_per_pallet: null,
-	commission_category_id: "",
-	price_per_box: null,
-	price_per_m2: null,
-	pieces_per_box: null,
-	m2_per_box: null,
-});
-
-const variantErrors = reactive({
-	size: "",
-	pei: "",
-	ett: "",
-	kilos_per_box: "",
-	boxes_per_pallet: "",
-	commission_category_id: "",
-	price_per_box: "",
-	price_per_m2: "",
-	pieces_per_box: "",
-	m2_per_box: "",
-});
-
 // Cada fila se convierte en su propia variante (POST/PUT /api/product-variants). `id` es
 // solo la key local para el v-for; `variantId` es el id real en backend (null si la fila
 // es nueva en esta sesión de edición) y decide POST vs. PUT al guardar.
@@ -577,42 +641,97 @@ function createColorRow({
 	};
 }
 
-const colorRows = ref([createColorRow()]);
+// Un grupo = una medida del producto: su ficha técnica (`spec`) + los colores que la
+// comparten. Mismo criterio de agrupamiento que groupVariants.js / InventoryTable.vue,
+// así que en edición el form muestra exactamente los grupos que se ven en Inventario.
+// En creación se arranca con un solo grupo vacío (mismo comportamiento que antes).
+const specFields = [
+	"size",
+	"pei",
+	"ett",
+	"kilos_per_box",
+	"boxes_per_pallet",
+	"commission_category_id",
+	"price_per_box",
+	"price_per_m2",
+	"pieces_per_box",
+	"m2_per_box",
+];
+
+function createVariantGroup({ spec = {}, colorRows = [createColorRow()] } = {}) {
+	return {
+		id: crypto.randomUUID(),
+		spec: {
+			size: "",
+			pei: "",
+			ett: "",
+			kilos_per_box: null,
+			boxes_per_pallet: null,
+			commission_category_id: "",
+			price_per_box: null,
+			price_per_m2: null,
+			pieces_per_box: null,
+			m2_per_box: null,
+			...spec,
+		},
+		specErrors: Object.fromEntries(specFields.map((field) => [field, ""])),
+		colorRows,
+	};
+}
+
+const variantGroups = ref([createVariantGroup()]);
+
+function addVariantGroup() {
+	variantGroups.value.push(createVariantGroup());
+}
+
+// Mismo criterio que colores nuevos vs. existentes: un grupo solo se quita si
+// ninguna de sus filas existe ya como variante en backend. Siempre queda al menos uno.
+function canRemoveGroup(group) {
+	return variantGroups.value.length > 1 && group.colorRows.every((row) => !row.variantId);
+}
+
+function removeVariantGroup(groupId) {
+	const group = variantGroups.value.find((g) => g.id === groupId);
+	if (!group || !canRemoveGroup(group)) return;
+	variantGroups.value = variantGroups.value.filter((g) => g.id !== groupId);
+}
 const deletingRowId = ref(null);
 
-function addColorRow() {
-	colorRows.value.push(createColorRow());
+function addColorRow(group) {
+	group.colorRows.push(createColorRow());
 }
 
 // Filas sin `variantId` son nuevas en esta sesión (o el flujo de creación, donde
 // ninguna fila lo tiene) — se quitan del array local sin tocar el backend. Filas con
 // `variantId` ya existen como variante real, así que requieren confirmación y un
-// DELETE inmediato (no esperan al submit del form).
-function removeColorRow(id) {
-	if (colorRows.value.length === 1) return;
+// DELETE inmediato (no esperan al submit del form). El mínimo de 1 color aplica por
+// grupo: quitar el último color de una medida no se permite desde aquí.
+function removeColorRow(group, rowId) {
+	if (group.colorRows.length === 1) return;
 
-	const row = colorRows.value.find((r) => r.id === id);
+	const row = group.colorRows.find((r) => r.id === rowId);
 	if (!row) return;
 
 	if (!row.variantId) {
-		colorRows.value = colorRows.value.filter((r) => r.id !== id);
+		group.colorRows = group.colorRows.filter((r) => r.id !== rowId);
 		return;
 	}
 
 	confirm.require({
 		header: "Eliminar variante",
 		message: `¿Eliminar el color "${row.color}"? Esta acción no se puede deshacer.`,
-		accept: () => deleteVariantRow(row),
+		accept: () => deleteVariantRow(group, row),
 	});
 }
 
-async function deleteVariantRow(row) {
+async function deleteVariantRow(group, row) {
 	deletingRowId.value = row.id;
 	generalError.value = null;
 
 	try {
 		await axios.delete(`/api/product-variants/${row.variantId}`);
-		colorRows.value = colorRows.value.filter((r) => r.id !== row.id);
+		group.colorRows = group.colorRows.filter((r) => r.id !== row.id);
 	} catch (err) {
 		if (err.response?.status === 422) {
 			generalError.value = err.response.data.message;
@@ -624,9 +743,10 @@ async function deleteVariantRow(row) {
 	}
 }
 
-// El form solo soporta una ficha técnica compartida por todas las filas de color (igual
-// que en creación), así que en edición se toma la de la primera variante como base.
-// Mismos nombres de campo que usa groupVariants.js para leer una variante.
+// Agrupa las variantes con groupVariants.js (medida+PEI+ETT+categoría de comisión+
+// precio por caja). Los campos que no son parte de la llave (piezas, m², kg, cajas por
+// tarima, precio por m²) se toman de la primera variante del grupo, igual que el
+// encabezado de cada medida en InventoryTable.vue.
 function populateFormFromProduct(product) {
 	form.supplier_id = product.supplier_id;
 	form.category_id = product.category_id;
@@ -634,30 +754,33 @@ function populateFormFromProduct(product) {
 	form.name = product.name;
 	form.purchase_unit = product.purchase_unit;
 
-	const [firstVariant] = product.variants ?? [];
-	if (firstVariant) {
-		variant.size = firstVariant.size;
-		variant.pei = firstVariant.pei;
-		variant.ett = firstVariant.ett;
-		variant.kilos_per_box = firstVariant.kilos_per_box;
-		variant.boxes_per_pallet = firstVariant.boxes_per_pallet;
-		variant.commission_category_id = firstVariant.commission_category?.id ?? "";
-		variant.price_per_box = firstVariant.price_per_box;
-		variant.price_per_m2 = firstVariant.price_per_m2;
-		variant.pieces_per_box = firstVariant.pieces_per_box;
-		variant.m2_per_box = firstVariant.m2_per_box;
-	}
+	const groups = groupVariants(product.variants ?? []);
+	if (!groups.length) return;
 
-	if (product.variants?.length) {
-		colorRows.value = product.variants.map((v) =>
-			createColorRow({
-				variantId: v.id,
-				color: v.color,
-				stock_boxes: v.stock_boxes,
-				minimum_stock: v.minimum_stock,
-			}),
-		);
-	}
+	variantGroups.value = groups.map((group) =>
+		createVariantGroup({
+			spec: {
+				size: group.size,
+				pei: group.pei,
+				ett: group.ett,
+				kilos_per_box: group.kilos_per_box,
+				boxes_per_pallet: group.boxes_per_pallet,
+				commission_category_id: group.commission_category?.id ?? "",
+				price_per_box: group.price_per_box,
+				price_per_m2: group.price_per_m2,
+				pieces_per_box: group.pieces_per_box,
+				m2_per_box: group.m2_per_box,
+			},
+			colorRows: group.variants.map((v) =>
+				createColorRow({
+					variantId: v.id,
+					color: v.color,
+					stock_boxes: v.stock_boxes,
+					minimum_stock: v.minimum_stock,
+				}),
+			),
+		}),
+	);
 }
 
 async function fetchProduct() {
@@ -697,20 +820,22 @@ const validateForm = () => {
 		}
 	}
 
-	for (const field of requiredVariantFields) {
-		variantErrors[field] = "";
-		if (variant[field] === "" || variant[field] === null) {
-			variantErrors[field] = "Este campo es requerido";
-			isValid = false;
-		}
-	}
-
-	for (const row of colorRows.value) {
-		for (const field of requiredColorRowFields) {
-			row.errors[field] = "";
-			if (row[field] === "" || row[field] === null) {
-				row.errors[field] = "Este campo es requerido";
+	for (const group of variantGroups.value) {
+		for (const field of requiredVariantFields) {
+			group.specErrors[field] = "";
+			if (group.spec[field] === "" || group.spec[field] === null) {
+				group.specErrors[field] = "Este campo es requerido";
 				isValid = false;
+			}
+		}
+
+		for (const row of group.colorRows) {
+			for (const field of requiredColorRowFields) {
+				row.errors[field] = "";
+				if (row[field] === "" || row[field] === null) {
+					row.errors[field] = "Este campo es requerido";
+					isValid = false;
+				}
 			}
 		}
 	}
@@ -721,23 +846,31 @@ const validateForm = () => {
 const submitting = ref(false);
 const generalError = ref(null);
 
-function buildVariantPayload(productId, row) {
-	return {
+// Cada variante toma la ficha técnica de su propio grupo. `stock_boxes` solo va al
+// crear (stock inicial): en una variante existente el stock se cambia con el diálogo
+// de ajuste, que deja historial — mandarlo en el PUT pisaría una venta ocurrida
+// mientras el form estaba abierto.
+function buildVariantPayload(productId, group, row) {
+	const { spec } = group;
+	const payload = {
 		product_id: productId,
-		size: variant.size,
-		pei: variant.pei,
-		ett: variant.ett,
-		kilos_per_box: variant.kilos_per_box,
-		boxes_per_pallet: variant.boxes_per_pallet,
-		commission_category_id: variant.commission_category_id || null,
-		price_per_box: variant.price_per_box,
-		price_per_m2: variant.price_per_m2,
-		pieces_per_box: variant.pieces_per_box,
-		m2_per_box: variant.m2_per_box,
+		size: spec.size,
+		pei: spec.pei,
+		ett: spec.ett,
+		kilos_per_box: spec.kilos_per_box,
+		boxes_per_pallet: spec.boxes_per_pallet,
+		commission_category_id: spec.commission_category_id || null,
+		price_per_box: spec.price_per_box,
+		price_per_m2: spec.price_per_m2,
+		pieces_per_box: spec.pieces_per_box,
+		m2_per_box: spec.m2_per_box,
 		color: row.color,
-		stock_boxes: row.stock_boxes,
 		minimum_stock: row.minimum_stock,
 	};
+
+	if (!row.variantId) payload.stock_boxes = row.stock_boxes;
+
+	return payload;
 }
 
 // Solo mapea a `errors` los campos del producto — es lo único validado antes
@@ -779,13 +912,18 @@ const handleSubmit = async () => {
 		// creación, donde ninguna fila lo tiene). No se borra ninguna variante aquí
 		// aunque el usuario haya quitado una fila del form — eso es el paso 5.5.
 		await Promise.all(
-			colorRows.value.map((row) =>
-				row.variantId
-					? axios.put(
+			variantGroups.value.flatMap((group) =>
+				group.colorRows.map((row) =>
+					row.variantId
+						? axios.put(
 							`/api/product-variants/${row.variantId}`,
-							buildVariantPayload(productId, row),
+							buildVariantPayload(productId, group, row),
 						)
-					: axios.post("/api/product-variants", buildVariantPayload(productId, row)),
+						: axios.post(
+							"/api/product-variants",
+							buildVariantPayload(productId, group, row),
+						),
+				),
 			),
 		);
 

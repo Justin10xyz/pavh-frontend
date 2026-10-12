@@ -1,6 +1,7 @@
 <template>
 	<div class="relative">
 		<InputTextCustom
+			:id="inputId"
 			v-model="searchQuery"
 			:placeholder="placeholder ?? defaultPlaceholder"
 			@focus="showDropdown = true"
@@ -28,7 +29,7 @@
 				<template v-else>
 					<p class="text-sm text-text flex items-center gap-2">
 						{{ option.name }}
-						<span class="text-[10px] text-text-muted border border-border rounded px-1.5 py-0.5">
+						<span class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5">
 							{{ option.categoryName }}
 						</span>
 					</p>
@@ -58,6 +59,8 @@ import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 
 const props = defineProps({
 	placeholder: { type: String, default: null },
+	// Para asociar un <label for> externo al input de búsqueda.
+	inputId: { type: String, default: undefined },
 	// Opt-in: quien lo usa debe saber manejar `option.type === 'simple'` antes de
 	// recibir productos simples (si no, trataría su `id` como el de una variante).
 	includeSimpleProducts: { type: Boolean, default: false },

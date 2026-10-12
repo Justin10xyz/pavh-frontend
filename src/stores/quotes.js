@@ -7,6 +7,9 @@ export const useQuotesStore = defineStore("quotes", () => {
 	const loading = ref(false);
 	const error = ref(null);
 	const initialized = ref(false);
+	// Último query del listado (ej. { estado: "Borrador" }), para que el
+	// "Volver" del detalle regrese con el mismo filtro. Lo escribe QuotesView.
+	const listQuery = ref({});
 
 	// Detalle de una sola cotización (con items + producto). Va en su propio
 	// ref y con loading/error propios: es un registro completo, no el resumen
@@ -82,6 +85,36 @@ export const useQuotesStore = defineStore("quotes", () => {
 		return data.data;
 	}
 
+	// PATCH /api/quotes/{id}/cancel solo cambia el status (responde 422 si no
+	// está en Borrador). Mismo update in-place que updateQuote(), pero en el
+	// detalle se conservan los items ya cargados: la respuesta no eager-loadea
+	// items.productVariant.product y cancelar no toca las líneas.
+	async function cancelQuote(id) {
+		const { data } = await axios.patch(`/api/quotes/${id}/cancel`);
+
+		if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+			currentQuote.value = { ...data.data, items: currentQuote.value.items };
+		}
+
+		const index = quotes.value.findIndex((q) => String(q.id) === String(id));
+		if (index !== -1) quotes.value[index] = data.data;
+
+		return data.data;
+	}
+
+	// La conversión ocurre en POST /api/sales con quote_id (SaleFormView), cuya
+	// respuesta no trae el quote completo: solo {id, folio}. El backend la marca
+	// "Convertida" en la misma transacción, así que un POST exitoso basta para
+	// actualizar el status in-place sin refetch del listado.
+	function markQuoteConverted(id) {
+		const quote = quotes.value.find((q) => String(q.id) === String(id));
+		if (quote) quote.status = "Convertida";
+
+		if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+			currentQuote.value.status = "Convertida";
+		}
+	}
+
 	async function fetchQuotePdf(id) {
 		const response = await axios.get(`/api/quotes/${id}/pdf`, { responseType: "blob" });
 		return response.data;
@@ -92,9 +125,12 @@ export const useQuotesStore = defineStore("quotes", () => {
 		loading,
 		error,
 		initialized,
+		listQuery,
 		fetchQuotes,
 		createQuote,
 		updateQuote,
+		cancelQuote,
+		markQuoteConverted,
 		currentQuote,
 		currentQuoteLoading,
 		currentQuoteError,

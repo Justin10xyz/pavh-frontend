@@ -1,17 +1,16 @@
 <template>
 	<div class="p-2">
-		<div class="flex items-center justify-between mb-4">
+		<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
 			<h1 class="font-serif text-xl text-primary">Inventario</h1>
 			<RouterLink
-				v-if="activeSection === 'floors'"
-				:to="{ name: 'products.create' }"
-				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors inline-flex items-center select-none"
+				:to="newProductRoute"
+				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center select-none"
 			>
 				Nuevo producto
 			</RouterLink>
 		</div>
 
-		<div class="flex items-center gap-2 mb-4" role="group" aria-label="Sección del inventario">
+		<div class="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Sección del inventario">
 			<button
 				v-for="section in sections"
 				:key="section.key"
@@ -47,7 +46,11 @@
 				v-if="filteredProducts.length === 0"
 				class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface"
 			>
-				No se encontraron productos con esos filtros.
+				{{
+					inventory.products.length === 0
+						? "Aún no hay productos de pisos registrados."
+						: "No se encontraron productos con esos filtros."
+				}}
 			</div>
 
 			<InventoryTable
@@ -56,6 +59,7 @@
 				:visibleVariantsByProduct="visibleVariantsByProduct"
 				@edit-product="editProduct"
 				@open-stock-dialog="openStockDialog"
+				@open-movements-dialog="openMovementsDialog"
 			/>
 		</template>
 	</div>
@@ -69,6 +73,14 @@
 		:subtitle="stockDialogVariant?.color"
 		@stock-updated="onVariantStockUpdated"
 	/>
+
+	<StockMovementsDialog
+		v-model:visible="movementsDialogOpen"
+		:url="movementsDialogVariant ? `/api/product-variants/${movementsDialogVariant.id}/stock-movements` : null"
+		:stock="movementsDialogVariant?.stock_boxes"
+		stock-unit="cj"
+		:subtitle="movementsDialogVariant?.color"
+	/>
 </template>
 
 <script setup>
@@ -79,6 +91,7 @@ import { useInventoryStore } from "@/stores/inventory";
 import InventoryFilters from "./components/InventoryFilters.vue";
 import InventoryTable from "./components/InventoryTable.vue";
 import StockAdjustDialog from "./components/StockAdjustDialog.vue";
+import StockMovementsDialog from "./components/StockMovementsDialog.vue";
 import SimpleProductsSection from "./components/SimpleProductsSection.vue";
 
 const route = useRoute();
@@ -97,6 +110,13 @@ const sections = [
 ];
 
 const activeSection = computed(() => (route.query.seccion === "otros" ? "other" : "floors"));
+
+// Un solo botón en el encabezado para ambas secciones; solo cambia el destino.
+const newProductRoute = computed(() =>
+	activeSection.value === "other"
+		? { name: "inventory.simpleProducts.create" }
+		: { name: "products.create" },
+);
 
 function selectSection(key) {
 	router.replace({ query: key === "other" ? { seccion: "otros" } : {} });
@@ -119,6 +139,14 @@ function onVariantStockUpdated(updatedVariant) {
 		stock_boxes: updatedVariant.stock_boxes,
 		low_stock: updatedVariant.low_stock,
 	});
+}
+
+const movementsDialogOpen = ref(false);
+const movementsDialogVariant = ref(null);
+
+function openMovementsDialog(variant) {
+	movementsDialogVariant.value = variant;
+	movementsDialogOpen.value = true;
 }
 
 // Filters logic

@@ -1,87 +1,132 @@
 <template>
 	<div class="p-2">
-		<div class="flex items-center justify-between mb-4">
+		<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
 			<h1 class="font-serif text-xl text-primary">Cotizaciones</h1>
-			<button
-				type="button"
-				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors inline-flex items-center select-none"
-				@click="createQuote"
+			<RouterLink
+				:to="{ name: 'quotes.create' }"
+				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center select-none"
 			>
 				Nueva cotización
-			</button>
+			</RouterLink>
 		</div>
 
 		<div v-if="quotes.loading" class="text-text-muted text-sm">Cargando cotizaciones…</div>
 		<div v-else-if="quotes.error" class="text-danger text-sm">{{ quotes.error }}</div>
 
 		<template v-else>
-			<div class="relative flex-1 min-w-[220px] mb-4">
-				<svg
-					class="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
-					width="14" height="14" viewBox="0 0 24 24" fill="none"
-					stroke="currentColor" stroke-width="2"
-				>
-					<circle cx="11" cy="11" r="7" />
-					<line x1="21" y1="21" x2="16.65" y2="16.65" />
-				</svg>
-				<InputTextCustom
-					v-model="searchQuery"
-					placeholder="Buscar por folio o cliente…"
-					class="max-w-md pl-8"
+			<div class="flex flex-wrap items-center gap-3 mb-4">
+				<div class="relative flex-1 min-w-56">
+					<svg
+						class="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<circle cx="11" cy="11" r="7" />
+						<line x1="21" y1="21" x2="16.65" y2="16.65" />
+					</svg>
+					<InputTextCustom
+						v-model="searchQuery"
+						placeholder="Buscar por folio o cliente…"
+						class="max-w-md pl-8"
+					/>
+				</div>
+
+				<QuickFilter
+					v-model="statusFilter"
+					:options="statusOptions"
+					label="Filtrar por estado"
 				/>
 			</div>
 
-			<div v-if="filteredQuotes.length === 0" class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface">
-				No se encontraron cotizaciones con esos filtros.
+			<div
+				v-if="filteredQuotes.length === 0"
+				class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface"
+			>
+				{{
+					quotes.quotes.length === 0
+						? "Aún no hay cotizaciones registradas."
+						: "No se encontraron cotizaciones con esos filtros."
+				}}
 			</div>
 
-			<div v-else class="bg-surface border border-border rounded-md overflow-hidden">
-				<DataTable :value="filteredQuotes" dataKey="id" class="quotes-table">
-					<Column header="Folio">
+			<div v-else class="bg-surface border border-border rounded-md overflow-x-auto">
+				<DataTable
+					:value="filteredQuotes"
+					dataKey="id"
+					class="data-table"
+					:row-class="() => 'cursor-pointer'"
+					@row-click="openQuote"
+				>
+					<Column header="Folio" body-class="whitespace-nowrap">
 						<template #body="{ data }">
-							<span class="font-medium text-text">{{ data.folio }}</span>
+							<RouterLink
+								:to="{ name: 'quotes.show', params: { id: data.id } }"
+								class="font-medium text-text hover:text-accent transition-colors"
+							>
+								{{ data.folio }}
+							</RouterLink>
+							<!-- Sin columna Fecha por debajo de sm: va debajo del folio -->
+							<span class="block sm:hidden text-xs text-text-muted">{{
+								formatDate(data.created_at)
+							}}</span>
 						</template>
 					</Column>
 
 					<Column header="Cliente">
 						<template #body="{ data }">
 							<span :class="data.customer ? 'text-text' : 'text-text-muted'">
-								{{ data.customer?.name ?? 'Sin cliente' }}
+								{{ data.customer?.name ?? "Sin cliente" }}
 							</span>
 						</template>
 					</Column>
 
-					<Column header="Fecha">
+					<Column
+						header="Fecha"
+						header-class="hidden sm:table-cell"
+						body-class="hidden sm:table-cell whitespace-nowrap"
+					>
 						<template #body="{ data }">
 							<span class="text-text-muted">{{ formatDate(data.created_at) }}</span>
 						</template>
 					</Column>
 
-					<Column header="Status">
+					<Column header="Estado">
 						<template #body="{ data }">
-							<span class="text-[10px] px-2 py-0.5 rounded" :class="statusClasses(data.status)">
+							<span
+								class="text-xs px-2 py-0.5 rounded whitespace-nowrap"
+								:class="statusClasses(data.status)"
+							>
 								{{ data.status }}
 							</span>
 						</template>
 					</Column>
 
-					<Column header="Total" style="width: 9rem">
+					<Column
+						header="Total"
+						header-class="text-right!"
+						body-class="text-right whitespace-nowrap"
+					>
 						<template #body="{ data }">
-							<span class="text-text">{{ formatCurrency(data.total) }}</span>
+							<span class="font-semibold text-primary tabular-nums">{{
+								formatCurrency(data.total)
+							}}</span>
 						</template>
 					</Column>
 
-					<Column header="" style="width: 3rem">
+					<Column header="" body-class="w-px">
 						<template #body="{ data }">
-							<button
-								type="button"
-								class="text-text-muted hover:text-accent transition-colors"
+							<RouterLink
+								:to="{ name: 'quotes.show', params: { id: data.id } }"
+								class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
 								aria-label="Ver cotización"
 								title="Ver cotización"
-								@click="viewQuote(data.id)"
 							>
-								<i class="ti ti-eye text-[15px]"></i>
-							</button>
+								<i class="ti ti-eye text-base"></i>
+							</RouterLink>
 						</template>
 					</Column>
 				</DataTable>
@@ -91,85 +136,104 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import { useQuotesStore } from '@/stores/quotes'
-import { statusClasses } from '@/lib/quoteStatus'
-import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
+import { onMounted, ref, computed, watch } from "vue";
+import DataTable from "primevue/datatable";
+import Column from "primevue/column";
+import { useQuotesStore } from "@/stores/quotes";
+import { useRoute, useRouter } from "vue-router";
+import { QUOTE_STATUSES, statusClasses } from "@/lib/quoteStatus";
+import { formatCurrency } from "@/lib/formatCurrency";
+import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
+import QuickFilter from "@/components/widgets/filters/QuickFilter.vue";
 
-const router = useRouter()
-const quotes = useQuotesStore()
+const route = useRoute();
+const router = useRouter();
+const quotes = useQuotesStore();
 
 onMounted(() => {
-	if (!quotes.initialized) quotes.fetchQuotes()
-})
+	if (!quotes.initialized) quotes.fetchQuotes();
+});
 
-function createQuote() {
-	router.push({ path: '/cotizaciones/nueva' })
-}
-
-function viewQuote(id) {
-	router.push({ path: `/cotizaciones/${id}` })
-}
-
-const searchQuery = ref('')
+const searchQuery = ref("");
 
 function normalize(str) {
-	return (str ?? '')
+	return (str ?? "")
 		.toString()
-		.normalize('NFD')
-		.replace(/[\u0300-\u036f]/g, '')
-		.toLowerCase()
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLowerCase();
 }
 
+// Filtro por status client-side: el listado ya trae todas las cotizaciones
+// (QuoteController@index no pagina ni filtra), igual que la búsqueda.
+//
+// El status activo vive en la URL (?estado=Borrador), no en un ref: así se
+// conserva al volver del detalle con Atrás y se puede enlazar directo (ej.
+// "Ver todo" del widget de cotizaciones activas). Un valor desconocido en la
+// URL cae a "Todas". Se usa replace para no llenar el historial de filtros.
+const statusFilter = computed({
+	get: () => (QUOTE_STATUSES.includes(route.query.estado) ? route.query.estado : "all"),
+	set: (key) => {
+		router.replace({
+			query: { ...route.query, estado: key === "all" ? undefined : key },
+		});
+	},
+});
+
+// El "Volver" del detalle regresa al listado con el mismo filtro, aunque se
+// haya pasado por la edición (donde Atrás del navegador ya no aplica).
+// Se filtra por nombre de ruta: al navegar al detalle, `route` ya cambió antes
+// de que este componente se desmonte, y sin el guard se guardaría el query del
+// detalle (vacío).
+watch(
+	() => route.query,
+	(query) => {
+		if (route.name === "quotes") quotes.listQuery = { ...query };
+	},
+	{ immediate: true },
+);
+
+const statusOptions = computed(() => [
+	{ key: "all", label: "Todas", count: quotes.quotes.length },
+	...QUOTE_STATUSES.map((status) => ({
+		key: status,
+		label: status,
+		count: quotes.quotes.filter((quote) => quote.status === status).length,
+	})),
+]);
+
 const filteredQuotes = computed(() => {
-	const q = normalize(searchQuery.value)
-	if (!q) return quotes.quotes
+	const q = normalize(searchQuery.value);
 
 	return quotes.quotes.filter(
-		(quote) => normalize(quote.folio).includes(q) || normalize(quote.customer?.name).includes(q)
-	)
-})
+		(quote) =>
+			(statusFilter.value === "all" || quote.status === statusFilter.value) &&
+			(!q || normalize(quote.folio).includes(q) || normalize(quote.customer?.name).includes(q)),
+	);
+});
 
-const currencyFormatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
+// Toda la fila abre el detalle. Los clicks sobre un link propio (folio, ojo)
+// se dejan al RouterLink, que ya soporta Ctrl/Cmd+click y click medio.
+function openQuote({ originalEvent, data }) {
+	if (originalEvent.target.closest("a, button")) return;
 
-function formatCurrency(value) {
-	return currencyFormatter.format(Number(value))
+	const to = { name: "quotes.show", params: { id: data.id } };
+	if (originalEvent.ctrlKey || originalEvent.metaKey) {
+		window.open(router.resolve(to).href, "_blank");
+	} else {
+		router.push(to);
+	}
 }
 
 function formatDate(value) {
-	return new Date(value).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+	return new Date(value).toLocaleString("es-MX", {
+		day: "2-digit",
+		month: "short",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
 }
 </script>
 
-<style scoped>
-.quotes-table :deep(table) {
-	width: 100%;
-	border-collapse: collapse;
-}
-.quotes-table :deep(thead th) {
-	text-align: left;
-	font-size: 11px;
-	font-weight: 500;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: var(--color-text-muted);
-	background: var(--color-bg);
-	padding: 0.5rem 0.75rem;
-	border-bottom: 1px solid var(--color-border);
-}
-.quotes-table :deep(tbody > tr > td) {
-	padding: 0.5rem 0.75rem;
-	vertical-align: middle;
-	border-bottom: 1px solid var(--color-border);
-	font-size: 0.8125rem;
-}
-.quotes-table :deep(tbody > tr:last-child > td) {
-	border-bottom: none;
-}
-.quotes-table :deep(tbody > tr:hover) {
-	background: var(--color-bg);
-}
-</style>
+<style scoped></style>

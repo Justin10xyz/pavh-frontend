@@ -7,26 +7,26 @@
 
 		<div v-if="loadingQuote" class="text-text-muted text-sm">Cargando cotización…</div>
 
-		<p v-if="generalError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+		<p v-if="loadError" class="text-danger text-sm mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 			</svg>
-			{{ generalError }}
+			{{ loadError }}
 		</p>
 
-		<form v-else @submit.prevent="handleSubmit" class="space-y-4">
+		<form v-if="!loadingQuote && !loadError" @submit.prevent="handleSubmit" class="space-y-4">
 			<!-- Sección 1 — Datos generales -->
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
+				<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5">
-						<label for="customer_id" class="text-xs font-medium text-text-muted block">Cliente</label>
+						<FieldLabel html-for="customer_id" text="Cliente" />
 						<CustomerSearch id="customer_id" v-model="form.customer_id" />
 					</div>
 
 					<div class="space-y-1.5 sm:col-span-2">
-						<label for="notes" class="text-xs font-medium text-text-muted block">Notas</label>
+						<FieldLabel html-for="notes" text="Notas" />
 						<TextareaCustom
 							id="notes"
 							v-model="form.notes"
@@ -39,12 +39,20 @@
 
 			<!-- Sección 2 — Líneas de producto -->
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Productos</h2>
+				<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Productos</h2>
 
 				<div class="space-y-3">
 					<div v-for="(row, index) in lines" :key="row.id" class="border border-border rounded-md p-4">
 						<div class="flex items-center justify-between mb-3">
-							<span class="text-xs font-medium text-text-muted">Producto {{ index + 1 }}</span>
+							<!-- Sin producto elegido, el encabezado es el label del buscador -->
+							<label
+								v-if="!hasProduct(row)"
+								:for="`product-${row.id}`"
+								class="text-xs font-medium text-text-muted"
+							>
+								Producto {{ index + 1 }}
+							</label>
+							<span v-else class="text-xs font-medium text-text-muted">Producto {{ index + 1 }}</span>
 							<button
 								type="button"
 								@click="removeLine(row.id)"
@@ -61,7 +69,8 @@
 
 						<!-- Sin producto seleccionado: buscador -->
 						<ProductAutocomplete
-							v-if="!row.variant && !row.simpleProduct"
+							v-if="!hasProduct(row)"
+							:input-id="`product-${row.id}`"
 							include-simple-products
 							@select="(option) => selectProductForRow(row, option)"
 						/>
@@ -73,7 +82,7 @@
 									{{ simpleProductFor(row).name }}
 									<span
 										v-if="simpleProductCategoryName(row)"
-										class="text-[10px] text-text-muted border border-border rounded px-1.5 py-0.5"
+										class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
 									>
 										{{ simpleProductCategoryName(row) }}
 									</span>
@@ -93,33 +102,39 @@
 
 							<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
 								<div class="space-y-1.5">
-									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (unidades)</label>
+									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (unidades)" required />
 									<InputNumberCustom
 										:id="`quantity-${row.id}`"
 										v-model="row.quantity"
 										:min="1"
 										placeholder="0"
 										:max-fraction-digits="0"
+										:error="quantityError(row)"
 									/>
+									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Precio unitario</label>
+									<span class="text-xs font-medium text-text-muted block">Precio unitario</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
 										{{ formatCurrency(simpleProductFor(row).price) }}
 									</div>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Subtotal</label>
+									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
 										{{ formatCurrency(lineSubtotal(row)) }}
 									</div>
 								</div>
 							</div>
 
-							<p v-if="hasInsufficientStock(row)" class="text-danger text-[12px] mt-2">
-								Stock insuficiente — consultar disponibilidad sobre pedido.
+							<p
+								v-if="hasInsufficientStock(row)"
+								class="mt-3 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
+							>
+								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
+								<span>{{ stockWarning(row) }}</span>
 							</p>
 						</div>
 
@@ -144,40 +159,46 @@
 
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
 								<div class="space-y-1.5">
-									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (m²)</label>
+									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (m²)" required />
 									<InputNumberCustom
 										:id="`quantity-${row.id}`"
 										v-model="row.quantity"
 										:min="0.01"
 										placeholder="0.00"
 										:max-fraction-digits="2"
+										:error="quantityError(row)"
 									/>
+									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Equivalente</label>
+									<span class="text-xs font-medium text-text-muted block">Equivalente</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
-										{{ boxesFor(row) ?? '—' }} cajas
+										{{ boxesFor(row) === null ? '—' : `${boxesFor(row)} cajas` }}
 									</div>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Precio unitario</label>
+									<span class="text-xs font-medium text-text-muted block">Precio unitario</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
 										{{ formatCurrency(row.variant.price_per_m2) }}
 									</div>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Subtotal</label>
+									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
 										{{ formatCurrency(lineSubtotal(row)) }}
 									</div>
 								</div>
 							</div>
 
-							<p v-if="hasInsufficientStock(row)" class="text-danger text-[12px] mt-2">
-								Stock insuficiente — consultar disponibilidad sobre pedido.
+							<p
+								v-if="hasInsufficientStock(row)"
+								class="mt-3 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
+							>
+								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
+								<span>{{ stockWarning(row) }}</span>
 							</p>
 						</div>
 					</div>
@@ -205,30 +226,66 @@
 				</div>
 			</div>
 
+			<!-- Junto a las acciones (no arriba del form): con varias líneas, el inicio
+			     del form queda fuera de vista al presionar Guardar. -->
+			<p v-if="generalError" role="alert" class="text-danger text-sm flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+				</svg>
+				{{ generalError }}
+			</p>
+
 			<!-- Acciones -->
 			<div class="flex items-center justify-end gap-3">
 				<button
 					type="button"
 					@click="handleCancel"
-					class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 				>
 					Cancelar
 				</button>
 				<button
 					type="submit"
 					:disabled="submitting"
-					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 				>
 					{{ submitting ? 'Guardando…' : 'Guardar cotización' }}
 				</button>
 			</div>
 		</form>
+
+		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
+			<template #container="{ message, acceptCallback, rejectCallback }">
+				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+					<h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
+					<p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+					<div class="flex items-center justify-end gap-3">
+						<button
+							type="button"
+							@click="rejectCallback"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Seguir editando
+						</button>
+						<button
+							type="button"
+							@click="acceptCallback"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Descartar cambios
+						</button>
+					</div>
+				</div>
+			</template>
+		</ConfirmDialog>
 	</div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import ConfirmDialog from 'primevue/confirmdialog'
+import { useConfirm } from 'primevue/useconfirm'
 import { useInventoryStore } from '@/stores/inventory'
 import { useSimpleProductsStore } from '@/stores/simpleProducts'
 import { useCatalogsStore } from '@/stores/catalogs'
@@ -237,6 +294,10 @@ import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vu
 import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
+import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
+import { formatCurrency } from '@/lib/formatCurrency'
+import { formatQuantity } from '@/lib/formatQuantity'
+import { useNotify } from '@/composables/useNotify'
 
 const route = useRoute()
 const router = useRouter()
@@ -244,6 +305,8 @@ const inventory = useInventoryStore()
 const simpleProducts = useSimpleProductsStore()
 const catalogs = useCatalogsStore()
 const quotes = useQuotesStore()
+const notify = useNotify()
+const confirm = useConfirm()
 
 // Modo edición cuando la ruta trae :id (quotes.edit); sin :id es creación.
 const quoteId = computed(() => route.params.id ?? null)
@@ -272,7 +335,7 @@ async function loadQuote() {
 
 	const quote = quotes.currentQuote
 	if (quotes.currentQuoteError || !quote || String(quote.id) !== String(quoteId.value)) {
-		generalError.value = quotes.currentQuoteError || 'No se pudo cargar la cotización.'
+		loadError.value = quotes.currentQuoteError || 'No se pudo cargar la cotización.'
 		return
 	}
 
@@ -298,6 +361,7 @@ async function loadQuote() {
 		quantity: Number(item.quantity),
 	}))
 	lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()]
+	savedSnapshot.value = serializeForm()
 }
 
 const form = reactive({
@@ -317,6 +381,49 @@ function createEmptyLine() {
 }
 
 const lines = ref([createEmptyLine()])
+
+// Cambios sin guardar: se compara contra una foto del form tomada al iniciar
+// (creación) o al terminar de cargar la cotización (edición). Solo cuenta lo
+// que se envía al backend; una línea vacía agregada y sin usar no es un cambio.
+function serializeForm() {
+	return JSON.stringify({
+		customer_id: form.customer_id || null,
+		notes: form.notes || null,
+		lines: lines.value
+			.filter((l) => l.variant || l.simpleProduct)
+			.map((l) => [l.variant?.id ?? null, l.simpleProduct?.id ?? null, l.quantity ?? null]),
+	})
+}
+
+const savedSnapshot = ref(serializeForm())
+const isDirty = computed(() => serializeForm() !== savedSnapshot.value)
+// Tras guardar se navega fuera del form sin pasar por la confirmación.
+let skipLeaveGuard = false
+
+onBeforeRouteLeave(() => {
+	if (skipLeaveGuard || !isDirty.value) return true
+
+	return new Promise((resolve) => {
+		confirm.require({
+			header: 'Descartar cambios',
+			message: 'Hay cambios sin guardar en esta cotización. Si sales ahora, se perderán.',
+			accept: () => resolve(true),
+			reject: () => resolve(false),
+			onHide: () => resolve(false),
+		})
+	})
+})
+
+// Cerrar/recargar la pestaña no pasa por el router: el navegador muestra su
+// propio aviso genérico (no se puede personalizar el texto).
+function handleBeforeUnload(event) {
+	if (!isDirty.value) return
+	event.preventDefault()
+	event.returnValue = ''
+}
+
+window.addEventListener('beforeunload', handleBeforeUnload)
+onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
 const mergedRowId = ref(null)
 let mergeTimeoutHandle = null
 
@@ -398,6 +505,18 @@ function hasInsufficientStock(row) {
 	return boxes > (row.variant.stock_boxes ?? 0)
 }
 
+// Es un aviso, no un error: la cotización se puede guardar igual (el stock se
+// valida hasta convertirla en venta).
+function stockWarning(row) {
+	if (row.simpleProduct) {
+		const stock = simpleProductFor(row).stock_quantity
+		return `Stock insuficiente: hay ${formatQuantity(stock)} uds. y se cotizan ${formatQuantity(row.quantity)}. Consultar disponibilidad sobre pedido.`
+	}
+
+	const stock = row.variant.stock_boxes ?? 0
+	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se requieren ${boxesFor(row)}. Consultar disponibilidad sobre pedido.`
+}
+
 function lineSubtotal(row) {
 	if (!row.quantity) return 0
 	if (row.simpleProduct) return row.quantity * simpleProductFor(row).price
@@ -408,19 +527,39 @@ function lineSubtotal(row) {
 const subtotal = computed(() => lines.value.reduce((sum, row) => sum + lineSubtotal(row), 0))
 const total = computed(() => subtotal.value) // sin impuestos por ahora, igual que el backend
 
-const currencyFormatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
-
-function formatCurrency(value) {
-	return currencyFormatter.format(Number(value) || 0)
-}
-
 const submitting = ref(false)
 const generalError = ref(null)
+// Fallo de fetchQuote en modo edición: oculta el form (no se debe poder
+// enviar uno vacío sobre una cotización que no cargó). generalError queda
+// solo para errores de submit, que no desmontan el form.
+const loadError = ref(null)
+
+// Se activa en el primer intento de guardar; desde ahí el error de cantidad de
+// cada línea se evalúa en vivo y desaparece en cuanto se captura un valor válido.
+const submitAttempted = ref(false)
+
+function hasProduct(row) {
+	return !!(row.variant || row.simpleProduct)
+}
+
+function quantityError(row) {
+	if (!submitAttempted.value || !hasProduct(row) || row.quantity > 0) return ''
+	return 'Captura la cantidad.'
+}
 
 const handleSubmit = async () => {
 	generalError.value = null
+	submitAttempted.value = true
 
-	const validLines = lines.value.filter((l) => (l.variant || l.simpleProduct) && l.quantity > 0)
+	// Una línea con producto pero sin cantidad bloquea el guardado (antes se
+	// descartaba en silencio). Las líneas sin producto sí se ignoran: son filas
+	// agregadas con "+ Agregar producto" que no se llegaron a usar.
+	if (lines.value.some((l) => quantityError(l))) {
+		generalError.value = 'Hay productos sin cantidad. Captúrala o quita la línea.'
+		return
+	}
+
+	const validLines = lines.value.filter(hasProduct)
 	if (validLines.length === 0) {
 		generalError.value = 'Agrega al menos un producto con cantidad mayor a cero.'
 		return
@@ -438,11 +577,16 @@ const handleSubmit = async () => {
 		}
 
 		if (isEdit.value) {
-			await quotes.updateQuote(quoteId.value, payload)
+			const updated = await quotes.updateQuote(quoteId.value, payload)
+			skipLeaveGuard = true
+			notify.success(`Cotización ${updated.folio} actualizada`)
 			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
 		} else {
-			await quotes.createQuote(payload)
-			router.push({ name: 'quotes' })
+			// Al detalle, no al listado: lo siguiente suele ser descargar o compartir el PDF.
+			const created = await quotes.createQuote(payload)
+			skipLeaveGuard = true
+			notify.success(`Cotización ${created.folio} guardada`)
+			router.push({ name: 'quotes.show', params: { id: created.id } })
 		}
 	} catch (err) {
 		console.error(err)
