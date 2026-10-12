@@ -20,7 +20,7 @@
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5 sm:col-span-2">
-						<label for="name" class="text-xs font-medium text-text-muted block">Nombre</label>
+						<FieldLabel html-for="name" text="Nombre" required />
 						<InputTextCustom
 							id="name"
 							v-model="form.name"
@@ -34,9 +34,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="phone" class="text-xs font-medium text-text-muted block">
-							Teléfono <span class="font-normal">(opcional)</span>
-						</label>
+						<FieldLabel html-for="phone" text="Teléfono" />
 						<InputTextCustom
 							id="phone"
 							v-model="form.phone"
@@ -51,9 +49,7 @@
 					</div>
 
 					<div class="space-y-1.5">
-						<label for="email" class="text-xs font-medium text-text-muted block">
-							Correo <span class="font-normal">(opcional)</span>
-						</label>
+						<FieldLabel html-for="email" text="Correo" />
 						<InputTextCustom
 							id="email"
 							v-model="form.email"
@@ -95,6 +91,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCustomersStore } from '@/stores/customers'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
+import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 
 const route = useRoute()
 const router = useRouter()
