@@ -18,19 +18,32 @@
 		<template v-else-if="quote">
 			<!-- Header -->
 			<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
-				<div>
-					<div class="flex items-center gap-2">
-						<h1 class="font-serif text-xl text-primary">{{ quote.folio }}</h1>
-						<span
-							class="text-xs px-2 py-0.5 rounded"
-							:class="statusClasses(quote.status)"
-						>
-							{{ quote.status }}
-						</span>
+				<div class="flex items-start gap-3">
+					<!-- Volver en línea con el título (antes se perdía entre las acciones).
+					     Por debajo de lg solo la flecha. -->
+					<RouterLink
+						:to="{ name: 'quotes' }"
+						aria-label="Volver a cotizaciones"
+						title="Volver a cotizaciones"
+						class="shrink-0 inline-flex items-center justify-center gap-1.5 h-8 w-8 lg:w-auto lg:px-3 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text text-sm font-medium rounded-md transition-colors select-none"
+					>
+						<i class="ti ti-arrow-left text-base" aria-hidden="true"></i>
+						<span class="hidden lg:inline">Volver</span>
+					</RouterLink>
+					<div>
+						<div class="flex items-center gap-2">
+							<h1 class="font-serif text-xl text-primary">{{ quote.folio }}</h1>
+							<span
+								class="text-xs px-2 py-0.5 rounded"
+								:class="statusClasses(quote.status)"
+							>
+								{{ quote.status }}
+							</span>
+						</div>
+						<p class="text-sm text-text-muted mt-0.5">
+							Creada el {{ formatDate(quote.created_at) }}
+						</p>
 					</div>
-					<p class="text-sm text-text-muted mt-0.5">
-						Creada el {{ formatDate(quote.created_at) }}
-					</p>
 				</div>
 
 				<div class="flex flex-col items-end gap-1.5">
@@ -50,13 +63,6 @@
 							{{ cancelling ? "Cancelando…" : "Cancelar cotización" }}
 						</button>
 						<span class="hidden sm:block w-px h-6 bg-border" aria-hidden="true"></span>
-						<button
-							type="button"
-							@click="goBack"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
-						>
-							Volver
-						</button>
 						<button
 							type="button"
 							:disabled="!isEditable"
