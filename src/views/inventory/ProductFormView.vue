@@ -330,22 +330,104 @@
 						Colores
 					</h3>
 
-					<div class="space-y-3">
+					<!-- Tabla compacta: encabezado una vez y una fila delgada por color. Por
+					     debajo de sm cada fila apila sus 3 campos con su label visible; desde
+					     sm los labels pasan a sr-only (siguen asociados al input) y el
+					     encabezado de columnas toma su lugar. Header y filas comparten la
+					     misma estructura (grid de 3 columnas + hueco del botón) para alinear. -->
+					<div class="border border-border rounded-md overflow-hidden">
 						<div
-							v-for="(row, index) in colorRows"
-							:key="row.id"
-							class="border border-border rounded-md p-4"
+							class="hidden sm:flex items-center gap-2 bg-bg border-b border-border px-3 py-2"
+							aria-hidden="true"
 						>
-							<div class="flex items-center justify-between mb-3">
-								<span class="text-xs font-medium text-text-muted"
-								>Color {{ index + 1 }}</span
+							<div
+								class="flex-1 grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
+							>
+								<span>Color<span class="text-danger ml-0.5">*</span></span>
+								<span>Stock inicial (cajas)<span class="text-danger ml-0.5">*</span></span>
+								<span>Stock mínimo<span class="text-danger ml-0.5">*</span></span>
+							</div>
+							<span class="w-8 shrink-0"></span>
+						</div>
+
+						<div class="divide-y divide-border">
+							<div
+								v-for="row in colorRows"
+								:key="row.id"
+								class="flex items-start gap-2 px-3 py-3 sm:py-2"
+							>
+								<div
+									class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3"
 								>
+									<div class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`color-${row.id}`"
+											text="Color"
+											required
+											class="sm:sr-only"
+										/>
+										<InputTextCustom
+											:id="`color-${row.id}`"
+											v-model="row.color"
+											:error="row.errors.color"
+											placeholder="Ej. Blanco"
+											@input="row.errors.color = ''"
+										/>
+										<p v-if="row.errors.color" class="text-danger text-xs mt-1.5">
+											{{ row.errors.color }}
+										</p>
+									</div>
+
+									<div class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`stock_boxes-${row.id}`"
+											text="Stock inicial (cajas)"
+											required
+											class="sm:sr-only"
+										/>
+										<InputNumberCustom
+											:id="`stock_boxes-${row.id}`"
+											v-model="row.stock_boxes"
+											:error="row.errors.stock_boxes"
+											:min="0"
+											placeholder="0"
+											@input="row.errors.stock_boxes = ''"
+											:max-fraction-digits="0"
+										/>
+										<p v-if="row.errors.stock_boxes" class="text-danger text-xs mt-1.5">
+											{{ row.errors.stock_boxes }}
+										</p>
+									</div>
+
+									<div class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`minimum_stock-${row.id}`"
+											text="Stock mínimo"
+											required
+											class="sm:sr-only"
+										/>
+										<InputNumberCustom
+											:id="`minimum_stock-${row.id}`"
+											v-model="row.minimum_stock"
+											:error="row.errors.minimum_stock"
+											:min="0"
+											placeholder="0"
+											@input="row.errors.minimum_stock = ''"
+											:max-fraction-digits="0"
+										/>
+										<p v-if="row.errors.minimum_stock" class="text-danger text-xs mt-1.5">
+											{{ row.errors.minimum_stock }}
+										</p>
+									</div>
+								</div>
+
+								<!-- Mismo alto que los inputs para quedar centrado con ellos desde sm -->
 								<button
 									type="button"
 									@click="removeColorRow(row.id)"
 									:disabled="colorRows.length === 1 || deletingRowId === row.id"
-									class="text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors"
-									aria-label="Eliminar color"
+									class="w-8 h-[2.375rem] shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
+									:aria-label="row.color ? `Eliminar color ${row.color}` : 'Eliminar color'"
 									title="Eliminar color"
 								>
 									<svg
@@ -354,6 +436,7 @@
 										viewBox="0 0 24 24"
 										stroke="currentColor"
 										stroke-width="2"
+										aria-hidden="true"
 									>
 										<path
 											stroke-linecap="round"
@@ -362,75 +445,6 @@
 										/>
 									</svg>
 								</button>
-							</div>
-
-							<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-								<div class="space-y-1.5">
-									<FieldLabel
-										:html-for="`color-${row.id}`"
-										text="Color"
-										required
-									/>
-									<InputTextCustom
-										:id="`color-${row.id}`"
-										v-model="row.color"
-										:error="row.errors.color"
-										placeholder="Ej. Blanco"
-										@input="row.errors.color = ''"
-									/>
-									<p
-										v-if="row.errors.color"
-										class="text-danger text-[12px] mt-1.5"
-									>
-										{{ row.errors.color }}
-									</p>
-								</div>
-
-								<div class="space-y-1.5">
-									<FieldLabel
-										:html-for="`stock_boxes-${row.id}`"
-										text="Stock inicial (cajas)"
-										required
-									/>
-									<InputNumberCustom
-										:id="`stock_boxes-${row.id}`"
-										v-model="row.stock_boxes"
-										:error="row.errors.stock_boxes"
-										:min="0"
-										placeholder="0"
-										@input="row.errors.stock_boxes = ''"
-										:max-fraction-digits="0"
-									/>
-									<p
-										v-if="row.errors.stock_boxes"
-										class="text-danger text-[12px] mt-1.5"
-									>
-										{{ row.errors.stock_boxes }}
-									</p>
-								</div>
-
-								<div class="space-y-1.5">
-									<FieldLabel
-										:html-for="`minimum_stock-${row.id}`"
-										text="Stock mínimo"
-										required
-									/>
-									<InputNumberCustom
-										:id="`minimum_stock-${row.id}`"
-										v-model="row.minimum_stock"
-										:error="row.errors.minimum_stock"
-										:min="0"
-										placeholder="0"
-										@input="row.errors.minimum_stock = ''"
-										:max-fraction-digits="0"
-									/>
-									<p
-										v-if="row.errors.minimum_stock"
-										class="text-danger text-[12px] mt-1.5"
-									>
-										{{ row.errors.minimum_stock }}
-									</p>
-								</div>
 							</div>
 						</div>
 					</div>
