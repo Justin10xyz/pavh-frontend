@@ -40,6 +40,22 @@
 				</template>
 			</Column>
 
+			<!-- Editar abre el producto completo (todas sus medidas), así que vive
+			     en la fila del producto y no en cada grupo de medida. -->
+			<Column header="" body-class="w-px">
+				<template #body="{ data }">
+					<button
+						type="button"
+						@click="emit('edit-product', data.id)"
+						class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+						:aria-label="`Editar ${data.name}`"
+						title="Editar producto"
+					>
+						<i class="ti ti-pencil text-base"></i>
+					</button>
+				</template>
+			</Column>
+
 			<template #expansion="{ data }">
 				<div class="bg-bg px-2 sm:px-4 py-2 space-y-1.5">
 					<div
@@ -95,15 +111,6 @@
 								<span class="shrink-0 whitespace-nowrap text-text-muted"
 								>{{ group.variants.length }} colores</span
 								>
-							</button>
-							<button
-								type="button"
-								@click="emit('edit-product', data.id)"
-								class="group-header-edit"
-								aria-label="Editar producto"
-								title="Editar producto"
-							>
-								<i class="ti ti-pencil"></i>
 							</button>
 						</div>
 
@@ -309,30 +316,10 @@ button.toggle-btn {
 	text-align: left;
 }
 
-.group-header-edit {
-	display: flex;
-	align-items: center;
-	align-self: center;
-	flex-shrink: 0;
-	margin-right: 0.5rem;
-	padding: 0.375rem;
-	border-radius: 0.25rem;
-	color: var(--color-text-muted);
-	transition:
-		color 150ms ease,
-		background-color 150ms ease;
-}
 @media (min-width: 64rem) {
-	.group-header-edit {
-		padding: 0.25rem;
-	}
 	.group-header-toggle {
 		align-items: center;
 	}
-}
-.group-header-edit:hover {
-	background: var(--color-border);
-	color: var(--color-accent);
 }
 
 .spec-badge {
