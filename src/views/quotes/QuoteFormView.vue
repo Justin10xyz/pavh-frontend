@@ -236,12 +236,39 @@
 				</button>
 			</div>
 		</form>
+
+		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
+			<template #container="{ message, acceptCallback, rejectCallback }">
+				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+					<h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
+					<p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+					<div class="flex items-center justify-end gap-3">
+						<button
+							type="button"
+							@click="rejectCallback"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Seguir editando
+						</button>
+						<button
+							type="button"
+							@click="acceptCallback"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Descartar cambios
+						</button>
+					</div>
+				</div>
+			</template>
+		</ConfirmDialog>
 	</div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import ConfirmDialog from 'primevue/confirmdialog'
+import { useConfirm } from 'primevue/useconfirm'
 import { useInventoryStore } from '@/stores/inventory'
 import { useSimpleProductsStore } from '@/stores/simpleProducts'
 import { useCatalogsStore } from '@/stores/catalogs'
@@ -260,6 +287,7 @@ const simpleProducts = useSimpleProductsStore()
 const catalogs = useCatalogsStore()
 const quotes = useQuotesStore()
 const notify = useNotify()
+const confirm = useConfirm()
 
 // Modo edición cuando la ruta trae :id (quotes.edit); sin :id es creación.
 const quoteId = computed(() => route.params.id ?? null)
@@ -314,6 +342,7 @@ async function loadQuote() {
 		quantity: Number(item.quantity),
 	}))
 	lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()]
+	savedSnapshot.value = serializeForm()
 }
 
 const form = reactive({
@@ -333,6 +362,49 @@ function createEmptyLine() {
 }
 
 const lines = ref([createEmptyLine()])
+
+// Cambios sin guardar: se compara contra una foto del form tomada al iniciar
+// (creación) o al terminar de cargar la cotización (edición). Solo cuenta lo
+// que se envía al backend; una línea vacía agregada y sin usar no es un cambio.
+function serializeForm() {
+	return JSON.stringify({
+		customer_id: form.customer_id || null,
+		notes: form.notes || null,
+		lines: lines.value
+			.filter((l) => l.variant || l.simpleProduct)
+			.map((l) => [l.variant?.id ?? null, l.simpleProduct?.id ?? null, l.quantity ?? null]),
+	})
+}
+
+const savedSnapshot = ref(serializeForm())
+const isDirty = computed(() => serializeForm() !== savedSnapshot.value)
+// Tras guardar se navega fuera del form sin pasar por la confirmación.
+let skipLeaveGuard = false
+
+onBeforeRouteLeave(() => {
+	if (skipLeaveGuard || !isDirty.value) return true
+
+	return new Promise((resolve) => {
+		confirm.require({
+			header: 'Descartar cambios',
+			message: 'Hay cambios sin guardar en esta cotización. Si sales ahora, se perderán.',
+			accept: () => resolve(true),
+			reject: () => resolve(false),
+			onHide: () => resolve(false),
+		})
+	})
+})
+
+// Cerrar/recargar la pestaña no pasa por el router: el navegador muestra su
+// propio aviso genérico (no se puede personalizar el texto).
+function handleBeforeUnload(event) {
+	if (!isDirty.value) return
+	event.preventDefault()
+	event.returnValue = ''
+}
+
+window.addEventListener('beforeunload', handleBeforeUnload)
+onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
 const mergedRowId = ref(null)
 let mergeTimeoutHandle = null
 
@@ -475,11 +547,13 @@ const handleSubmit = async () => {
 
 		if (isEdit.value) {
 			const updated = await quotes.updateQuote(quoteId.value, payload)
+			skipLeaveGuard = true
 			notify.success(`Cotización ${updated.folio} actualizada`)
 			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
 		} else {
 			// Al detalle, no al listado: lo siguiente suele ser descargar o compartir el PDF.
 			const created = await quotes.createQuote(payload)
+			skipLeaveGuard = true
 			notify.success(`Cotización ${created.folio} guardada`)
 			router.push({ name: 'quotes.show', params: { id: created.id } })
 		}
