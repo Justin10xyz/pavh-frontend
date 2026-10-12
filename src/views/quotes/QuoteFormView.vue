@@ -53,9 +53,10 @@
 						aria-hidden="true"
 					>
 						<div
-							class="flex-1 grid grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
+							class="flex-1 grid grid-cols-[minmax(0,2.2fr)_repeat(4,minmax(0,1fr))] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
 						>
 							<span>Producto<span class="text-danger ml-0.5">*</span></span>
+							<span>m² requeridos</span>
 							<span>Cantidad<span class="text-danger ml-0.5">*</span></span>
 							<span>Precio unitario</span>
 							<span class="text-right">Subtotal</span>
@@ -83,7 +84,7 @@
 
 								<div
 									v-else
-									class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3"
+									class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2.2fr)_repeat(4,minmax(0,1fr))] gap-3"
 								>
 									<!-- Producto: nombre + detalle en dos renglones, "Cambiar" en línea -->
 									<div class="min-w-0 sm:min-h-[2.375rem] flex flex-col justify-center">
@@ -125,14 +126,39 @@
 										<p v-if="mergedRowId === row.id" class="text-xs text-success mt-0.5">
 											Cantidad fusionada con esta línea existente.
 										</p>
+										<p v-if="boxConversionError(row)" class="text-danger text-xs mt-0.5">
+											{{ boxConversionError(row) }}
+										</p>
 									</div>
 
-									<!-- Cantidad: la unidad va como sufijo del input; en variantes, el
-									     equivalente en cajas debajo -->
+									<!-- m² que pide el cliente (opcional, solo variantes): sugieren las
+									     cajas con ceil. No se envían al backend: la cantidad real son las
+									     cajas, que se pueden ajustar después (ej. una de más por merma). -->
+									<div v-if="row.variant" class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`requested-${row.id}`"
+											text="m² requeridos"
+											class="sm:sr-only"
+										/>
+										<InputNumberCustom
+											:id="`requested-${row.id}`"
+											:model-value="row.requestedM2"
+											:min="0"
+											placeholder="Opcional"
+											suffix=" m²"
+											:max-fraction-digits="2"
+											:disabled="!row.variant.m2_per_box"
+											@update:model-value="(value) => applyRequestedM2(row, value)"
+										/>
+									</div>
+									<div v-else class="hidden sm:block" aria-hidden="true"></div>
+
+									<!-- Cantidad en la unidad física de stock: cajas completas (variante) o
+									     unidades (simple). En variantes, debajo los m² que cubren esas cajas. -->
 									<div class="space-y-1.5 sm:space-y-0">
 										<FieldLabel
 											:html-for="`quantity-${row.id}`"
-											:text="row.variant ? 'Cantidad (m²)' : 'Cantidad (unidades)'"
+											:text="row.variant ? 'Cajas' : 'Cantidad (unidades)'"
 											required
 											class="sm:sr-only"
 										/>
@@ -140,10 +166,10 @@
 											v-if="row.variant"
 											:id="`quantity-${row.id}`"
 											v-model="row.quantity"
-											:min="0.01"
-											placeholder="0.00 m²"
-											suffix=" m²"
-											:max-fraction-digits="2"
+											:min="1"
+											placeholder="0 cj"
+											suffix=" cj"
+											:max-fraction-digits="0"
 											:error="quantityError(row)"
 										/>
 										<InputNumberCustom
@@ -157,8 +183,13 @@
 											:error="quantityError(row)"
 										/>
 										<p v-if="quantityError(row)" class="text-danger text-xs mt-1.5">{{ quantityError(row) }}</p>
-										<p v-else-if="row.variant" class="text-xs text-text-muted mt-1">
-											{{ boxesFor(row) === null ? 'Sin equivalencia en cajas' : `${boxesFor(row)} ${boxesFor(row) === 1 ? 'caja' : 'cajas'}` }}
+										<p
+											v-else-if="row.variant && coveredM2(row) !== null"
+											class="text-xs mt-1 tabular-nums"
+											:class="coversRequested(row) ? 'text-text-muted' : 'text-amber-700'"
+										>
+											{{ formatQuantity(coveredM2(row)) }} m²<template v-if="!coversRequested(row)">
+												· no cubre {{ formatQuantity(row.requestedM2) }}</template>
 										</p>
 									</div>
 
@@ -297,6 +328,7 @@ import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatQuantity } from '@/lib/formatQuantity'
+import { boxesForSquareMeters, squareMetersForBoxes } from '@/lib/boxes'
 import { useNotify } from '@/composables/useNotify'
 
 const route = useRoute()
@@ -358,7 +390,9 @@ async function loadQuote() {
 			? { ...item.product_variant, type: 'variant', lineName: item.product_variant.product?.name }
 			: null,
 		simpleProduct: item.simple_product ? { ...item.simple_product, type: 'simple' } : null,
-		quantity: Number(item.quantity),
+		// Variante: sus cajas (null en líneas previas al cambio a cajas sin
+		// m2_per_box; se piden al guardar). Los m² requeridos no se guardan.
+		quantity: item.product_variant_id ? item.boxes : Number(item.quantity),
 	}))
 	lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()]
 	savedSnapshot.value = serializeForm()
@@ -371,12 +405,15 @@ const form = reactive({
 
 // Una línea lleva `variant` O `simpleProduct`, nunca ambos — refleja el arco
 // exclusivo product_variant_id / simple_product_id del backend.
+// `quantity` va en la unidad física de stock: cajas completas (variante) o
+// unidades (simple). `requestedM2` es solo ayuda de captura para variantes.
 function createEmptyLine() {
 	return {
 		id: crypto.randomUUID(),
 		variant: null,
 		simpleProduct: null,
 		quantity: null,
+		requestedM2: null,
 	}
 }
 
@@ -471,10 +508,12 @@ function selectProductForRow(row, option) {
 	row.variant = isSimple ? null : option
 	row.simpleProduct = isSimple ? option : null
 
-	// Al "Cambiar" de una variante (m², fraccionaria) a un producto simple, una
-	// cantidad no entera se descarta: el backend rechaza fraccionarios en simples.
-	const keepsQuantity = row.quantity > 0 && (!isSimple || Number.isInteger(row.quantity))
-	row.quantity = keepsQuantity ? row.quantity : 1
+	// Cajas y unidades son enteras: al "Cambiar" se conserva la cantidad. Los m²
+	// requeridos solo aplican a variantes; con otra variante (otro m² por caja)
+	// se recalculan las cajas.
+	row.quantity = row.quantity > 0 ? row.quantity : 1
+	if (isSimple) row.requestedM2 = null
+	else if (row.requestedM2 > 0) applyRequestedM2(row, row.requestedM2)
 }
 
 // Datos vivos del producto simple (precio, stock, categoría) desde el store; si
@@ -488,9 +527,32 @@ function simpleProductCategoryName(row) {
 	return catalogs.categories.find((c) => c.id === categoryId)?.name ?? ''
 }
 
-function boxesFor(row) {
-	if (!row.variant?.m2_per_box) return null
-	return Math.ceil((row.quantity || 0) / row.variant.m2_per_box)
+// La cantidad de una línea de variante son sus cajas (row.quantity); estos son
+// los m² que cubren, sobre los que se cobra el precio por m².
+function coveredM2(row) {
+	return squareMetersForBoxes(row.quantity || 0, row.variant?.m2_per_box)
+}
+
+// Solo UX: las cajas se pueden bajar a mano por debajo de lo requerido, y se avisa.
+function coversRequested(row) {
+	if (!(row.requestedM2 > 0)) return true
+	const covered = coveredM2(row)
+	return covered === null || covered >= row.requestedM2
+}
+
+// Los m² requeridos sugieren las cajas (hacia arriba); borrarlos no toca las
+// cajas ya capturadas.
+function applyRequestedM2(row, value) {
+	row.requestedM2 = value
+	const boxes = value > 0 ? boxesForSquareMeters(value, row.variant?.m2_per_box) : null
+	if (boxes) row.quantity = boxes
+}
+
+// Sin m2_per_box no se sabe qué cubren las cajas: el backend rechaza la línea
+// (nunca asume 1:1). Se avisa desde que se elige, no hasta guardar.
+function boxConversionError(row) {
+	if (!row.variant || Number(row.variant.m2_per_box) > 0) return ''
+	return 'Esta variante no tiene m² por caja configurado; no se puede cotizar.'
 }
 
 function hasInsufficientStock(row) {
@@ -500,9 +562,7 @@ function hasInsufficientStock(row) {
 		return (row.quantity || 0) > stock
 	}
 
-	const boxes = boxesFor(row)
-	if (boxes === null) return false
-	return boxes > (row.variant.stock_boxes ?? 0)
+	return (row.quantity || 0) > (row.variant.stock_boxes ?? 0)
 }
 
 // Es un aviso, no un error: la cotización se puede guardar igual (el stock se
@@ -514,13 +574,13 @@ function stockWarning(row) {
 	}
 
 	const stock = row.variant.stock_boxes ?? 0
-	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se requieren ${boxesFor(row)}. Consultar disponibilidad sobre pedido.`
+	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se cotizan ${row.quantity}. Consultar disponibilidad sobre pedido.`
 }
 
 function lineSubtotal(row) {
 	if (!row.quantity) return 0
 	if (row.simpleProduct) return row.quantity * simpleProductFor(row).price
-	if (row.variant) return row.quantity * row.variant.price_per_m2
+	if (row.variant) return (coveredM2(row) ?? 0) * row.variant.price_per_m2
 	return 0
 }
 
@@ -544,7 +604,7 @@ function hasProduct(row) {
 
 function quantityError(row) {
 	if (!submitAttempted.value || !hasProduct(row) || row.quantity > 0) return ''
-	return 'Captura la cantidad.'
+	return row.variant ? 'Captura las cajas.' : 'Captura la cantidad.'
 }
 
 const handleSubmit = async () => {
@@ -556,6 +616,11 @@ const handleSubmit = async () => {
 	// agregadas con "+ Agregar producto" que no se llegaron a usar.
 	if (lines.value.some((l) => quantityError(l))) {
 		generalError.value = 'Hay productos sin cantidad. Captúrala o quita la línea.'
+		return
+	}
+
+	if (lines.value.some((l) => boxConversionError(l))) {
+		generalError.value = 'Hay variantes sin m² por caja configurado. Quítalas o corrígelas en Inventario.'
 		return
 	}
 
@@ -573,7 +638,7 @@ const handleSubmit = async () => {
 			notes: form.notes || null,
 			items: validLines.map((l) => (l.simpleProduct
 				? { simple_product_id: l.simpleProduct.id, quantity: l.quantity }
-				: { product_variant_id: l.variant.id, quantity: l.quantity })),
+				: { product_variant_id: l.variant.id, boxes: l.quantity })),
 		}
 
 		if (isEdit.value) {

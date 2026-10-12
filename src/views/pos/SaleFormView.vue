@@ -58,9 +58,10 @@
 						aria-hidden="true"
 					>
 						<div
-							class="flex-1 grid grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
+							class="flex-1 grid grid-cols-[minmax(0,2.2fr)_repeat(4,minmax(0,1fr))] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
 						>
 							<span>Producto<span class="text-danger ml-0.5">*</span></span>
+							<span>m² requeridos</span>
 							<span>Cantidad<span class="text-danger ml-0.5">*</span></span>
 							<span>Precio unitario<span class="text-danger ml-0.5">*</span></span>
 							<span class="text-right">Subtotal</span>
@@ -88,7 +89,7 @@
 
 								<div
 									v-else
-									class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3"
+									class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2.2fr)_repeat(4,minmax(0,1fr))] gap-3"
 								>
 									<!-- Producto: nombre + detalle en dos renglones, "Cambiar" en línea -->
 									<div class="min-w-0 sm:min-h-[2.375rem] flex flex-col justify-center">
@@ -130,14 +131,39 @@
 										<p v-if="mergedRowId === row.id" class="text-xs text-success mt-0.5">
 											Cantidad fusionada con esta línea existente.
 										</p>
+										<p v-if="boxConversionError(row)" class="text-danger text-xs mt-0.5">
+											{{ boxConversionError(row) }}
+										</p>
 									</div>
 
-									<!-- Cantidad: la unidad va como sufijo del input; en variantes, el
-									     equivalente en cajas debajo -->
+									<!-- m² que pide el cliente (opcional, solo variantes): sugieren las
+									     cajas con ceil. No se envían al backend: la cantidad real son las
+									     cajas, que se pueden ajustar después (ej. una de más por merma). -->
+									<div v-if="row.variant" class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`requested-${row.id}`"
+											text="m² requeridos"
+											class="sm:sr-only"
+										/>
+										<InputNumberCustom
+											:id="`requested-${row.id}`"
+											:model-value="row.requestedM2"
+											:min="0"
+											placeholder="Opcional"
+											suffix=" m²"
+											:max-fraction-digits="2"
+											:disabled="!row.variant.m2_per_box"
+											@update:model-value="(value) => applyRequestedM2(row, value)"
+										/>
+									</div>
+									<div v-else class="hidden sm:block" aria-hidden="true"></div>
+
+									<!-- Cantidad en la unidad física de stock: cajas completas (variante) o
+									     unidades (simple). En variantes, debajo los m² que cubren esas cajas. -->
 									<div class="space-y-1.5 sm:space-y-0">
 										<FieldLabel
 											:html-for="`quantity-${row.id}`"
-											:text="row.variant ? 'Cantidad (m²)' : 'Cantidad (unidades)'"
+											:text="row.variant ? 'Cajas' : 'Cantidad (unidades)'"
 											required
 											class="sm:sr-only"
 										/>
@@ -145,10 +171,10 @@
 											v-if="row.variant"
 											:id="`quantity-${row.id}`"
 											v-model="row.quantity"
-											:min="0.01"
-											placeholder="0.00 m²"
-											suffix=" m²"
-											:max-fraction-digits="2"
+											:min="1"
+											placeholder="0 cj"
+											suffix=" cj"
+											:max-fraction-digits="0"
 											:error="quantityError(row)"
 										/>
 										<InputNumberCustom
@@ -162,8 +188,13 @@
 											:error="quantityError(row)"
 										/>
 										<p v-if="quantityError(row)" class="text-danger text-xs mt-1.5">{{ quantityError(row) }}</p>
-										<p v-else-if="row.variant" class="text-xs text-text-muted mt-1">
-											{{ boxesFor(row) === null ? 'Sin equivalencia en cajas' : `${boxesFor(row)} ${boxesFor(row) === 1 ? 'caja' : 'cajas'}` }}
+										<p
+											v-else-if="row.variant && coveredM2(row) !== null"
+											class="text-xs mt-1 tabular-nums"
+											:class="coversRequested(row) ? 'text-text-muted' : 'text-amber-700'"
+										>
+											{{ formatQuantity(coveredM2(row)) }} m²<template v-if="!coversRequested(row)">
+												· no cubre {{ formatQuantity(row.requestedM2) }}</template>
 										</p>
 									</div>
 
@@ -314,6 +345,7 @@ import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 import { useNotify } from '@/composables/useNotify'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatQuantity } from '@/lib/formatQuantity'
+import { boxesForSquareMeters, squareMetersForBoxes } from '@/lib/boxes'
 
 const route = useRoute()
 const router = useRouter()
@@ -425,7 +457,9 @@ function resolveConversionLines(items) {
 	for (const item of items) {
 		const line = {
 			...createEmptyLine(),
-			quantity: Number(item.quantity),
+			// Variante: las cajas cotizadas (null en líneas previas al cambio a
+			// cajas sin m2_per_box; se piden al registrar). Simple: unidades.
+			quantity: item.product_variant_id ? item.boxes : Number(item.quantity),
 			unit_price: Number(item.unit_price),
 		}
 
@@ -488,7 +522,10 @@ function createEmptyLine() {
 		id: crypto.randomUUID(),
 		variant: null,
 		simpleProduct: null,
+		// Unidad física de stock: cajas completas (variante) o unidades (simple).
+		// `requestedM2` es solo ayuda de captura para variantes; no se envía.
 		quantity: null,
+		requestedM2: null,
 		unit_price: null,
 	}
 }
@@ -588,10 +625,12 @@ function selectProductForRow(row, option) {
 	row.variant = isSimple ? null : option
 	row.simpleProduct = isSimple ? option : null
 
-	// Al "Cambiar" de una variante (m², fraccionaria) a un producto simple, una
-	// cantidad no entera se descarta: el backend rechaza fraccionarios en simples.
-	const keepsQuantity = row.quantity > 0 && (!isSimple || Number.isInteger(row.quantity))
-	row.quantity = keepsQuantity ? row.quantity : 1
+	// Cajas y unidades son enteras: al "Cambiar" se conserva la cantidad. Los m²
+	// requeridos solo aplican a variantes; con otra variante (otro m² por caja)
+	// se recalculan las cajas.
+	row.quantity = row.quantity > 0 ? row.quantity : 1
+	if (isSimple) row.requestedM2 = null
+	else if (row.requestedM2 > 0) applyRequestedM2(row, row.requestedM2)
 
 	// En venta el backend sí acepta unit_price del cliente: se precarga con el
 	// precio de lista (por m² o por unidad) como valor inicial editable.
@@ -609,9 +648,32 @@ function simpleProductCategoryName(row) {
 	return catalogs.categories.find((c) => c.id === categoryId)?.name ?? ''
 }
 
-function boxesFor(row) {
-	if (!row.variant?.m2_per_box) return null
-	return Math.ceil((row.quantity || 0) / row.variant.m2_per_box)
+// La cantidad de una línea de variante son sus cajas (row.quantity); estos son
+// los m² que cubren, sobre los que se cobra el precio por m².
+function coveredM2(row) {
+	return squareMetersForBoxes(row.quantity || 0, row.variant?.m2_per_box)
+}
+
+// Solo UX: las cajas se pueden bajar a mano por debajo de lo requerido, y se avisa.
+function coversRequested(row) {
+	if (!(row.requestedM2 > 0)) return true
+	const covered = coveredM2(row)
+	return covered === null || covered >= row.requestedM2
+}
+
+// Los m² requeridos sugieren las cajas (hacia arriba); borrarlos no toca las
+// cajas ya capturadas.
+function applyRequestedM2(row, value) {
+	row.requestedM2 = value
+	const boxes = value > 0 ? boxesForSquareMeters(value, row.variant?.m2_per_box) : null
+	if (boxes) row.quantity = boxes
+}
+
+// Sin m2_per_box no se sabe qué cubren las cajas: el backend rechaza la línea
+// (nunca asume 1:1). Se avisa desde que se elige, no hasta guardar.
+function boxConversionError(row) {
+	if (!row.variant || Number(row.variant.m2_per_box) > 0) return ''
+	return 'Esta variante no tiene m² por caja configurado; no se puede vender.'
 }
 
 // Solo UX: el guard real es hasSufficientStock() de ProductVariant/SimpleProduct
@@ -623,9 +685,7 @@ function hasInsufficientStock(row) {
 		return (row.quantity || 0) > stock
 	}
 
-	const boxes = boxesFor(row)
-	if (boxes === null) return false
-	return boxes > variantStock(row)
+	return (row.quantity || 0) > variantStock(row)
 }
 
 // Stock "en vivo" desde el store de Inventario: la variante de la línea es una
@@ -643,7 +703,7 @@ function stockError(row) {
 	}
 
 	const stock = variantStock(row)
-	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se requieren ${boxesFor(row)}. La venta no podrá registrarse con esta cantidad.`
+	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se requieren ${row.quantity}. La venta no podrá registrarse con esta cantidad.`
 }
 
 // Precio de lista por m² (variante) o por unidad (simple), el mismo con el que
@@ -660,6 +720,8 @@ function priceDiffersFromList(row) {
 
 function lineSubtotal(row) {
 	if (!(row.variant || row.simpleProduct) || !row.quantity || !row.unit_price) return 0
+	// Variante: precio por m² sobre los m² que cubren las cajas
+	if (row.variant) return (coveredM2(row) ?? 0) * row.unit_price
 	return row.quantity * row.unit_price
 }
 
@@ -680,7 +742,7 @@ function hasProduct(row) {
 
 function quantityError(row) {
 	if (!submitAttempted.value || !hasProduct(row) || row.quantity > 0) return ''
-	return 'Captura la cantidad.'
+	return row.variant ? 'Captura las cajas.' : 'Captura la cantidad.'
 }
 
 // StoreSaleRequest exige unit_price >= 0.01; sin esto el 422 llegaba como un
@@ -691,7 +753,7 @@ function priceError(row) {
 }
 
 // SaleResource no regresa el stock restante: se recalcula localmente con el
-// mismo criterio que SaleController@store (ceil(m² / m2_per_box), sumado por
+// mismo criterio que SaleController@store (las cajas de cada línea, sumadas por
 // variante) y la misma regla de low_stock que ProductVariantResource. Si el
 // inventario no está cargado no hay nada que sincronizar.
 function syncInventoryStock(items) {
@@ -703,10 +765,10 @@ function syncInventoryStock(items) {
 	for (const item of items) {
 		if (!item.product_variant_id) continue
 		const variant = findInventoryVariant(item.product_variant_id)
-		if (!variant?.m2_per_box) continue
+		if (!variant) continue
 
 		variantsById.set(variant.id, variant)
-		const boxesNeeded = Math.ceil(item.quantity / Number(variant.m2_per_box))
+		const boxesNeeded = item.boxes
 		boxesNeededByVariant.set(variant.id, (boxesNeededByVariant.get(variant.id) ?? 0) + boxesNeeded)
 	}
 
@@ -773,6 +835,11 @@ const handleSubmit = async () => {
 		return
 	}
 
+	if (lines.value.some((l) => boxConversionError(l))) {
+		generalError.value = 'Hay variantes sin m² por caja configurado. Quítalas o corrígelas en Inventario.'
+		return
+	}
+
 	const validLines = lines.value.filter(hasProduct)
 	if (validLines.length === 0) {
 		generalError.value = 'Agrega al menos un producto con cantidad mayor a cero.'
@@ -786,8 +853,10 @@ const handleSubmit = async () => {
 			customer_id: form.customer_id || null,
 			...(quoteId.value ? { quote_id: Number(quoteId.value) } : {}),
 			items: validLines.map((l) => ({
-				...(l.simpleProduct ? { simple_product_id: l.simpleProduct.id } : { product_variant_id: l.variant.id }),
-				quantity: l.quantity,
+				// Variante: cajas (los m² los deriva el backend). Simple: unidades.
+				...(l.simpleProduct
+					? { simple_product_id: l.simpleProduct.id, quantity: l.quantity }
+					: { product_variant_id: l.variant.id, boxes: l.quantity }),
 				unit_price: l.unit_price,
 			})),
 		}
