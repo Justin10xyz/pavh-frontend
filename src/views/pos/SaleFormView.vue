@@ -267,12 +267,39 @@
 				</button>
 			</div>
 		</form>
+
+		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
+			<template #container="{ message, acceptCallback, rejectCallback }">
+				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+					<h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
+					<p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+					<div class="flex items-center justify-end gap-3">
+						<button
+							type="button"
+							@click="rejectCallback"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Seguir editando
+						</button>
+						<button
+							type="button"
+							@click="acceptCallback"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Descartar venta
+						</button>
+					</div>
+				</div>
+			</template>
+		</ConfirmDialog>
 	</div>
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
+import ConfirmDialog from 'primevue/confirmdialog'
+import { useConfirm } from 'primevue/useconfirm'
 import axios from '@/lib/axios'
 import { useInventoryStore } from '@/stores/inventory'
 import { useSimpleProductsStore } from '@/stores/simpleProducts'
@@ -295,6 +322,7 @@ const inventory = useInventoryStore()
 const simpleProducts = useSimpleProductsStore()
 const catalogs = useCatalogsStore()
 const notify = useNotify()
+const confirm = useConfirm()
 
 // Precio de lista, stock y categoría de las líneas simples salen de estos
 // stores (cacheados vía `initialized`); ProductAutocomplete también los carga,
@@ -373,6 +401,9 @@ async function loadConversion() {
 
 		form.customer_id = data.data.customer_id ?? ''
 		lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()]
+		// Lo prellenado desde la cotización no cuenta como cambio; solo lo que
+		// se ajuste después.
+		savedSnapshot.value = serializeForm()
 	} catch (err) {
 		console.error(err)
 		// 422 de QuoteController@convert (cotización ya convertida, o variantes
@@ -462,6 +493,54 @@ function createEmptyLine() {
 }
 
 const lines = ref([createEmptyLine()])
+
+// Cambios sin registrar (mismo patrón que QuoteFormView): se compara contra una
+// foto del form tomada al iniciar, al terminar de prellenar una conversión y
+// al limpiar tras registrar. Solo cuenta lo que se envía al backend; una línea
+// vacía agregada y sin usar no es un cambio.
+function serializeForm() {
+	return JSON.stringify({
+		customer_id: form.customer_id || null,
+		lines: lines.value
+			.filter((l) => l.variant || l.simpleProduct)
+			.map((l) => [l.variant?.id ?? null, l.simpleProduct?.id ?? null, l.quantity ?? null, l.unit_price ?? null]),
+	})
+}
+
+const savedSnapshot = ref(serializeForm())
+const isDirty = computed(() => serializeForm() !== savedSnapshot.value)
+// Tras registrar una conversión se navega fuera del form sin pasar por la confirmación.
+let skipLeaveGuard = false
+
+function confirmDiscard() {
+	if (skipLeaveGuard || !isDirty.value) return true
+
+	return new Promise((resolve) => {
+		confirm.require({
+			header: 'Descartar venta',
+			message: 'Hay una venta capturada sin registrar. Si sales ahora, se perderá.',
+			accept: () => resolve(true),
+			reject: () => resolve(false),
+			onHide: () => resolve(false),
+		})
+	})
+}
+
+onBeforeRouteLeave(confirmDiscard)
+// Mismo componente con otro query (ej. de "Convertir a venta" a "Nueva venta"
+// desde el sidebar): no es un leave, pero el watch de quoteId limpia el form.
+onBeforeRouteUpdate(confirmDiscard)
+
+// Cerrar/recargar la pestaña no pasa por el router: el navegador muestra su
+// propio aviso genérico (no se puede personalizar el texto).
+function handleBeforeUnload(event) {
+	if (!isDirty.value) return
+	event.preventDefault()
+	event.returnValue = ''
+}
+
+window.addEventListener('beforeunload', handleBeforeUnload)
+onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
 const mergedRowId = ref(null)
 let mergeTimeoutHandle = null
 
@@ -653,6 +732,7 @@ function resetForm() {
 	lines.value = [createEmptyLine()]
 	mergedRowId.value = null
 	submitAttempted.value = false
+	savedSnapshot.value = serializeForm()
 }
 
 const handleSubmit = async () => {
@@ -695,6 +775,7 @@ const handleSubmit = async () => {
 		// El listado cacheado no se refetchea, así que se actualiza in-place.
 		if (quoteId.value) {
 			quotes.markQuoteConverted(quoteId.value)
+			skipLeaveGuard = true
 			notify.success(`Venta ${sale.folio} registrada`, 'La cotización quedó como Convertida.')
 			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
 			return
