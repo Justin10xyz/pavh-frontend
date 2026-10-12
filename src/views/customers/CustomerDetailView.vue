@@ -98,77 +98,117 @@
 
 				<!-- Historial: cotizaciones -->
 				<div class="bg-surface border border-border rounded-md overflow-hidden">
-					<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4">Cotizaciones</h2>
+					<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 sm:px-6 pt-5 sm:pt-6 mb-4">
+						<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted">Cotizaciones</h2>
+						<p v-if="quotes.length > 0" class="text-sm text-text-muted">
+							{{ quotes.length }} {{ quotes.length === 1 ? 'cotización' : 'cotizaciones' }}
+						</p>
+					</div>
 
 					<p v-if="quotesLoading && quotes.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Cargando cotizaciones…</p>
 					<p v-else-if="quotesError" class="text-danger text-sm px-5 sm:px-6 pb-5 sm:pb-6">{{ quotesError }}</p>
 					<p v-else-if="quotes.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Este cliente no tiene cotizaciones.</p>
 
-					<div v-else class="overflow-x-auto">
-						<table class="history-table">
-							<thead>
-								<tr>
-									<th>Folio</th>
-									<th>Fecha</th>
-									<th>Status</th>
-									<th class="text-right">Total</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr v-for="quote in quotes" :key="quote.id">
-									<td>
-										<RouterLink
-											:to="{ name: 'quotes.show', params: { id: quote.id } }"
-											class="font-medium text-text hover:text-accent transition-colors"
-										>
-											{{ quote.folio }}
-										</RouterLink>
-									</td>
-									<td class="text-text-muted">{{ formatDateTime(quote.created_at) }}</td>
-									<td>
-										<span class="text-[10px] px-2 py-0.5 rounded" :class="statusClasses(quote.status)">
-											{{ quote.status }}
-										</span>
-									</td>
-									<td class="text-right text-text">{{ formatCurrency(quote.total) }}</td>
-								</tr>
-							</tbody>
-						</table>
+					<div v-else class="overflow-x-auto border-t border-border">
+						<DataTable
+							:value="quotes"
+							dataKey="id"
+							class="data-table"
+							:row-class="() => 'cursor-pointer'"
+							@row-click="({ originalEvent, data }) => openRow(originalEvent, { name: 'quotes.show', params: { id: data.id } })"
+						>
+							<Column header="Folio" header-class="pl-5 sm:pl-6" body-class="pl-5 sm:pl-6 whitespace-nowrap">
+								<template #body="{ data }">
+									<RouterLink
+										:to="{ name: 'quotes.show', params: { id: data.id } }"
+										class="font-medium text-text hover:text-accent transition-colors"
+									>
+										{{ data.folio }}
+									</RouterLink>
+									<!-- Sin columna Fecha por debajo de sm: va debajo del folio -->
+									<span class="block sm:hidden text-xs text-text-muted">{{ formatDateTime(data.created_at) }}</span>
+								</template>
+							</Column>
+
+							<Column
+								header="Fecha"
+								header-class="hidden sm:table-cell"
+								body-class="hidden sm:table-cell whitespace-nowrap"
+							>
+								<template #body="{ data }">
+									<span class="text-text-muted">{{ formatDateTime(data.created_at) }}</span>
+								</template>
+							</Column>
+
+							<Column header="Status">
+								<template #body="{ data }">
+									<span class="text-xs px-2 py-0.5 rounded" :class="statusClasses(data.status)">
+										{{ data.status }}
+									</span>
+								</template>
+							</Column>
+
+							<Column header="Total" header-class="text-right! pr-5 sm:pr-6" body-class="text-right whitespace-nowrap pr-5 sm:pr-6">
+								<template #body="{ data }">
+									<span class="text-text tabular-nums">{{ formatCurrency(data.total) }}</span>
+								</template>
+							</Column>
+						</DataTable>
 					</div>
 				</div>
 
 				<!-- Historial: ventas -->
 				<div class="bg-surface border border-border rounded-md overflow-hidden">
-					<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4">Ventas</h2>
+					<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 sm:px-6 pt-5 sm:pt-6 mb-4">
+						<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted">Ventas</h2>
+						<!-- Lo que el cliente ha comprado en total -->
+						<p v-if="sales.length > 0" class="text-sm text-text-muted">
+							{{ sales.length }} {{ sales.length === 1 ? 'venta' : 'ventas' }}
+							<span aria-hidden="true">·</span>
+							Total <span class="font-semibold text-primary tabular-nums">{{ formatCurrency(salesTotal) }}</span>
+						</p>
+					</div>
 
 					<p v-if="salesLoading && sales.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Cargando ventas…</p>
 					<p v-else-if="salesError" class="text-danger text-sm px-5 sm:px-6 pb-5 sm:pb-6">{{ salesError }}</p>
 					<p v-else-if="sales.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Este cliente no tiene ventas.</p>
 
-					<div v-else class="overflow-x-auto">
-						<table class="history-table">
-							<thead>
-								<tr>
-									<th>Folio</th>
-									<th>Fecha</th>
-									<th class="text-right">Total</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr v-for="sale in sales" :key="sale.id">
-									<td>
-										<RouterLink
-											:to="{ name: 'pos.sales.show', params: { id: sale.id } }"
-											class="font-medium text-text hover:text-accent transition-colors"
-										>
-											{{ sale.folio }}
-										</RouterLink>
-									</td>
-									<td class="text-text-muted">{{ formatDateTime(sale.created_at) }}</td>
-									<td class="text-right text-text">{{ formatCurrency(sale.total) }}</td>
-								</tr>
-							</tbody>
-						</table>
+					<div v-else class="overflow-x-auto border-t border-border">
+						<DataTable
+							:value="sales"
+							dataKey="id"
+							class="data-table"
+							:row-class="() => 'cursor-pointer'"
+							@row-click="({ originalEvent, data }) => openRow(originalEvent, { name: 'pos.sales.show', params: { id: data.id } })"
+						>
+							<Column header="Folio" header-class="pl-5 sm:pl-6" body-class="pl-5 sm:pl-6 whitespace-nowrap">
+								<template #body="{ data }">
+									<RouterLink
+										:to="{ name: 'pos.sales.show', params: { id: data.id } }"
+										class="font-medium text-text hover:text-accent transition-colors"
+									>
+										{{ data.folio }}
+									</RouterLink>
+									<span class="block sm:hidden text-xs text-text-muted">{{ formatDateTime(data.created_at) }}</span>
+								</template>
+							</Column>
+
+							<Column
+								header="Fecha"
+								header-class="hidden sm:table-cell"
+								body-class="hidden sm:table-cell whitespace-nowrap"
+							>
+								<template #body="{ data }">
+									<span class="text-text-muted">{{ formatDateTime(data.created_at) }}</span>
+								</template>
+							</Column>
+
+							<Column header="Total" header-class="text-right! pr-5 sm:pr-6" body-class="text-right whitespace-nowrap pr-5 sm:pr-6">
+								<template #body="{ data }">
+									<span class="text-text tabular-nums">{{ formatCurrency(data.total) }}</span>
+								</template>
+							</Column>
+						</DataTable>
 					</div>
 				</div>
 			</div>
@@ -204,6 +244,8 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 import ConfirmDialog from 'primevue/confirmdialog'
 import axios from '@/lib/axios'
 import { useCustomersStore } from '@/stores/customers'
@@ -276,13 +318,13 @@ function fetchHistory(customerId) {
 		loading: quotesLoading,
 		error: quotesError,
 		message: 'No se pudieron cargar las cotizaciones del cliente.',
-		// GET /api/quotes no ordena todavía (pendiente en PROJECT.md): se ordena
-		// aquí por created_at descendente, igual que las ventas.
+		// GET /api/quotes y GET /api/sales ya vienen ordenados por created_at
+		// descendente (latest()).
 		load: async () => {
 			const { data } = await axios.get('/api/quotes', {
 				params: { customer_id: customerId, with: 'customer,quoteStatus' },
 			})
-			return [...data.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+			return data.data
 		},
 	})
 
@@ -291,7 +333,6 @@ function fetchHistory(customerId) {
 		loading: salesLoading,
 		error: salesError,
 		message: 'No se pudieron cargar las ventas del cliente.',
-		// GET /api/sales ya viene ordenado por created_at descendente (latest()).
 		load: async () => {
 			const { data } = await axios.get('/api/sales', {
 				params: { customer_id: customerId, with: 'customer' },
@@ -299,6 +340,22 @@ function fetchHistory(customerId) {
 			return data.data
 		},
 	})
+}
+
+const salesTotal = computed(() =>
+	sales.value.reduce((sum, sale) => sum + (Number(sale.total) || 0), 0)
+)
+
+// Toda la fila abre el documento. Los clicks sobre el folio (RouterLink) se
+// dejan a él, que ya soporta Ctrl/Cmd+click y click medio.
+function openRow(originalEvent, to) {
+	if (originalEvent.target.closest('a, button')) return
+
+	if (originalEvent.ctrlKey || originalEvent.metaKey) {
+		window.open(router.resolve(to).href, '_blank')
+	} else {
+		router.push(to)
+	}
 }
 
 watch(
@@ -335,42 +392,5 @@ function goBack() {
 </script>
 
 <style scoped>
-.history-table {
-	width: 100%;
-	border-collapse: collapse;
-}
-.history-table thead th {
-	font-size: 11px;
-	font-weight: 500;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: var(--color-text-muted);
-	background: var(--color-bg);
-	padding: 0.5rem 0.75rem;
-	border-top: 1px solid var(--color-border);
-	border-bottom: 1px solid var(--color-border);
-}
-.history-table thead th:not(.text-right) {
-	text-align: left;
-}
-.history-table tbody td {
-	padding: 0.5rem 0.75rem;
-	vertical-align: middle;
-	border-bottom: 1px solid var(--color-border);
-	font-size: 0.8125rem;
-}
-.history-table tbody tr:last-child td {
-	border-bottom: none;
-}
-.history-table tbody tr:hover {
-	background: var(--color-bg);
-}
-.history-table th:first-child,
-.history-table td:first-child {
-	padding-left: 1.5rem;
-}
-.history-table th:last-child,
-.history-table td:last-child {
-	padding-right: 1.5rem;
-}
+
 </style>
