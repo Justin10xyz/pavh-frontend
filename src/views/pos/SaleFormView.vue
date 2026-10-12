@@ -184,6 +184,11 @@
 											:error="priceError(row)"
 										/>
 										<p v-if="priceError(row)" class="text-danger text-xs mt-1.5">{{ priceError(row) }}</p>
+										<!-- Referencia solo si el precio se ajustó: hace visible un descuento
+										     o un error de dedo antes de registrar -->
+										<p v-else-if="priceDiffersFromList(row)" class="text-xs text-text-muted mt-1 tabular-nums">
+											Lista: {{ formatCurrency(listPrice(row)) }}{{ row.variant ? '/m²' : '' }}
+										</p>
 									</div>
 
 									<div class="space-y-1.5 sm:space-y-0">
@@ -620,7 +625,13 @@ function hasInsufficientStock(row) {
 
 	const boxes = boxesFor(row)
 	if (boxes === null) return false
-	return boxes > (row.variant.stock_boxes ?? 0)
+	return boxes > variantStock(row)
+}
+
+// Stock "en vivo" desde el store de Inventario: la variante de la línea es una
+// copia tomada al elegirla, y no se entera de un refetch (ver refreshStock).
+function variantStock(row) {
+	return Number(findInventoryVariant(row.variant.id)?.stock_boxes ?? row.variant.stock_boxes ?? 0)
 }
 
 // Mismo texto base que el aviso de QuoteFormView, pero como error: el backend
@@ -631,8 +642,20 @@ function stockError(row) {
 		return `Stock insuficiente: hay ${formatQuantity(stock)} uds. y se requieren ${formatQuantity(row.quantity)}. La venta no podrá registrarse con esta cantidad.`
 	}
 
-	const stock = row.variant.stock_boxes ?? 0
+	const stock = variantStock(row)
 	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se requieren ${boxesFor(row)}. La venta no podrá registrarse con esta cantidad.`
+}
+
+// Precio de lista por m² (variante) o por unidad (simple), el mismo con el que
+// se precarga unit_price al elegir el producto.
+function listPrice(row) {
+	return Number(row.variant ? row.variant.price_per_m2 : simpleProductFor(row).price) || 0
+}
+
+// Comparado en centavos para no marcar diferencias de punto flotante.
+function priceDiffersFromList(row) {
+	if (!hasProduct(row) || !(row.unit_price > 0)) return false
+	return Math.round(row.unit_price * 100) !== Math.round(listPrice(row) * 100)
 }
 
 function lineSubtotal(row) {
@@ -723,6 +746,13 @@ function findInventoryVariant(variantId) {
 	return null
 }
 
+// Refetch puntual, una sola vez por intento fallido (nunca en loop). Solo los
+// stores de los tipos presentes en el form.
+function refreshStock() {
+	if (lines.value.some((l) => l.variant)) inventory.fetchProducts()
+	if (lines.value.some((l) => l.simpleProduct)) simpleProducts.fetchSimpleProducts()
+}
+
 function resetForm() {
 	form.customer_id = ''
 	lines.value = [createEmptyLine()]
@@ -786,6 +816,11 @@ const handleSubmit = async () => {
 		// fraccionaria en un producto simple, o validación del Form Request) ya
 		// trae un mensaje listo para mostrar.
 		generalError.value = err.response?.data?.message || 'No se pudo registrar la venta. Intenta de nuevo.'
+
+		// Un 422 de negocio (sin `errors` de Form Request) puede venir de stock que
+		// cambió con el form abierto (otra venta, un ajuste): se refresca una vez
+		// para que el aviso por línea muestre lo disponible real.
+		if (err.response?.status === 422 && !err.response.data?.errors) refreshStock()
 	} finally {
 		submitting.value = false
 	}
