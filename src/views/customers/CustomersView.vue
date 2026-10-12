@@ -49,64 +49,69 @@
 			{{ searchQuery.trim() ? 'No se encontraron clientes con esa búsqueda.' : 'Aún no hay clientes registrados.' }}
 		</div>
 
-		<div
-			v-else
-			class="bg-surface border border-border rounded-md overflow-x-auto transition-opacity"
-			:class="{ 'opacity-60': customers.loading }"
-			:aria-busy="customers.loading"
-		>
-			<DataTable
-				:value="customers.customers"
-				dataKey="id"
-				class="data-table"
-				:row-class="() => 'cursor-pointer'"
-				@row-click="openCustomer"
+		<template v-else>
+			<p class="text-sm text-text-muted mb-2 sm:text-right" aria-live="polite">
+				{{ customers.customers.length }} {{ customers.customers.length === 1 ? 'cliente' : 'clientes' }}
+			</p>
+
+			<div
+				class="bg-surface border border-border rounded-md overflow-x-auto transition-opacity"
+				:class="{ 'opacity-60': customers.loading }"
+				:aria-busy="customers.loading"
 			>
-				<Column header="Nombre">
-					<template #body="{ data }">
-						<RouterLink
-							:to="{ name: 'customers.show', params: { id: data.id } }"
-							class="font-medium text-text hover:text-accent transition-colors"
-						>
-							{{ data.name }}
-						</RouterLink>
-					</template>
-				</Column>
+				<DataTable
+					:value="customers.customers"
+					dataKey="id"
+					class="data-table"
+					:row-class="() => 'cursor-pointer'"
+					@row-click="openCustomer"
+				>
+					<Column header="Nombre">
+						<template #body="{ data }">
+							<RouterLink
+								:to="{ name: 'customers.show', params: { id: data.id } }"
+								class="font-medium text-text hover:text-accent transition-colors"
+							>
+								{{ data.name }}
+							</RouterLink>
+						</template>
+					</Column>
 
-				<Column header="Teléfono">
-					<template #body="{ data }">
-						<span :class="data.phone ? 'text-text' : 'text-text-muted'">{{ data.phone || '—' }}</span>
-					</template>
-				</Column>
+					<Column header="Teléfono">
+						<template #body="{ data }">
+							<span :class="data.phone ? 'text-text' : 'text-text-muted'">{{ data.phone || '—' }}</span>
+						</template>
+					</Column>
 
-				<Column header="Correo">
-					<template #body="{ data }">
-						<span :class="data.email ? 'text-text' : 'text-text-muted'">{{ data.email || '—' }}</span>
-					</template>
-				</Column>
+					<Column header="Correo">
+						<template #body="{ data }">
+							<span :class="data.email ? 'text-text' : 'text-text-muted'">{{ data.email || '—' }}</span>
+						</template>
+					</Column>
 
-				<Column header="Alta" style="width: 9rem">
-					<template #body="{ data }">
-						<span class="text-text-muted">{{ formatDate(data.created_at) }}</span>
-					</template>
-				</Column>
+					<Column header="Alta" style="width: 9rem">
+						<template #body="{ data }">
+							<span class="text-text-muted">{{ formatDate(data.created_at) }}</span>
+						</template>
+					</Column>
 
-				<Column header="" style="width: 3rem">
-					<template #body="{ data }">
-						<button
-							type="button"
-							class="text-text-muted hover:text-danger transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-							:disabled="busyId === data.id"
-							aria-label="Eliminar cliente"
-							title="Eliminar cliente"
-							@click="requestDelete(data)"
-						>
-							<i class="ti ti-trash text-[15px]"></i>
-						</button>
-					</template>
-				</Column>
-			</DataTable>
-		</div>
+					<Column header="" body-class="w-px">
+						<template #body="{ data }">
+							<button
+								type="button"
+								class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-danger transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+								:disabled="busyId === data.id"
+								:aria-label="`Eliminar a ${data.name}`"
+								:title="`Eliminar a ${data.name}`"
+								@click="requestDelete(data)"
+							>
+								<i class="ti ti-trash text-base" aria-hidden="true"></i>
+							</button>
+						</template>
+					</Column>
+				</DataTable>
+			</div>
+		</template>
 
 		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
 			<template #container="{ message, acceptCallback, rejectCallback }">
