@@ -41,161 +41,161 @@
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
 				<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Productos</h2>
 
-				<div class="space-y-3">
-					<div v-for="(row, index) in lines" :key="row.id" class="border border-border rounded-md p-4">
-						<div class="flex items-center justify-between mb-3">
-							<!-- Sin producto elegido, el encabezado es el label del buscador -->
-							<label
-								v-if="!hasProduct(row)"
-								:for="`product-${row.id}`"
-								class="text-xs font-medium text-text-muted"
-							>
-								Producto {{ index + 1 }}
-							</label>
-							<span v-else class="text-xs font-medium text-text-muted">Producto {{ index + 1 }}</span>
-							<button
-								type="button"
-								@click="removeLine(row.id)"
-								:disabled="lines.length === 1"
-								class="text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors"
-								aria-label="Quitar producto"
-								title="Quitar producto"
-							>
-								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6" />
-								</svg>
-							</button>
+				<!-- Tabla compacta (mismo patrón que los colores en ProductFormView):
+				     encabezado una vez y una fila delgada por producto. Por debajo de sm
+				     cada fila apila sus campos con su label visible; desde sm los labels
+				     pasan a sr-only y el encabezado toma su lugar. Header y filas comparten
+				     el mismo grid + hueco del botón para alinear. `relative`: los labels
+				     sr-only son absolute y sin ancestro posicionado escapan del scroll. -->
+				<div class="relative border border-border rounded-md">
+					<div
+						class="hidden sm:flex items-center gap-2 bg-bg border-b border-border rounded-t-md px-3 py-2"
+						aria-hidden="true"
+					>
+						<div
+							class="flex-1 grid grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
+						>
+							<span>Producto<span class="text-danger ml-0.5">*</span></span>
+							<span>Cantidad<span class="text-danger ml-0.5">*</span></span>
+							<span>Precio unitario</span>
+							<span class="text-right">Subtotal</span>
 						</div>
+						<span class="w-8 shrink-0"></span>
+					</div>
 
-						<!-- Sin producto seleccionado: buscador -->
-						<ProductAutocomplete
-							v-if="!hasProduct(row)"
-							:input-id="`product-${row.id}`"
-							include-simple-products
-							@select="(option) => selectProductForRow(row, option)"
-						/>
-
-						<!-- Producto simple seleccionado -->
-						<div v-else-if="row.simpleProduct">
-							<div class="flex items-start justify-between gap-3 mb-3">
-								<p class="text-sm text-text flex items-center gap-2">
-									{{ simpleProductFor(row).name }}
-									<span
-										v-if="simpleProductCategoryName(row)"
-										class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
+					<div class="divide-y divide-border">
+						<div v-for="(row, index) in lines" :key="row.id" class="px-3 py-3 sm:py-2">
+							<div class="flex items-start gap-2">
+								<!-- Sin producto elegido: el buscador ocupa toda la fila -->
+								<div v-if="!hasProduct(row)" class="flex-1 min-w-0 space-y-1.5 sm:space-y-0">
+									<label
+										:for="`product-${row.id}`"
+										class="text-xs font-medium text-text-muted block sm:sr-only"
 									>
-										{{ simpleProductCategoryName(row) }}
-									</span>
-								</p>
+										Producto {{ index + 1 }}
+									</label>
+									<ProductAutocomplete
+										:input-id="`product-${row.id}`"
+										include-simple-products
+										@select="(option) => selectProductForRow(row, option)"
+									/>
+								</div>
+
+								<div
+									v-else
+									class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3"
+								>
+									<!-- Producto: nombre + detalle en dos renglones, "Cambiar" en línea -->
+									<div class="min-w-0 sm:min-h-[2.375rem] flex flex-col justify-center">
+										<template v-if="row.simpleProduct">
+											<p class="text-sm font-medium text-text truncate" :title="simpleProductFor(row).name">
+												{{ simpleProductFor(row).name }}
+											</p>
+											<p class="text-xs text-text-muted flex items-center gap-2">
+												<span
+													v-if="simpleProductCategoryName(row)"
+													class="border border-border rounded px-1.5"
+												>
+													{{ simpleProductCategoryName(row) }}
+												</span>
+												<button
+													type="button"
+													@click="changeLine(row)"
+													class="text-accent hover:underline cursor-pointer"
+												>
+													Cambiar
+												</button>
+											</p>
+										</template>
+										<template v-else>
+											<p class="text-sm font-medium text-text truncate" :title="row.variant.lineName">
+												{{ row.variant.lineName }}
+											</p>
+											<p class="text-xs text-text-muted flex items-center gap-2 min-w-0">
+												<span class="truncate">{{ row.variant.color }} · {{ row.variant.size }}</span>
+												<button
+													type="button"
+													@click="changeLine(row)"
+													class="text-accent hover:underline shrink-0 cursor-pointer"
+												>
+													Cambiar
+												</button>
+											</p>
+										</template>
+										<p v-if="mergedRowId === row.id" class="text-xs text-success mt-0.5">
+											Cantidad fusionada con esta línea existente.
+										</p>
+									</div>
+
+									<!-- Cantidad: la unidad va como sufijo del input; en variantes, el
+									     equivalente en cajas debajo -->
+									<div class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`quantity-${row.id}`"
+											:text="row.variant ? 'Cantidad (m²)' : 'Cantidad (unidades)'"
+											required
+											class="sm:sr-only"
+										/>
+										<InputNumberCustom
+											v-if="row.variant"
+											:id="`quantity-${row.id}`"
+											v-model="row.quantity"
+											:min="0.01"
+											placeholder="0.00 m²"
+											suffix=" m²"
+											:max-fraction-digits="2"
+											:error="quantityError(row)"
+										/>
+										<InputNumberCustom
+											v-else
+											:id="`quantity-${row.id}`"
+											v-model="row.quantity"
+											:min="1"
+											placeholder="0 uds."
+											suffix=" uds."
+											:max-fraction-digits="0"
+											:error="quantityError(row)"
+										/>
+										<p v-if="quantityError(row)" class="text-danger text-xs mt-1.5">{{ quantityError(row) }}</p>
+										<p v-else-if="row.variant" class="text-xs text-text-muted mt-1">
+											{{ boxesFor(row) === null ? 'Sin equivalencia en cajas' : `${boxesFor(row)} ${boxesFor(row) === 1 ? 'caja' : 'cajas'}` }}
+										</p>
+									</div>
+
+									<!-- Precio de lista, informativo: en cotización no se edita -->
+									<div class="space-y-1.5 sm:space-y-0">
+										<span class="text-xs font-medium text-text-muted block sm:sr-only">Precio unitario</span>
+										<p class="sm:h-[2.375rem] flex items-center text-sm text-text-muted tabular-nums">
+											{{ row.variant ? `${formatCurrency(row.variant.price_per_m2)}/m²` : formatCurrency(simpleProductFor(row).price) }}
+										</p>
+									</div>
+
+									<div class="space-y-1.5 sm:space-y-0">
+										<span class="text-xs font-medium text-text-muted block sm:sr-only">Subtotal</span>
+										<p class="sm:h-[2.375rem] flex items-center sm:justify-end text-sm font-medium text-text tabular-nums">
+											{{ formatCurrency(lineSubtotal(row)) }}
+										</p>
+									</div>
+								</div>
+
+								<!-- Mismo alto que los inputs para quedar centrado con ellos desde sm -->
 								<button
 									type="button"
-									@click="changeLine(row)"
-									class="text-xs text-accent hover:underline flex-shrink-0 cursor-pointer"
+									@click="removeLine(row.id)"
+									:disabled="lines.length === 1"
+									class="w-8 h-[2.375rem] shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
+									aria-label="Quitar producto"
+									title="Quitar producto"
 								>
-									Cambiar
+									<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6" />
+									</svg>
 								</button>
 							</div>
 
-							<p v-if="mergedRowId === row.id" class="text-xs text-success mb-3">
-								Cantidad fusionada con esta línea existente.
-							</p>
-
-							<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-								<div class="space-y-1.5">
-									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (unidades)" required />
-									<InputNumberCustom
-										:id="`quantity-${row.id}`"
-										v-model="row.quantity"
-										:min="1"
-										placeholder="0"
-										:max-fraction-digits="0"
-										:error="quantityError(row)"
-									/>
-									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Precio unitario</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
-										{{ formatCurrency(simpleProductFor(row).price) }}
-									</div>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
-										{{ formatCurrency(lineSubtotal(row)) }}
-									</div>
-								</div>
-							</div>
-
 							<p
-								v-if="hasInsufficientStock(row)"
-								class="mt-3 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
-							>
-								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
-								<span>{{ stockWarning(row) }}</span>
-							</p>
-						</div>
-
-						<!-- Variante seleccionada -->
-						<div v-else>
-							<div class="flex items-start justify-between gap-3 mb-3">
-								<p class="text-sm text-text">
-									{{ row.variant.lineName }} — {{ row.variant.color }} — {{ row.variant.size }}
-								</p>
-								<button
-									type="button"
-									@click="changeLine(row)"
-									class="text-xs text-accent hover:underline flex-shrink-0 cursor-pointer"
-								>
-									Cambiar
-								</button>
-							</div>
-
-							<p v-if="mergedRowId === row.id" class="text-xs text-success mb-3">
-								Cantidad fusionada con esta línea existente.
-							</p>
-
-							<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-								<div class="space-y-1.5">
-									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (m²)" required />
-									<InputNumberCustom
-										:id="`quantity-${row.id}`"
-										v-model="row.quantity"
-										:min="0.01"
-										placeholder="0.00"
-										:max-fraction-digits="2"
-										:error="quantityError(row)"
-									/>
-									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Equivalente</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
-										{{ boxesFor(row) === null ? '—' : `${boxesFor(row)} cajas` }}
-									</div>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Precio unitario</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
-										{{ formatCurrency(row.variant.price_per_m2) }}
-									</div>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
-										{{ formatCurrency(lineSubtotal(row)) }}
-									</div>
-								</div>
-							</div>
-
-							<p
-								v-if="hasInsufficientStock(row)"
-								class="mt-3 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
+								v-if="hasProduct(row) && hasInsufficientStock(row)"
+								class="mt-2 sm:mr-10 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
 							>
 								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
 								<span>{{ stockWarning(row) }}</span>
