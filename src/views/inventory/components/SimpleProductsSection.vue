@@ -31,13 +31,19 @@
 					<template #body="{ data }">
 						<span class="font-medium text-text">{{ data.name }}</span>
 						<!-- Sin columna Categoría por debajo de sm: va debajo del nombre -->
-						<span class="block sm:hidden text-xs text-text-muted">{{ categoryName(data) }}</span>
+						<span class="block sm:hidden text-xs text-text-muted">{{
+							categoryName(data)
+						}}</span>
 					</template>
 				</Column>
 
-				<Column header="Categoría" header-class="hidden sm:table-cell" body-class="hidden sm:table-cell">
+				<Column
+					header="Categoría"
+					header-class="hidden sm:table-cell"
+					body-class="hidden sm:table-cell"
+				>
 					<template #body="{ data }">
-						<span class="text-text-muted">{{ categoryName(data) }}</span>
+						<span class="text-muted">{{ categoryName(data) }}</span>
 					</template>
 				</Column>
 
