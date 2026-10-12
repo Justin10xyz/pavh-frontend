@@ -2,16 +2,18 @@ import { ref } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import axios from '@/lib/axios'
 import { useCustomersStore } from '@/stores/customers'
+import { useNotify } from '@/composables/useNotify'
 
 // Flujo de borrado compartido entre el listado y el detalle de clientes:
 // GET delete-summary → ConfirmDialog con los conteos → customers.deleteCustomer().
 // El resumen es solo informativo: el borrado nunca se bloquea por tener
 // historial, y si el resumen falla se confirma igual con un texto genérico.
 // Cada vista monta su propio <ConfirmDialog> y decide qué hacer al terminar
-// (`onDeleted`).
+// (`onDeleted`); el aviso de éxito va aquí para que ambas lo muestren igual.
 export function useCustomerDelete({ onDeleted } = {}) {
 	const confirm = useConfirm()
 	const customers = useCustomersStore()
+	const notify = useNotify()
 
 	// id del cliente en proceso (pidiendo resumen o borrando), para deshabilitar
 	// su botón y no abrir dos confirmaciones.
@@ -46,6 +48,7 @@ export function useCustomerDelete({ onDeleted } = {}) {
 
 		try {
 			await customers.deleteCustomer(customer.id)
+			notify.success('Cliente eliminado', customer.name)
 			onDeleted?.(customer)
 		} catch (err) {
 			console.error(err)

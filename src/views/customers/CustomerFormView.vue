@@ -90,12 +90,14 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCustomersStore } from '@/stores/customers'
+import { useNotify } from '@/composables/useNotify'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 
 const route = useRoute()
 const router = useRouter()
 const customers = useCustomersStore()
+const notify = useNotify()
 
 const isEditMode = computed(() => !!route.params.id)
 const loadingCustomer = ref(false)
@@ -171,6 +173,8 @@ async function handleSubmit() {
 			? await customers.updateCustomer(route.params.id, payload)
 			: await customers.createCustomer(payload)
 
+		// El nombre va en el detalle: a diferencia de un folio puede ser largo.
+		notify.success(isEditMode.value ? 'Cliente actualizado' : 'Cliente guardado', customer.name)
 		router.push({ name: 'customers.show', params: { id: customer.id } })
 	} catch (err) {
 		if (err.response?.status === 422) {
