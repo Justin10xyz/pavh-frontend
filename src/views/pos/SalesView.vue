@@ -92,6 +92,7 @@ import { useSalesStore } from '@/stores/sales'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import DateRangeFilter from '@/components/widgets/filters/DateRangeFilter.vue'
 import { dateRangeFor } from '@/lib/dateRanges'
+import { formatCurrency } from '@/lib/formatCurrency'
 
 const router = useRouter()
 const sales = useSalesStore()
@@ -135,12 +136,6 @@ const filteredSales = computed(() => {
 		(sale) => normalize(sale.folio).includes(q) || normalize(sale.customer?.name).includes(q)
 	)
 })
-
-const currencyFormatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
-
-function formatCurrency(value) {
-	return currencyFormatter.format(Number(value))
-}
 
 function formatDate(value) {
 	return new Date(value).toLocaleString('es-MX', {

@@ -141,6 +141,7 @@ import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useSalesStore } from '@/stores/sales'
 import { useDocumentPdf } from '@/composables/useDocumentPdf'
+import { formatCurrency } from '@/lib/formatCurrency'
 
 const route = useRoute()
 const router = useRouter()
@@ -168,12 +169,6 @@ watch(
 	},
 	{ immediate: true }
 )
-
-const currencyFormatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
-
-function formatCurrency(value) {
-	return currencyFormatter.format(Number(value))
-}
 
 function formatQuantity(value) {
 	return Number(value).toLocaleString('es-MX', { maximumFractionDigits: 2 })

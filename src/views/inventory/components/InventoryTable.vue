@@ -80,10 +80,10 @@
 									</span>
 									<span class="flex items-center gap-2 whitespace-nowrap">
 										<span class="font-semibold text-primary tabular-nums"
-										>${{ Number(group.price_per_box).toFixed(2) }}/caja</span
+										>{{ formatCurrency(group.price_per_box) }}/caja</span
 										>
 										<span class="font-semibold text-primary tabular-nums"
-										>${{ Number(group.price_per_m2).toFixed(2) }}/m²</span
+										>{{ formatCurrency(group.price_per_m2) }}/m²</span
 										>
 									</span>
 									<span class="text-text-muted">
@@ -139,7 +139,7 @@
 										<td
 											class="hidden sm:table-cell py-1.5 font-semibold text-primary tabular-nums"
 										>
-											${{ Number(variant.price_per_box).toFixed(2) }}
+											{{ formatCurrency(variant.price_per_box) }}
 										</td>
 										<td
 											class="py-1.5 text-sm"
@@ -205,6 +205,7 @@ import { ref } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { groupVariants } from "@/lib/groupVariants";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 defineProps({
 	products: {
