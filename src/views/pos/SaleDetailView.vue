@@ -7,7 +7,7 @@
 			<button
 				type="button"
 				@click="goBack"
-				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 			>
 				Volver
 			</button>
@@ -16,38 +16,49 @@
 		<template v-else-if="sale">
 			<!-- Header -->
 			<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
-				<div>
-					<h1 class="font-serif text-xl text-primary">{{ sale.folio }}</h1>
-					<p class="text-sm text-text-muted mt-0.5">Registrada el {{ formatDateTime(sale.created_at) }}</p>
+				<div class="flex items-start gap-3">
+					<!-- Volver en línea con el título, mismo patrón que QuoteDetailView.
+					     Por debajo de lg solo la flecha. -->
+					<RouterLink
+						:to="{ name: 'pos.sales.index' }"
+						aria-label="Volver a ventas"
+						title="Volver a ventas"
+						class="shrink-0 inline-flex items-center justify-center gap-1.5 h-8 w-8 lg:w-auto lg:px-3 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text text-sm font-medium rounded-md transition-colors select-none"
+					>
+						<i class="ti ti-arrow-left text-base" aria-hidden="true"></i>
+						<span class="hidden lg:inline">Volver</span>
+					</RouterLink>
+					<div>
+						<h1 class="font-serif text-xl text-primary">{{ sale.folio }}</h1>
+						<p class="text-sm text-text-muted mt-0.5">Registrada el {{ formatDateTime(sale.created_at) }}</p>
+					</div>
 				</div>
 
 				<div class="flex flex-col items-end gap-1.5">
-					<div class="flex flex-wrap items-center gap-3">
-						<button
-							type="button"
-							@click="goBack"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
-						>
-							Volver
-						</button>
+					<div class="flex flex-wrap items-center justify-end gap-3">
+						<!-- Por debajo de sm solo ícono, igual que en QuoteDetailView -->
 						<button
 							v-if="canShareFiles"
 							type="button"
 							:disabled="pdfBusy"
 							@click="sharePdf"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							aria-label="Compartir"
+							title="Compartir"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 						>
-							<i class="ti ti-share text-[15px]"></i>
-							Compartir
+							<i class="ti ti-share text-base" aria-hidden="true"></i>
+							<span class="hidden sm:inline">Compartir</span>
 						</button>
 						<button
 							type="button"
 							:disabled="pdfBusy"
 							@click="downloadPdf"
-							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:bg-primary/50 disabled:cursor-not-allowed"
+							aria-label="Descargar PDF"
+							title="Descargar PDF"
+							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:bg-primary/50 disabled:cursor-not-allowed"
 						>
-							<i class="ti ti-download text-[15px]"></i>
-							{{ pdfBusy ? 'Generando PDF…' : 'Descargar PDF' }}
+							<i class="ti ti-download text-base" aria-hidden="true"></i>
+							<span class="hidden sm:inline">{{ pdfBusy ? 'Generando PDF…' : 'Descargar PDF' }}</span>
 						</button>
 					</div>
 					<p v-if="pdfError" class="text-danger text-xs">{{ pdfError }}</p>
@@ -57,29 +68,51 @@
 			<div class="space-y-4">
 				<!-- Datos generales -->
 				<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-					<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
+					<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
 
 					<dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
 						<div class="space-y-1">
 							<dt class="text-xs font-medium text-text-muted">Cliente</dt>
 							<dd v-if="sale.customer" class="text-text">
 								<div class="font-medium">{{ sale.customer.name }}</div>
-								<div v-if="sale.customer.phone" class="text-text-muted text-[13px]">{{ sale.customer.phone }}</div>
-								<div v-if="sale.customer.email" class="text-text-muted text-[13px]">{{ sale.customer.email }}</div>
+								<a
+									v-if="sale.customer.phone"
+									:href="`tel:${sale.customer.phone}`"
+									class="block w-fit text-text-muted text-sm hover:text-text hover:underline"
+								>
+									{{ sale.customer.phone }}
+								</a>
+								<a
+									v-if="sale.customer.email"
+									:href="`mailto:${sale.customer.email}`"
+									class="block w-fit text-text-muted text-sm hover:text-text hover:underline"
+								>
+									{{ sale.customer.email }}
+								</a>
 							</dd>
 							<dd v-else class="text-text-muted">Sin cliente</dd>
 						</div>
 
-						<div class="space-y-1">
-							<dt class="text-xs font-medium text-text-muted">Fecha de venta</dt>
-							<dd class="text-text">{{ formatDateTime(sale.created_at) }}</dd>
+						<!-- Solo si la venta vino de convertir una cotización (contraparte de
+						     "Convertida en venta" en QuoteDetailView) -->
+						<div v-if="sale.quote" class="space-y-1">
+							<dt class="text-xs font-medium text-text-muted">Convertida desde cotización</dt>
+							<dd>
+								<RouterLink
+									:to="{ name: 'quotes.show', params: { id: sale.quote.id } }"
+									class="inline-flex items-center gap-1 font-medium text-accent hover:underline"
+								>
+									{{ sale.quote.folio }}
+									<i class="ti ti-arrow-up-right text-sm" aria-hidden="true"></i>
+								</RouterLink>
+							</dd>
 						</div>
 					</dl>
 				</div>
 
 				<!-- Líneas -->
 				<div class="bg-surface border border-border rounded-md overflow-hidden">
-					<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4">Productos</h2>
+					<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4">Productos</h2>
 
 					<div class="overflow-x-auto">
 						<table class="items-table">
@@ -87,7 +120,9 @@
 								<tr>
 									<th>Producto</th>
 									<th class="text-right">Cantidad</th>
-									<th class="text-right">Precio unitario</th>
+									<!-- Cajas y precio unitario se ocultan por debajo de sm: el subtotal ya basta -->
+									<th class="text-right hidden sm:table-cell">Cajas</th>
+									<th class="text-right hidden sm:table-cell">Precio unitario</th>
 									<th class="text-right">Subtotal</th>
 								</tr>
 							</thead>
@@ -99,17 +134,24 @@
 											<div class="font-medium text-text">{{ item.simple_product?.name ?? '—' }}</div>
 										</td>
 										<td class="text-right text-text">{{ formatQuantity(item.quantity) }} uds.</td>
-										<td class="text-right text-text">{{ formatCurrency(item.unit_price) }}</td>
+										<td class="text-right text-text-muted hidden sm:table-cell">—</td>
+										<td class="text-right text-text hidden sm:table-cell">{{ formatCurrency(item.unit_price) }}</td>
 									</template>
 									<template v-else>
 										<td>
 											<div class="font-medium text-text">{{ item.product_variant?.product?.name ?? '—' }}</div>
-											<div class="text-text-muted text-[12px]">
+											<div class="text-text-muted text-xs">
 												{{ item.product_variant?.color }} · {{ item.product_variant?.size }}
 											</div>
 										</td>
 										<td class="text-right text-text">{{ formatQuantity(item.quantity) }} m²</td>
-										<td class="text-right text-text">{{ formatCurrency(item.unit_price) }}/m²</td>
+										<td
+											class="text-right hidden sm:table-cell"
+											:class="boxesFor(item) == null ? 'text-text-muted' : 'text-text'"
+										>
+											{{ boxesFor(item) ?? '—' }}
+										</td>
+										<td class="text-right text-text hidden sm:table-cell">{{ formatCurrency(item.unit_price) }}/m²</td>
 									</template>
 									<td class="text-right text-text">{{ formatCurrency(item.line_total) }}</td>
 								</tr>
@@ -171,6 +213,14 @@ watch(
 	{ immediate: true }
 )
 
+// Mismo cálculo que QuoteDetailView/backend: quantity está en m², el stock en
+// cajas (ceil, no se entrega media caja).
+function boxesFor(item) {
+	const m2PerBox = item.product_variant?.m2_per_box
+	if (!m2PerBox) return null
+	return Math.ceil((Number(item.quantity) || 0) / m2PerBox)
+}
+
 function formatDateTime(value) {
 	return new Date(value).toLocaleString('es-MX', {
 		day: '2-digit',
@@ -192,7 +242,7 @@ function goBack() {
 	border-collapse: collapse;
 }
 .items-table thead th {
-	font-size: 11px;
+	font-size: 0.75rem;
 	font-weight: 500;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
@@ -209,7 +259,7 @@ function goBack() {
 	padding: 0.5rem 0.75rem;
 	vertical-align: middle;
 	border-bottom: 1px solid var(--color-border);
-	font-size: 0.8125rem;
+	font-size: 0.875rem;
 }
 .items-table tbody tr:last-child td {
 	border-bottom: none;
