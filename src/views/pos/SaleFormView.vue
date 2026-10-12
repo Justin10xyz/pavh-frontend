@@ -261,6 +261,7 @@ import { useQuotesStore } from '@/stores/quotes'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
 import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
+import { formatCurrency } from '@/lib/formatCurrency'
 
 const route = useRoute()
 const router = useRouter()
@@ -529,12 +530,6 @@ function lineSubtotal(row) {
 
 const subtotal = computed(() => lines.value.reduce((sum, row) => sum + lineSubtotal(row), 0))
 const total = computed(() => subtotal.value) // sin impuestos por ahora, igual que Cotizaciones
-
-const currencyFormatter = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' })
-
-function formatCurrency(value) {
-	return currencyFormatter.format(Number(value) || 0)
-}
 
 const submitting = ref(false)
 const generalError = ref(null)

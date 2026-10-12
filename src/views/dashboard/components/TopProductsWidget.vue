@@ -52,6 +52,7 @@
 
 <script setup>
 import { formatCurrency } from '@/lib/formatCurrency'
+import { formatQuantity } from '@/lib/formatQuantity'
 import DateRangeFilter from '@/components/widgets/filters/DateRangeFilter.vue'
 
 defineProps({
@@ -76,10 +77,6 @@ defineProps({
 })
 
 const emit = defineEmits(['update:filter'])
-
-function formatQuantity(value) {
-	return Number(value).toLocaleString('es-MX', { maximumFractionDigits: 2 })
-}
 </script>
 
 <style scoped>

@@ -4,11 +4,16 @@
 			<div>
 				<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
 				<p class="text-sm text-text-muted mt-0.5">
-					{{ isEditMode ? 'Actualiza los datos del producto.' : 'Captura los datos del producto. El stock inicia en 0.' }}
+					{{
+						isEditMode
+							? "Actualiza los datos del producto."
+							: "Captura los datos del producto. El stock inicia en 0."
+					}}
 				</p>
 			</div>
 			<button
 				type="button"
+				shrink-0
 				@click="handleCancel"
 				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-1.5 shrink-0"
 			>
@@ -17,16 +22,31 @@
 			</button>
 		</div>
 
-		<p v-if="generalError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
-			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+		<p
+			v-if="generalError"
+			class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2"
+		>
+			<svg
+				class="w-3.5 h-3.5 shrink-0"
+				fill="none"
+				viewBox="0 0 24 24"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+				/>
 			</svg>
 			{{ generalError }}
 		</p>
 
 		<form @submit.prevent="handleSubmit" class="space-y-4">
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos del producto</h2>
+				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">
+					Datos del producto
+				</h2>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5">
@@ -42,7 +62,9 @@
 							empty-message="No hay categorías de tipo General"
 							@change="errors.category_id = ''"
 						/>
-						<p v-if="errors.category_id" class="text-danger text-[12px] mt-1.5">{{ errors.category_id }}</p>
+						<p v-if="errors.category_id" class="text-danger text-[12px] mt-1.5">
+							{{ errors.category_id }}
+						</p>
 					</div>
 
 					<div class="space-y-1.5">
@@ -56,7 +78,9 @@
 							:disabled="loadingProduct"
 							@input="errors.name = ''"
 						/>
-						<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">{{ errors.name }}</p>
+						<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">
+							{{ errors.name }}
+						</p>
 					</div>
 
 					<div class="space-y-1.5">
@@ -72,7 +96,9 @@
 							:disabled="loadingProduct"
 							@input="errors.price = ''"
 						/>
-						<p v-if="errors.price" class="text-danger text-[12px] mt-1.5">{{ errors.price }}</p>
+						<p v-if="errors.price" class="text-danger text-[12px] mt-1.5">
+							{{ errors.price }}
+						</p>
 					</div>
 
 					<div v-if="isEditMode" class="space-y-1.5">
@@ -82,7 +108,7 @@
 								id="stock_quantity"
 								class="flex-1 flex items-center h-10 px-3 bg-bg border border-border rounded-md text-sm text-text"
 							>
-								{{ loadingProduct ? '—' : `${stockQuantity} unidades` }}
+								{{ loadingProduct ? "—" : `${stockQuantity} unidades` }}
 							</output>
 							<button
 								type="button"
@@ -107,7 +133,9 @@
 							:disabled="loadingProduct"
 							@input="errors.description = ''"
 						/>
-						<p v-if="errors.description" class="text-danger text-[12px] mt-1.5">{{ errors.description }}</p>
+						<p v-if="errors.description" class="text-danger text-[12px] mt-1.5">
+							{{ errors.description }}
+						</p>
 					</div>
 				</div>
 			</div>
@@ -126,7 +154,13 @@
 					:disabled="submitting || loadingProduct || loadFailed"
 					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 				>
-					{{ submitting ? 'Guardando…' : isEditMode ? 'Guardar cambios' : 'Guardar producto' }}
+					{{
+						submitting
+							? "Guardando…"
+							: isEditMode
+								? "Guardar cambios"
+								: "Guardar producto"
+					}}
 				</button>
 			</div>
 		</form>
@@ -145,142 +179,146 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useCatalogsStore } from '@/stores/catalogs'
-import { useSimpleProductsStore } from '@/stores/simpleProducts'
-import SelectCustom from '@/components/widgets/SelectCustom.vue'
-import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
-import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
-import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
-import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
-import StockAdjustDialog from './components/StockAdjustDialog.vue'
+import { computed, onMounted, reactive, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useCatalogsStore } from "@/stores/catalogs";
+import { useSimpleProductsStore } from "@/stores/simpleProducts";
+import SelectCustom from "@/components/widgets/SelectCustom.vue";
+import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
+import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
+import TextareaCustom from "@/components/widgets/TextareaCustom.vue";
+import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
+import StockAdjustDialog from "./components/StockAdjustDialog.vue";
 
-const route = useRoute()
-const router = useRouter()
-const catalogs = useCatalogsStore()
-const simpleProducts = useSimpleProductsStore()
+const route = useRoute();
+const router = useRouter();
+const catalogs = useCatalogsStore();
+const simpleProducts = useSimpleProductsStore();
 
-const isEditMode = computed(() => !!route.params.id)
-const loadingProduct = ref(false)
+const isEditMode = computed(() => !!route.params.id);
+const loadingProduct = ref(false);
 // Mismo criterio que CustomerFormView: si la precarga falla en edición no hay
 // nada válido que guardar, así que el submit queda deshabilitado.
-const loadFailed = ref(false)
+const loadFailed = ref(false);
 
 // El backend rechaza (422) un producto simple en una categoría de tipo 'variant'.
 const simpleCategories = computed(() =>
-	catalogs.categories.filter((c) => c.product_form_type === 'simple'),
-)
+	catalogs.categories.filter((c) => c.product_form_type === "simple"),
+);
 
 const form = reactive({
-	category_id: '',
-	name: '',
+	category_id: "",
+	name: "",
 	price: null,
-	description: '',
-})
+	description: "",
+});
 
 const errors = reactive({
-	category_id: '',
-	name: '',
-	price: '',
-	description: '',
-})
+	category_id: "",
+	name: "",
+	price: "",
+	description: "",
+});
 
 // Solo lectura en el form: el stock se modifica únicamente vía PATCH /stock.
-const stockQuantity = ref(0)
-const stockDialogOpen = ref(false)
+const stockQuantity = ref(0);
+const stockDialogOpen = ref(false);
 
-const submitting = ref(false)
-const generalError = ref(null)
+const submitting = ref(false);
+const generalError = ref(null);
 
 onMounted(() => {
-	if (!catalogs.initialized) catalogs.fetchCatalogs()
-	if (isEditMode.value) loadProduct()
-})
+	if (!catalogs.initialized) catalogs.fetchCatalogs();
+	if (isEditMode.value) loadProduct();
+});
 
 async function loadProduct() {
-	loadingProduct.value = true
+	loadingProduct.value = true;
 
 	try {
-		const product = await simpleProducts.fetchSimpleProduct(route.params.id)
-		form.category_id = product.category_id
-		form.name = product.name
-		form.price = product.price
-		form.description = product.description ?? ''
-		stockQuantity.value = product.stock_quantity
+		const product = await simpleProducts.fetchSimpleProduct(route.params.id);
+		form.category_id = product.category_id;
+		form.name = product.name;
+		form.price = product.price;
+		form.description = product.description ?? "";
+		stockQuantity.value = product.stock_quantity;
 	} catch (err) {
-		console.error(err)
-		generalError.value = err.response?.status === 404 ? 'El producto no existe.' : 'No se pudo cargar el producto.'
-		loadFailed.value = true
+		console.error(err);
+		generalError.value =
+			err.response?.status === 404
+				? "El producto no existe."
+				: "No se pudo cargar el producto.";
+		loadFailed.value = true;
 	} finally {
-		loadingProduct.value = false
+		loadingProduct.value = false;
 	}
 }
 
 function onStockUpdated(product) {
-	stockQuantity.value = product.stock_quantity
-	simpleProducts.updateSimpleProductStock(product.id, { stock_quantity: product.stock_quantity })
+	stockQuantity.value = product.stock_quantity;
+	simpleProducts.updateSimpleProductStock(product.id, { stock_quantity: product.stock_quantity });
 }
 
-const requiredFields = ['category_id', 'name', 'price']
+const requiredFields = ["category_id", "name", "price"];
 
 function validateForm() {
-	let isValid = true
+	let isValid = true;
 
 	for (const field of requiredFields) {
-		const value = typeof form[field] === 'string' ? form[field].trim() : form[field]
-		errors[field] = value === '' || value === null ? 'Este campo es requerido' : ''
-		if (errors[field]) isValid = false
+		const value = typeof form[field] === "string" ? form[field].trim() : form[field];
+		errors[field] = value === "" || value === null ? "Este campo es requerido" : "";
+		if (errors[field]) isValid = false;
 	}
 
-	return isValid
+	return isValid;
 }
 
 function applyServerErrors(serverErrors) {
 	for (const field of Object.keys(serverErrors)) {
 		if (field in errors) {
-			errors[field] = serverErrors[field][0]
+			errors[field] = serverErrors[field][0];
 		}
 	}
 }
 
 async function handleSubmit() {
-	if (!validateForm()) return
+	if (!validateForm()) return;
 
-	generalError.value = null
-	submitting.value = true
+	generalError.value = null;
+	submitting.value = true;
 
 	const payload = {
 		category_id: form.category_id,
 		name: form.name.trim(),
 		price: form.price,
 		description: form.description.trim() || null,
-	}
+	};
 
 	try {
 		if (isEditMode.value) {
-			await simpleProducts.updateSimpleProduct(route.params.id, payload)
+			await simpleProducts.updateSimpleProduct(route.params.id, payload);
 		} else {
-			await simpleProducts.createSimpleProduct(payload)
+			await simpleProducts.createSimpleProduct(payload);
 		}
 
-		router.push({ name: 'inventory', query: { seccion: 'otros' } })
+		router.push({ name: "inventory", query: { seccion: "otros" } });
 	} catch (err) {
 		// El 422 de "categoría que no admite productos simples" llega sin `errors`,
 		// solo con `message`.
 		if (err.response?.status === 422 && err.response.data.errors) {
-			applyServerErrors(err.response.data.errors)
+			applyServerErrors(err.response.data.errors);
 		} else {
-			console.error(err)
-			generalError.value = err.response?.data?.message || 'No se pudo guardar el producto. Intenta de nuevo.'
+			console.error(err);
+			generalError.value =
+				err.response?.data?.message || "No se pudo guardar el producto. Intenta de nuevo.";
 		}
 	} finally {
-		submitting.value = false
+		submitting.value = false;
 	}
 }
 
 function handleCancel() {
-	router.push({ name: 'inventory', query: { seccion: 'otros' } })
+	router.push({ name: "inventory", query: { seccion: "otros" } });
 }
 </script>
 

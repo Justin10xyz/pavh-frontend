@@ -38,6 +38,11 @@ const props = defineProps({
 	disabled: { type: Boolean, default: false },
 	error: { type: [String, Boolean], default: '' },
 	emptyMessage: { type: String, default: 'Sin opciones' },
+	// Si el valor actual no está entre las opciones (ej. un PEI "3/4" guardado antes
+	// de que existiera el catálogo), se agrega como opción extra con su texto tal
+	// cual en vez de mostrar el placeholder. Opt-in: en selects de catálogo (ids) un
+	// valor sin opción suele ser un catálogo aún cargando, no un dato a mostrar.
+	keepUnknownValue: { type: Boolean, default: false },
 })
 
 function isObject(option) {
@@ -51,6 +56,11 @@ const normalizedOptions = computed(() => {
 		value: isObject(option) ? option[props.optionValue] : option,
 		label: isObject(option) ? option[props.optionLabel] : option,
 	}))
+
+	const hasValue = model.value !== '' && model.value !== null
+	if (props.keepUnknownValue && hasValue && !options.some((o) => o.value === model.value)) {
+		options.push({ value: model.value, label: String(model.value) })
+	}
 
 	return props.allowEmpty ? [{ value: '', label: props.placeholder }, ...options] : options
 })

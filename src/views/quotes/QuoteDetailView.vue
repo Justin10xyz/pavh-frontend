@@ -264,6 +264,8 @@ import { useConfirm } from "primevue/useconfirm";
 import { useQuotesStore } from "@/stores/quotes";
 import { statusClasses } from "@/lib/quoteStatus";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
+import { formatCurrency } from "@/lib/formatCurrency";
+import { formatQuantity } from "@/lib/formatQuantity";
 
 const route = useRoute();
 const router = useRouter();
@@ -305,16 +307,6 @@ function boxesFor(item) {
 	const m2PerBox = item.product_variant?.m2_per_box;
 	if (!m2PerBox) return null;
 	return Math.ceil((Number(item.quantity) || 0) / m2PerBox);
-}
-
-const currencyFormatter = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
-
-function formatCurrency(value) {
-	return currencyFormatter.format(Number(value));
-}
-
-function formatQuantity(value) {
-	return Number(value).toLocaleString("es-MX", { maximumFractionDigits: 2 });
 }
 
 function formatDate(value) {

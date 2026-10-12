@@ -4,7 +4,7 @@
 			:value="products"
 			dataKey="id"
 			v-model:expandedRows="expandedRows"
-			class="inventory-table"
+			class="data-table inventory-table"
 		>
 			<Column header="Producto">
 				<template #body="{ data, rowTogglerCallback }">
@@ -14,18 +14,27 @@
 							class="toggle-btn cursor-pointer"
 							:class="{ 'is-open': expandedRows[data.id] }"
 							@click="rowTogglerCallback"
-							:aria-label="expandedRows[data.id] ? 'Colapsar' : 'Expandir'"
+							:aria-expanded="!!expandedRows[data.id]"
+							:aria-label="`Variantes de ${data.name}`"
 						>
-							<svg viewBox="0 0 8 8" width="8" height="8">
+							<svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
 								<path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
 							</svg>
 						</button>
 						<div class="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
 							<span class="font-semibold text-primary text-sm">{{ data.name }}</span>
 							<span
-								class="text-[0.6rem] text-text-muted border border-border rounded px-1.5 py-0.5"
+								class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
 							>
 								{{ data.category }} · {{ data.supplier }} · {{ data.unit_type }}
+							</span>
+							<!-- Aviso visible sin expandir: con "Solo stock bajo" activo, evita
+							     abrir producto y medida para saber dónde está el faltante. -->
+							<span
+								v-if="lowStockCount(visibleVariantsByProduct.get(data.id)) > 0"
+								class="low-stock-badge"
+							>
+								{{ lowStockLabel(visibleVariantsByProduct.get(data.id)) }}
 							</span>
 						</div>
 					</div>
@@ -37,6 +46,22 @@
 					<span class="text-text-muted">{{
 						visibleVariantsByProduct.get(data.id)?.length ?? 0
 					}}</span>
+				</template>
+			</Column>
+
+			<!-- Editar abre el producto completo (todas sus medidas), así que vive
+			     en la fila del producto y no en cada grupo de medida. -->
+			<Column header="" body-class="w-px">
+				<template #body="{ data }">
+					<button
+						type="button"
+						@click="emit('edit-product', data.id)"
+						class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+						:aria-label="`Editar ${data.name}`"
+						title="Editar producto"
+					>
+						<i class="ti ti-pencil text-base"></i>
+					</button>
 				</template>
 			</Column>
 
@@ -53,17 +78,13 @@
 								class="group-header-toggle cursor-pointer"
 								@click="toggleGroup(data.id, group.key)"
 								title="Clic para ver stock por color"
-								:aria-label="
-									isGroupExpanded(data.id, group.key)
-										? 'Colapsar colores'
-										: 'Expandir colores'
-								"
+								:aria-expanded="isGroupExpanded(data.id, group.key)"
 							>
 								<span
 									class="toggle-btn"
 									:class="{ 'is-open': isGroupExpanded(data.id, group.key) }"
 								>
-									<svg viewBox="0 0 8 8" width="8" height="8">
+									<svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
 										<path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
 									</svg>
 								</span>
@@ -80,10 +101,10 @@
 									</span>
 									<span class="flex items-center gap-2 whitespace-nowrap">
 										<span class="font-semibold text-primary tabular-nums"
-										>${{ Number(group.price_per_box).toFixed(2) }}/caja</span
+										>{{ formatCurrency(group.price_per_box) }}/caja</span
 										>
 										<span class="font-semibold text-primary tabular-nums"
-										>${{ Number(group.price_per_m2).toFixed(2) }}/m²</span
+										>{{ formatCurrency(group.price_per_m2) }}/m²</span
 										>
 									</span>
 									<span class="text-text-muted">
@@ -92,28 +113,21 @@
 										{{ group.kilos_per_box }} kg/caja
 									</span>
 								</span>
-								<span class="shrink-0 whitespace-nowrap text-text-muted"
-								>{{ group.variants.length }} colores</span
-								>
-							</button>
-							<button
-								type="button"
-								@click="emit('edit-product', data.id)"
-								class="group-header-edit"
-								aria-label="Editar producto"
-								title="Editar producto"
-							>
-								<i class="ti ti-pencil"></i>
+								<span class="shrink-0 flex items-center gap-2 whitespace-nowrap">
+									<span v-if="lowStockCount(group.variants) > 0" class="low-stock-badge">
+										{{ lowStockLabel(group.variants) }}
+									</span>
+									<span class="text-text-muted">{{ group.variants.length }} colores</span>
+								</span>
 							</button>
 						</div>
 
 						<div v-if="isGroupExpanded(data.id, group.key)" class="overflow-x-auto">
-							<table class="w-full text-xs border-t border-border">
+							<table class="variants-table w-full text-xs border-t border-border">
 								<thead>
-									<tr class="text-text-muted uppercase text-[10px]">
+									<tr class="text-text-muted uppercase text-xs">
 										<th class="text-left font-medium py-1.5 pl-3 sm:pl-8">Color</th>
 										<th class="hidden md:table-cell text-left font-medium py-1.5">Código</th>
-										<th class="hidden sm:table-cell text-right font-medium py-1.5">Precio/caja</th>
 										<th class="text-right font-medium py-1.5">Stock</th>
 										<th class="text-center font-medium py-1.5 pr-3 sm:pr-6">Estado</th>
 									</tr>
@@ -134,13 +148,6 @@
 										<td class="hidden md:table-cell py-1.5 text-text-muted font-mono text-xs">
 											{{ variant.code }}
 										</td>
-										<!-- Por debajo de sm se oculta: el precio por caja es parte de la
-									     llave del grupo, así que ya está en el encabezado. -->
-										<td
-											class="hidden sm:table-cell py-1.5 font-semibold text-primary tabular-nums"
-										>
-											${{ Number(variant.price_per_box).toFixed(2) }}
-										</td>
 										<td
 											class="py-1.5 text-sm"
 											:class="
@@ -154,7 +161,7 @@
 										<td class="py-1.5 pr-3 sm:pr-6">
 											<div class="flex items-center justify-start gap-1.5">
 												<span
-													class="text-[0.6rem] px-2 py-0.5 rounded"
+													class="text-xs px-2 py-0.5 rounded"
 													:class="
 														variant.low_stock
 															? 'bg-danger/10 text-danger'
@@ -205,6 +212,7 @@ import { ref } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { groupVariants } from "@/lib/groupVariants";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 defineProps({
 	products: {
@@ -234,6 +242,15 @@ function toggleGroup(productId, groupKey) {
 function isGroupExpanded(productId, groupKey) {
 	return !!expandedGroups.value[groupExpansionKey(productId, groupKey)];
 }
+
+// Cuenta sobre las variantes visibles (ya filtradas), igual que la columna Variantes.
+function lowStockCount(variants = []) {
+	return variants.filter((v) => v.low_stock).length;
+}
+
+function lowStockLabel(variants) {
+	return `${lowStockCount(variants)} con stock bajo`;
+}
 </script>
 
 <style scoped>
@@ -243,7 +260,7 @@ function isGroupExpanded(productId, groupKey) {
 	justify-content: center;
 	width: 1.25rem;
 	height: 1.25rem;
-	border-radius: 3px;
+	border-radius: 0.25rem;
 	color: var(--color-text-muted);
 	flex-shrink: 0;
 }
@@ -269,32 +286,22 @@ button.toggle-btn {
 	transform: rotate(90deg);
 }
 
-.inventory-table :deep(table) {
-	width: 100%;
-	border-collapse: collapse;
+/* Estilos base de tabla en `.data-table` (main.css); aquí solo la fila de expansión. */
+.inventory-table :deep([data-pc-section="rowexpansion"] > td) {
+	padding: 0;
 }
-.inventory-table :deep(thead th) {
-	text-align: left;
-	font-size: 11px;
-	font-weight: 500;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: var(--color-text-muted);
-	background: var(--color-bg);
+
+/* Tabla de colores anidada: `.data-table` no la alcanza (solo la tabla raíz), así
+   que lleva su propio espaciado — el mismo que antes heredaba de los estilos de
+   la tabla principal. */
+.variants-table th {
 	padding: 0.5rem 0.75rem;
+	background: var(--color-bg);
 	border-bottom: 1px solid var(--color-border);
 }
-.inventory-table :deep(tbody > tr:not(.p-datatable-row-expansion) > td) {
+.variants-table td {
 	padding: 0.375rem 0.75rem;
 	vertical-align: middle;
-	border-bottom: 1px solid var(--color-border);
-}
-.inventory-table :deep(tbody > tr:hover:not(.p-datatable-row-expansion)) {
-	background: var(--color-bg);
-}
-.inventory-table :deep(.p-datatable-row-expansion > td) {
-	padding: 0;
-	border-bottom: 1px solid var(--color-border);
 }
 
 .group-header {
@@ -316,38 +323,28 @@ button.toggle-btn {
 	text-align: left;
 }
 
-.group-header-edit {
-	display: flex;
-	align-items: center;
-	align-self: center;
-	flex-shrink: 0;
-	margin-right: 0.5rem;
-	padding: 0.375rem;
-	border-radius: 0.25rem;
-	color: var(--color-text-muted);
-	transition:
-		color 150ms ease,
-		background-color 150ms ease;
-}
 @media (min-width: 64rem) {
-	.group-header-edit {
-		padding: 0.25rem;
-	}
 	.group-header-toggle {
 		align-items: center;
 	}
 }
-.group-header-edit:hover {
-	background: var(--color-border);
-	color: var(--color-accent);
+
+.low-stock-badge {
+	font-size: 0.75rem;
+	font-weight: 500;
+	white-space: nowrap;
+	color: var(--color-danger);
+	background: color-mix(in oklab, var(--color-danger) 10%, transparent);
+	border-radius: 0.25rem;
+	padding: 0.125rem 0.5rem;
 }
 
 .spec-badge {
-	font-size: 10px;
+	font-size: 0.75rem;
 	font-weight: 400;
 	color: var(--color-text-muted);
 	border: 1px solid var(--color-border);
-	border-radius: 3px;
+	border-radius: 0.25rem;
 	padding: 0.125rem 0.375rem;
 }
 </style>
