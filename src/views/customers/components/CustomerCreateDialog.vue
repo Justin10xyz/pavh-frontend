@@ -17,7 +17,7 @@
 					</button>
 				</div>
 
-				<p v-if="generalError" class="text-danger text-[12px] mb-4">{{ generalError }}</p>
+				<p v-if="generalError" class="text-danger text-xs mb-4">{{ generalError }}</p>
 
 				<div class="space-y-4 mb-5">
 					<div class="space-y-1.5">
@@ -30,7 +30,7 @@
 							placeholder="Ej. Constructora del Norte"
 							@input="errors.name = ''"
 						/>
-						<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">{{ errors.name }}</p>
+						<p v-if="errors.name" class="text-danger text-xs mt-1.5">{{ errors.name }}</p>
 					</div>
 
 					<div class="space-y-1.5">
@@ -44,7 +44,7 @@
 							placeholder="Ej. 81 1234 5678"
 							@input="errors.phone = ''"
 						/>
-						<p v-if="errors.phone" class="text-danger text-[12px] mt-1.5">{{ errors.phone }}</p>
+						<p v-if="errors.phone" class="text-danger text-xs mt-1.5">{{ errors.phone }}</p>
 					</div>
 
 					<div class="space-y-1.5">
@@ -58,7 +58,7 @@
 							placeholder="Ej. compras@constructora.mx"
 							@input="errors.email = ''"
 						/>
-						<p v-if="errors.email" class="text-danger text-[12px] mt-1.5">{{ errors.email }}</p>
+						<p v-if="errors.email" class="text-danger text-xs mt-1.5">{{ errors.email }}</p>
 					</div>
 				</div>
 

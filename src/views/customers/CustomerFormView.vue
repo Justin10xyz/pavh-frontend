@@ -18,7 +18,7 @@
 
 		<form v-if="!loadingCustomer && !loadError" @submit.prevent="handleSubmit" class="space-y-4">
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos del cliente</h2>
+				<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Datos del cliente</h2>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5 sm:col-span-2">
@@ -31,7 +31,7 @@
 							placeholder="Ej. Constructora del Norte"
 							@input="errors.name = ''"
 						/>
-						<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">{{ errors.name }}</p>
+						<p v-if="errors.name" class="text-danger text-xs mt-1.5">{{ errors.name }}</p>
 					</div>
 
 					<div class="space-y-1.5">
@@ -49,7 +49,7 @@
 								@input="errors.phone = ''"
 							/>
 						</div>
-						<p v-if="errors.phone" class="text-danger text-[12px] mt-1.5">{{ errors.phone }}</p>
+						<p v-if="errors.phone" class="text-danger text-xs mt-1.5">{{ errors.phone }}</p>
 					</div>
 
 					<div class="space-y-1.5">
@@ -67,7 +67,7 @@
 								@input="errors.email = ''"
 							/>
 						</div>
-						<p v-if="errors.email" class="text-danger text-[12px] mt-1.5">{{ errors.email }}</p>
+						<p v-if="errors.email" class="text-danger text-xs mt-1.5">{{ errors.email }}</p>
 					</div>
 				</div>
 			</div>
@@ -86,14 +86,14 @@
 				<button
 					type="button"
 					@click="handleCancel"
-					class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 				>
 					Cancelar
 				</button>
 				<button
 					type="submit"
 					:disabled="submitting"
-					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
+					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
 				>
 					{{ submitting ? 'Guardando…' : (isEditMode ? 'Guardar cambios' : 'Guardar cliente') }}
 				</button>

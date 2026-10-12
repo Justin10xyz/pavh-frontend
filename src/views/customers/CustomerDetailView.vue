@@ -55,7 +55,7 @@
 				</div>
 			</div>
 
-			<p v-if="deleteError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+			<p v-if="deleteError" class="text-danger text-sm mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 				</svg>
@@ -65,7 +65,7 @@
 			<div class="space-y-4">
 				<!-- Contacto: nombre y fecha de alta ya están en el header -->
 				<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-					<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Contacto</h2>
+					<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Contacto</h2>
 
 					<dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
 						<div class="space-y-1">
@@ -99,7 +99,7 @@
 				<!-- Historial: cotizaciones -->
 				<div class="bg-surface border border-border rounded-md overflow-hidden">
 					<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 sm:px-6 pt-5 sm:pt-6 mb-4">
-						<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted">Cotizaciones</h2>
+						<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted">Cotizaciones</h2>
 						<p v-if="quotes.length > 0" class="text-sm text-text-muted">
 							{{ quotes.length }} {{ quotes.length === 1 ? 'cotización' : 'cotizaciones' }}
 						</p>
@@ -160,7 +160,7 @@
 				<!-- Historial: ventas -->
 				<div class="bg-surface border border-border rounded-md overflow-hidden">
 					<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 sm:px-6 pt-5 sm:pt-6 mb-4">
-						<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted">Ventas</h2>
+						<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted">Ventas</h2>
 						<!-- Lo que el cliente ha comprado en total -->
 						<p v-if="sales.length > 0" class="text-sm text-text-muted">
 							{{ sales.length }} {{ sales.length === 1 ? 'venta' : 'ventas' }}
@@ -223,14 +223,14 @@
 						<button
 							type="button"
 							@click="rejectCallback"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Cancelar
 						</button>
 						<button
 							type="button"
 							@click="acceptCallback"
-							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Eliminar
 						</button>
