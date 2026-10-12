@@ -113,7 +113,6 @@
 									<tr class="text-text-muted uppercase text-[10px]">
 										<th class="text-left font-medium py-1.5 pl-3 sm:pl-8">Color</th>
 										<th class="hidden md:table-cell text-left font-medium py-1.5">Código</th>
-										<th class="hidden sm:table-cell text-right font-medium py-1.5">Precio/caja</th>
 										<th class="text-right font-medium py-1.5">Stock</th>
 										<th class="text-center font-medium py-1.5 pr-3 sm:pr-6">Estado</th>
 									</tr>
@@ -133,13 +132,6 @@
 										</td>
 										<td class="hidden md:table-cell py-1.5 text-text-muted font-mono text-xs">
 											{{ variant.code }}
-										</td>
-										<!-- Por debajo de sm se oculta: el precio por caja es parte de la
-									     llave del grupo, así que ya está en el encabezado. -->
-										<td
-											class="hidden sm:table-cell py-1.5 font-semibold text-primary tabular-nums"
-										>
-											{{ formatCurrency(variant.price_per_box) }}
 										</td>
 										<td
 											class="py-1.5 text-sm"
