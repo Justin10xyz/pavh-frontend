@@ -35,31 +35,39 @@
 
 					<div class="space-y-1.5">
 						<FieldLabel html-for="phone" text="Teléfono" />
-						<InputTextCustom
-							id="phone"
-							v-model="form.phone"
-							:error="errors.phone"
-							type="tel"
-							autocomplete="off"
-							placeholder="Ej. 81 1234 5678"
-							:disabled="loadingCustomer"
-							@input="errors.phone = ''"
-						/>
+						<div class="relative">
+							<i class="ti ti-phone absolute left-3 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none" aria-hidden="true"></i>
+							<InputTextCustom
+								id="phone"
+								v-model="form.phone"
+								:error="errors.phone"
+								type="tel"
+								autocomplete="off"
+								placeholder="Ej. 81 1234 5678"
+								:disabled="loadingCustomer"
+								class="pl-9"
+								@input="errors.phone = ''"
+							/>
+						</div>
 						<p v-if="errors.phone" class="text-danger text-[12px] mt-1.5">{{ errors.phone }}</p>
 					</div>
 
 					<div class="space-y-1.5">
 						<FieldLabel html-for="email" text="Correo" />
-						<InputTextCustom
-							id="email"
-							v-model="form.email"
-							:error="errors.email"
-							type="email"
-							autocomplete="off"
-							placeholder="Ej. compras@constructora.mx"
-							:disabled="loadingCustomer"
-							@input="errors.email = ''"
-						/>
+						<div class="relative">
+							<i class="ti ti-mail absolute left-3 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none" aria-hidden="true"></i>
+							<InputTextCustom
+								id="email"
+								v-model="form.email"
+								:error="errors.email"
+								type="email"
+								autocomplete="off"
+								placeholder="Ej. compras@constructora.mx"
+								:disabled="loadingCustomer"
+								class="pl-9"
+								@input="errors.email = ''"
+							/>
+						</div>
 						<p v-if="errors.email" class="text-danger text-[12px] mt-1.5">{{ errors.email }}</p>
 					</div>
 				</div>
