@@ -16,6 +16,10 @@ export const useSalesStore = defineStore('sales', () => {
 	// solo la respuesta más reciente puede escribir en el estado.
 	let lastRequestId = 0
 
+	// Último query del listado (?periodo=…), para que "Volver" del detalle
+	// regrese con el mismo filtro (mismo criterio que quotes.listQuery).
+	const listQuery = ref({})
+
 	// Detalle de una sola venta, en su propio ref con loading/error propios
 	// (mismo criterio que currentQuote en quotes.js): no pisa el listado.
 	const currentSale = ref(null)
@@ -84,6 +88,7 @@ export const useSalesStore = defineStore('sales', () => {
 		loading,
 		error,
 		initialized,
+		listQuery,
 		currentSale,
 		currentSaleLoading,
 		currentSaleError,

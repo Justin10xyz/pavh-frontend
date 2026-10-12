@@ -20,7 +20,7 @@
 					<!-- Volver en línea con el título, mismo patrón que QuoteDetailView.
 					     Por debajo de lg solo la flecha. -->
 					<RouterLink
-						:to="{ name: 'pos.sales.index' }"
+						:to="{ name: 'pos.sales.index', query: sales.listQuery }"
 						aria-label="Volver a ventas"
 						title="Volver a ventas"
 						class="shrink-0 inline-flex items-center justify-center gap-1.5 h-8 w-8 lg:w-auto lg:px-3 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text text-sm font-medium rounded-md transition-colors select-none"
@@ -232,7 +232,7 @@ function formatDateTime(value) {
 }
 
 function goBack() {
-	router.push({ name: 'pos.sales.index' })
+	router.push({ name: 'pos.sales.index', query: sales.listQuery })
 }
 </script>
 
