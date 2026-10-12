@@ -7,14 +7,16 @@
 			</p>
 		</div>
 
-		<p v-if="generalError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+		<div v-if="loadingCustomer" class="text-text-muted text-sm">Cargando cliente…</div>
+
+		<p v-if="loadError" class="text-danger text-sm mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 			</svg>
-			{{ generalError }}
+			{{ loadError }}
 		</p>
 
-		<form @submit.prevent="handleSubmit" class="space-y-4">
+		<form v-if="!loadingCustomer && !loadError" @submit.prevent="handleSubmit" class="space-y-4">
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
 				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos del cliente</h2>
 
@@ -27,7 +29,6 @@
 							:error="errors.name"
 							autocomplete="off"
 							placeholder="Ej. Constructora del Norte"
-							:disabled="loadingCustomer"
 							@input="errors.name = ''"
 						/>
 						<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">{{ errors.name }}</p>
@@ -44,7 +45,6 @@
 								type="tel"
 								autocomplete="off"
 								placeholder="Ej. 81 1234 5678"
-								:disabled="loadingCustomer"
 								class="pl-9"
 								@input="errors.phone = ''"
 							/>
@@ -63,7 +63,6 @@
 								type="email"
 								autocomplete="off"
 								placeholder="Ej. compras@constructora.mx"
-								:disabled="loadingCustomer"
 								class="pl-9"
 								@input="errors.email = ''"
 							/>
@@ -72,6 +71,15 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- Junto a las acciones (no arriba del form), mismo criterio que en
+			     Cotizaciones y Ventas. -->
+			<p v-if="generalError" role="alert" class="text-danger text-sm flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+				</svg>
+				{{ generalError }}
+			</p>
 
 			<!-- Acciones -->
 			<div class="flex items-center justify-end gap-3">
@@ -84,7 +92,7 @@
 				</button>
 				<button
 					type="submit"
-					:disabled="submitting || loadingCustomer || loadFailed"
+					:disabled="submitting"
 					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
 				>
 					{{ submitting ? 'Guardando…' : (isEditMode ? 'Guardar cambios' : 'Guardar cliente') }}
@@ -136,10 +144,9 @@ const notify = useNotify()
 const confirm = useConfirm()
 
 const isEditMode = computed(() => !!route.params.id)
-const loadingCustomer = ref(false)
-// Si la precarga falla en modo edición no hay nada válido que guardar: el
-// form queda visible con el error, pero el submit se deshabilita.
-const loadFailed = ref(false)
+// Arranca en true en modo edición para no mostrar el form vacío un instante
+// antes de que empiece la precarga.
+const loadingCustomer = ref(isEditMode.value)
 
 const form = reactive({
 	name: '',
@@ -155,6 +162,10 @@ const errors = reactive({
 
 const submitting = ref(false)
 const generalError = ref(null)
+// Fallo de fetchCustomer en modo edición: oculta el form (no se debe poder
+// enviar uno vacío sobre un cliente que no cargó). generalError queda solo
+// para errores de submit, que no desmontan el form.
+const loadError = ref(null)
 
 // Cambios sin guardar: se compara contra una foto del form tomada al iniciar
 // (creación) o al terminar de cargar el cliente (edición). Se comparan los
@@ -164,9 +175,7 @@ function serializeForm() {
 }
 
 const savedSnapshot = ref(serializeForm())
-// Si la precarga falló no hay nada que se pueda guardar, así que tampoco nada
-// que se pierda al salir.
-const isDirty = computed(() => !loadFailed.value && serializeForm() !== savedSnapshot.value)
+const isDirty = computed(() => serializeForm() !== savedSnapshot.value)
 // Tras guardar se navega fuera del form sin pasar por la confirmación.
 let skipLeaveGuard = false
 
@@ -206,8 +215,7 @@ async function loadCustomer() {
 
 	const customer = customers.currentCustomer
 	if (customers.currentCustomerError || !customer || String(customer.id) !== String(route.params.id)) {
-		generalError.value = customers.currentCustomerError || 'No se pudo cargar el cliente.'
-		loadFailed.value = true
+		loadError.value = customers.currentCustomerError || 'No se pudo cargar el cliente.'
 		return
 	}
 
