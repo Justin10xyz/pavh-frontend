@@ -83,12 +83,39 @@
 				</button>
 			</div>
 		</form>
+
+		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
+			<template #container="{ message, acceptCallback, rejectCallback }">
+				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+					<h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
+					<p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+					<div class="flex items-center justify-end gap-3">
+						<button
+							type="button"
+							@click="rejectCallback"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Seguir editando
+						</button>
+						<button
+							type="button"
+							@click="acceptCallback"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Descartar cambios
+						</button>
+					</div>
+				</div>
+			</template>
+		</ConfirmDialog>
 	</div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import ConfirmDialog from 'primevue/confirmdialog'
+import { useConfirm } from 'primevue/useconfirm'
 import { useCustomersStore } from '@/stores/customers'
 import { useNotify } from '@/composables/useNotify'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
@@ -98,6 +125,7 @@ const route = useRoute()
 const router = useRouter()
 const customers = useCustomersStore()
 const notify = useNotify()
+const confirm = useConfirm()
 
 const isEditMode = computed(() => !!route.params.id)
 const loadingCustomer = ref(false)
@@ -120,6 +148,45 @@ const errors = reactive({
 const submitting = ref(false)
 const generalError = ref(null)
 
+// Cambios sin guardar: se compara contra una foto del form tomada al iniciar
+// (creación) o al terminar de cargar el cliente (edición). Se comparan los
+// valores ya recortados, igual que el payload que se envía.
+function serializeForm() {
+	return JSON.stringify([form.name.trim(), form.phone.trim(), form.email.trim()])
+}
+
+const savedSnapshot = ref(serializeForm())
+// Si la precarga falló no hay nada que se pueda guardar, así que tampoco nada
+// que se pierda al salir.
+const isDirty = computed(() => !loadFailed.value && serializeForm() !== savedSnapshot.value)
+// Tras guardar se navega fuera del form sin pasar por la confirmación.
+let skipLeaveGuard = false
+
+onBeforeRouteLeave(() => {
+	if (skipLeaveGuard || !isDirty.value) return true
+
+	return new Promise((resolve) => {
+		confirm.require({
+			header: 'Descartar cambios',
+			message: 'Hay cambios sin guardar en este cliente. Si sales ahora, se perderán.',
+			accept: () => resolve(true),
+			reject: () => resolve(false),
+			onHide: () => resolve(false),
+		})
+	})
+})
+
+// Cerrar/recargar la pestaña no pasa por el router: el navegador muestra su
+// propio aviso genérico (no se puede personalizar el texto).
+function handleBeforeUnload(event) {
+	if (!isDirty.value) return
+	event.preventDefault()
+	event.returnValue = ''
+}
+
+window.addEventListener('beforeunload', handleBeforeUnload)
+onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
+
 onMounted(() => {
 	if (isEditMode.value) loadCustomer()
 })
@@ -139,6 +206,7 @@ async function loadCustomer() {
 	form.name = customer.name
 	form.phone = customer.phone ?? ''
 	form.email = customer.email ?? ''
+	savedSnapshot.value = serializeForm()
 }
 
 // Solo lo que el backend también exige; el formato de correo lo valida el
@@ -175,6 +243,7 @@ async function handleSubmit() {
 
 		// El nombre va en el detalle: a diferencia de un folio puede ser largo.
 		notify.success(isEditMode.value ? 'Cliente actualizado' : 'Cliente guardado', customer.name)
+		skipLeaveGuard = true
 		router.push({ name: 'customers.show', params: { id: customer.id } })
 	} catch (err) {
 		if (err.response?.status === 422) {
