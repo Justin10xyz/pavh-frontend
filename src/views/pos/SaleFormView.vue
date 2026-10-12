@@ -15,7 +15,7 @@
 		     ya no están en inventario): aquí sí
 		     se oculta el form a propósito, no hay nada que se pueda registrar. -->
 		<div v-else-if="conversionError" class="space-y-3">
-			<p class="text-danger text-[13px] flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+			<p class="text-danger text-sm flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 				</svg>
@@ -23,7 +23,7 @@
 			</p>
 			<router-link
 				:to="{ name: 'quotes.show', params: { id: quoteId } }"
-				class="inline-flex items-center bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none"
+				class="inline-flex items-center bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none"
 			>
 				Volver a la cotización
 			</router-link>
@@ -32,11 +32,11 @@
 		<form v-else @submit.prevent="handleSubmit" class="space-y-4">
 			<!-- Sección 1 — Cliente -->
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Cliente</h2>
+				<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Cliente</h2>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5">
-						<label for="customer_id" class="text-xs font-medium text-text-muted block">Cliente</label>
+						<FieldLabel html-for="customer_id" text="Cliente" />
 						<CustomerSearch id="customer_id" v-model="form.customer_id" />
 					</div>
 				</div>
@@ -44,19 +44,27 @@
 
 			<!-- Sección 2 — Líneas de venta -->
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Productos</h2>
+				<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Productos</h2>
 
 				<div class="space-y-3">
 					<div v-for="(row, index) in lines" :key="row.id" class="border border-border rounded-md p-4">
 						<div class="flex items-center justify-between mb-3">
-							<span class="text-xs font-medium text-text-muted">Línea {{ index + 1 }}</span>
+							<!-- Sin producto elegido, el encabezado es el label del buscador -->
+							<label
+								v-if="!hasProduct(row)"
+								:for="`product-${row.id}`"
+								class="text-xs font-medium text-text-muted"
+							>
+								Producto {{ index + 1 }}
+							</label>
+							<span v-else class="text-xs font-medium text-text-muted">Producto {{ index + 1 }}</span>
 							<button
 								type="button"
 								@click="removeLine(row.id)"
 								:disabled="lines.length === 1"
 								class="text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors"
-								aria-label="Quitar línea"
-								title="Quitar línea"
+								aria-label="Quitar producto"
+								title="Quitar producto"
 							>
 								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6" />
@@ -66,7 +74,8 @@
 
 						<!-- Sin producto seleccionado: buscador -->
 						<ProductAutocomplete
-							v-if="!row.variant && !row.simpleProduct"
+							v-if="!hasProduct(row)"
+							:input-id="`product-${row.id}`"
 							include-simple-products
 							@select="(option) => selectProductForRow(row, option)"
 						/>
@@ -78,7 +87,7 @@
 									{{ simpleProductFor(row).name }}
 									<span
 										v-if="simpleProductCategoryName(row)"
-										class="text-[10px] text-text-muted border border-border rounded px-1.5 py-0.5"
+										class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
 									>
 										{{ simpleProductCategoryName(row) }}
 									</span>
@@ -98,18 +107,20 @@
 
 							<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
 								<div class="space-y-1.5">
-									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (unidades)</label>
+									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (unidades)" required />
 									<InputNumberCustom
 										:id="`quantity-${row.id}`"
 										v-model="row.quantity"
 										:min="1"
 										placeholder="0"
 										:max-fraction-digits="0"
+										:error="quantityError(row)"
 									/>
+									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
-									<label :for="`unit-price-${row.id}`" class="text-xs font-medium text-text-muted block">Precio unitario</label>
+									<FieldLabel :html-for="`unit-price-${row.id}`" text="Precio unitario" required />
 									<InputNumberCustom
 										:id="`unit-price-${row.id}`"
 										v-model="row.unit_price"
@@ -117,19 +128,26 @@
 										placeholder="$0.00"
 										mode="currency"
 										currency="MXN"
+										:error="priceError(row)"
 									/>
+									<p v-if="priceError(row)" class="text-danger text-xs">{{ priceError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Subtotal</label>
+									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
 										{{ formatCurrency(lineSubtotal(row)) }}
 									</div>
 								</div>
 							</div>
 
-							<p v-if="hasInsufficientStock(row)" class="text-danger text-[12px] mt-2">
-								Stock insuficiente — la venta no podrá registrarse con esta cantidad.
+							<!-- danger, no amber como en Cotizaciones: aquí el backend sí rechaza la venta -->
+							<p
+								v-if="hasInsufficientStock(row)"
+								class="mt-3 flex items-start gap-1.5 text-xs text-danger bg-danger/10 border border-danger/20 rounded-md px-3 py-2"
+							>
+								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
+								<span>{{ stockError(row) }}</span>
 							</p>
 						</div>
 
@@ -154,25 +172,27 @@
 
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
 								<div class="space-y-1.5">
-									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (m²)</label>
+									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (m²)" required />
 									<InputNumberCustom
 										:id="`quantity-${row.id}`"
 										v-model="row.quantity"
 										:min="0.01"
 										placeholder="0.00"
 										:max-fraction-digits="2"
+										:error="quantityError(row)"
 									/>
+									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Equivalente</label>
+									<span class="text-xs font-medium text-text-muted block">Equivalente</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
-										{{ boxesFor(row) ?? '—' }} cajas
+										{{ boxesFor(row) === null ? '—' : `${boxesFor(row)} cajas` }}
 									</div>
 								</div>
 
 								<div class="space-y-1.5">
-									<label :for="`unit-price-${row.id}`" class="text-xs font-medium text-text-muted block">Precio unitario (m²)</label>
+									<FieldLabel :html-for="`unit-price-${row.id}`" text="Precio unitario (m²)" required />
 									<InputNumberCustom
 										:id="`unit-price-${row.id}`"
 										v-model="row.unit_price"
@@ -180,19 +200,26 @@
 										placeholder="$0.00"
 										mode="currency"
 										currency="MXN"
+										:error="priceError(row)"
 									/>
+									<p v-if="priceError(row)" class="text-danger text-xs">{{ priceError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Subtotal</label>
+									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
 										{{ formatCurrency(lineSubtotal(row)) }}
 									</div>
 								</div>
 							</div>
 
-							<p v-if="hasInsufficientStock(row)" class="text-danger text-[12px] mt-2">
-								Stock insuficiente — la venta no podrá registrarse con esta cantidad.
+							<!-- danger, no amber como en Cotizaciones: aquí el backend sí rechaza la venta -->
+							<p
+								v-if="hasInsufficientStock(row)"
+								class="mt-3 flex items-start gap-1.5 text-xs text-danger bg-danger/10 border border-danger/20 rounded-md px-3 py-2"
+							>
+								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
+								<span>{{ stockError(row) }}</span>
 							</p>
 						</div>
 					</div>
@@ -203,7 +230,7 @@
 					@click="addLine"
 					class="mt-3 w-full border border-dashed border-border rounded-md py-2 text-sm text-text-muted hover:text-text hover:border-accent transition-colors select-none cursor-pointer"
 				>
-					+ Agregar línea
+					+ Agregar producto
 				</button>
 
 				<div class="flex justify-end mt-5 pt-4 border-t border-border">
@@ -220,19 +247,13 @@
 				</div>
 			</div>
 
-			<!-- Mensajes: fuera de cualquier v-if/v-else del form para no ocultarlo -->
-			<p v-if="generalError" class="text-danger text-[13px] flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+			<!-- Junto a las acciones (no arriba del form): con varias líneas, el inicio
+			     del form queda fuera de vista al presionar Registrar. -->
+			<p v-if="generalError" role="alert" class="text-danger text-sm flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 				</svg>
 				{{ generalError }}
-			</p>
-
-			<p v-if="successMessage" class="text-success text-[13px] flex items-center gap-1.5 bg-success/10 border border-success/20 rounded-md px-3 py-2">
-				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-				</svg>
-				{{ successMessage }}
 			</p>
 
 			<!-- Acciones -->
@@ -240,7 +261,7 @@
 				<button
 					type="submit"
 					:disabled="submitting"
-					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 				>
 					{{ submitting ? 'Registrando…' : 'Registrar venta' }}
 				</button>
@@ -261,7 +282,10 @@ import { useQuotesStore } from '@/stores/quotes'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
 import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
+import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
+import { useNotify } from '@/composables/useNotify'
 import { formatCurrency } from '@/lib/formatCurrency'
+import { formatQuantity } from '@/lib/formatQuantity'
 
 const route = useRoute()
 const router = useRouter()
@@ -270,6 +294,7 @@ const quotes = useQuotesStore()
 const inventory = useInventoryStore()
 const simpleProducts = useSimpleProductsStore()
 const catalogs = useCatalogsStore()
+const notify = useNotify()
 
 // Precio de lista, stock y categoría de las líneas simples salen de estos
 // stores (cacheados vía `initialized`); ProductAutocomplete también los carga,
@@ -523,6 +548,18 @@ function hasInsufficientStock(row) {
 	return boxes > (row.variant.stock_boxes ?? 0)
 }
 
+// Mismo texto base que el aviso de QuoteFormView, pero como error: el backend
+// rechaza la venta completa si alguna línea excede el stock.
+function stockError(row) {
+	if (row.simpleProduct) {
+		const stock = simpleProductFor(row).stock_quantity
+		return `Stock insuficiente: hay ${formatQuantity(stock)} uds. y se requieren ${formatQuantity(row.quantity)}. La venta no podrá registrarse con esta cantidad.`
+	}
+
+	const stock = row.variant.stock_boxes ?? 0
+	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se requieren ${boxesFor(row)}. La venta no podrá registrarse con esta cantidad.`
+}
+
 function lineSubtotal(row) {
 	if (!(row.variant || row.simpleProduct) || !row.quantity || !row.unit_price) return 0
 	return row.quantity * row.unit_price
@@ -533,7 +570,27 @@ const total = computed(() => subtotal.value) // sin impuestos por ahora, igual q
 
 const submitting = ref(false)
 const generalError = ref(null)
-const successMessage = ref(null)
+
+// Se activa en el primer intento de registrar; desde ahí los errores de cada
+// línea se evalúan en vivo y desaparecen en cuanto se captura un valor válido
+// (mismo criterio que QuoteFormView).
+const submitAttempted = ref(false)
+
+function hasProduct(row) {
+	return !!(row.variant || row.simpleProduct)
+}
+
+function quantityError(row) {
+	if (!submitAttempted.value || !hasProduct(row) || row.quantity > 0) return ''
+	return 'Captura la cantidad.'
+}
+
+// StoreSaleRequest exige unit_price >= 0.01; sin esto el 422 llegaba como un
+// mensaje genérico sin señalar la línea.
+function priceError(row) {
+	if (!submitAttempted.value || !hasProduct(row) || row.unit_price > 0) return ''
+	return 'Captura el precio.'
+}
 
 // SaleResource no regresa el stock restante: se recalcula localmente con el
 // mismo criterio que SaleController@store (ceil(m² / m2_per_box), sumado por
@@ -595,13 +652,22 @@ function resetForm() {
 	form.customer_id = ''
 	lines.value = [createEmptyLine()]
 	mergedRowId.value = null
+	submitAttempted.value = false
 }
 
 const handleSubmit = async () => {
 	generalError.value = null
-	successMessage.value = null
+	submitAttempted.value = true
 
-	const validLines = lines.value.filter((l) => (l.variant || l.simpleProduct) && l.quantity > 0)
+	// Una línea con producto pero sin cantidad o precio bloquea el registro (antes
+	// se descartaba en silencio). Las líneas sin producto sí se ignoran: son filas
+	// agregadas con "+ Agregar producto" que no se llegaron a usar.
+	if (lines.value.some((l) => quantityError(l) || priceError(l))) {
+		generalError.value = 'Hay productos sin cantidad o precio. Captúralos o quita la línea.'
+		return
+	}
+
+	const validLines = lines.value.filter(hasProduct)
 	if (validLines.length === 0) {
 		generalError.value = 'Agrega al menos un producto con cantidad mayor a cero.'
 		return
@@ -629,12 +695,15 @@ const handleSubmit = async () => {
 		// El listado cacheado no se refetchea, así que se actualiza in-place.
 		if (quoteId.value) {
 			quotes.markQuoteConverted(quoteId.value)
+			notify.success(`Venta ${sale.folio} registrada`, 'La cotización quedó como Convertida.')
 			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
 			return
 		}
 
+		// Mostrador: el form se limpia para el siguiente cliente; el toast es la
+		// única confirmación, así que lleva el folio.
 		resetForm()
-		successMessage.value = `Venta ${sale.folio} registrada correctamente.`
+		notify.success(`Venta ${sale.folio} registrada`)
 	} catch (err) {
 		console.error(err)
 		// 422 del backend (stock insuficiente, variante sin m2_per_box, cantidad
@@ -651,7 +720,6 @@ const handleSubmit = async () => {
 watch(quoteId, () => {
 	conversionError.value = null
 	generalError.value = null
-	successMessage.value = null
 	resetForm()
 	if (quoteId.value) loadConversion()
 }, { immediate: true })
