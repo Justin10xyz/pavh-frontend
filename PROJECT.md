@@ -262,7 +262,7 @@ Vista rápida — el detalle completo de cada uno está en "Módulos" más abajo
 
 - ~~Bug: la lógica de cálculo de rango de fecha estaba duplicada entre `SalesView.vue` y `src/stores/dashboard.js`~~ — resuelto: extraída a `src/lib/dateRanges.js` al sumarse Productos más vendidos como tercer consumidor
 - ~~Bug: `formatCurrency`/`Intl.NumberFormat` duplicado en varias vistas~~ ✅ — `SalesView.vue`, `SaleDetailView.vue`, `SaleFormView.vue`, `QuoteDetailView.vue` y `QuoteFormView.vue` ahora importan `src/lib/formatCurrency.js`, que ganó el guard `Number(value) || 0` que tenían las copias de los formularios (muestra $0.00 en vez de $NaN con una línea a medio capturar). `InventoryTable.vue` también la usa en lugar de `` `$${Number(x).toFixed(2)}` `` (ahora con separador de miles)
-- Helper de cantidad (`toLocaleString('es-MX', { maximumFractionDigits: 2 })`) repetido en `SaleDetailView.vue`, `QuoteDetailView.vue` y `TopProductsWidget.vue` — candidato a `src/lib/` igual que `formatCurrency`
+- ~~Helper de cantidad (`formatQuantity`) repetido en `SaleDetailView.vue`, `QuoteDetailView.vue` y `TopProductsWidget.vue`~~ ✅ — extraído a `src/lib/formatQuantity.js` (hasta 2 decimales, mismo guard `Number(value) || 0` que `formatCurrency`)
 - Pase de UX/UI y estilos, módulo por módulo, una vez cerrada la cobertura funcional completa de todos los módulos (decisión de Justin — evitar pulir vistas que aún pueden cambiar de forma). **En curso**: empezó por Inventario (tablas, formularios de producto, filtros), badges de status y header de `QuotesView.vue`, y la búsqueda/alta rápida de clientes en `CustomerSearch.vue`
 
 ### Antes de desplegar a producción
