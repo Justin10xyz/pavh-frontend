@@ -97,6 +97,11 @@ import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 const visible = defineModel('visible', { type: Boolean, default: false })
 const emit = defineEmits(['created'])
 
+const props = defineProps({
+	// Prellenado del nombre al abrir (ej. lo que se escribió en el buscador sin resultados).
+	initialName: { type: String, default: '' },
+})
+
 const customers = useCustomersStore()
 
 const form = reactive({ name: '', phone: '', email: '' })
@@ -105,6 +110,7 @@ const submitting = ref(false)
 const generalError = ref(null)
 // El `id` cae directo al <input> de InputTextCustom.
 function focusName() {
+	if (props.initialName && !form.name) form.name = props.initialName
 	document.getElementById('new_customer_name')?.focus()
 }
 
