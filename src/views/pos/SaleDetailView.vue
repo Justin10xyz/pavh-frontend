@@ -36,6 +36,18 @@
 
 				<div class="flex flex-col items-end gap-1.5">
 					<div class="flex flex-wrap items-center justify-end gap-3">
+						<!-- Siguiente cliente: tras registrar, el form navega aquí en vez de
+						     limpiarse. Separada de las acciones del documento. -->
+						<RouterLink
+							:to="{ name: 'pos.sales.create' }"
+							aria-label="Nueva venta"
+							title="Nueva venta"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none inline-flex items-center gap-2"
+						>
+							<i class="ti ti-plus text-base" aria-hidden="true"></i>
+							<span class="hidden sm:inline">Nueva venta</span>
+						</RouterLink>
+						<span class="hidden sm:block w-px h-6 bg-border" aria-hidden="true"></span>
 						<!-- Por debajo de sm solo ícono, igual que en QuoteDetailView -->
 						<button
 							v-if="canShareFiles"

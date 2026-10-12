@@ -505,7 +505,7 @@ function serializeForm() {
 
 const savedSnapshot = ref(serializeForm())
 const isDirty = computed(() => serializeForm() !== savedSnapshot.value)
-// Tras registrar una conversión se navega fuera del form sin pasar por la confirmación.
+// Tras registrar se navega al detalle de la venta sin pasar por la confirmación.
 let skipLeaveGuard = false
 
 function confirmDiscard() {
@@ -766,21 +766,20 @@ const handleSubmit = async () => {
 		syncInventoryStock(payload.items)
 		syncSimpleProductsStock(payload.items)
 
-		// Una conversión no es flujo de mostrador repetido: se vuelve al detalle
-		// de la cotización (que se refetchea al montar y ya mostrará "Convertida").
-		// El listado cacheado no se refetchea, así que se actualiza in-place.
-		if (quoteId.value) {
-			quotes.markQuoteConverted(quoteId.value)
-			skipLeaveGuard = true
-			notify.success(`Venta ${sale.folio} registrada`, 'La cotización quedó como Convertida.')
-			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
-			return
-		}
+		// El listado de cotizaciones cacheado no se refetchea: el status se
+		// actualiza in-place.
+		if (quoteId.value) quotes.markQuoteConverted(quoteId.value)
 
-		// Mostrador: el form se limpia para el siguiente cliente; el toast es la
-		// única confirmación, así que lleva el folio.
-		resetForm()
-		notify.success(`Venta ${sale.folio} registrada`)
+		// Venta directa y conversión van al detalle de la venta (no se limpia el
+		// form ni se vuelve a la cotización): lo siguiente es entregar la nota,
+		// y PDF/Compartir viven ahí. El detalle ofrece "Nueva venta" para el
+		// siguiente cliente y enlaza de vuelta a la cotización de origen.
+		skipLeaveGuard = true
+		notify.success(
+			`Venta ${sale.folio} registrada`,
+			quoteId.value ? 'La cotización quedó como Convertida.' : undefined,
+		)
+		router.push({ name: 'pos.sales.show', params: { id: sale.id } })
 	} catch (err) {
 		console.error(err)
 		// 422 del backend (stock insuficiente, variante sin m2_per_box, cantidad

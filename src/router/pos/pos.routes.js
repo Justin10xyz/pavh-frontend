@@ -9,7 +9,7 @@ export default [
 		path: '/pos/venta-directa',
 		name: 'pos.sales.create',
 		component: () => import('@/views/pos/SaleFormView.vue'),
-		meta: { layout: 'AppLayout', section: 'pos', title: 'Venta directa', requiresAuth: true },
+		meta: { layout: 'AppLayout', section: 'pos', title: 'Nueva venta', requiresAuth: true },
 	},
 	{
 		path: '/pos/ventas',
