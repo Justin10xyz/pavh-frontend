@@ -63,29 +63,35 @@
 			</p>
 
 			<div class="space-y-4">
-				<!-- Datos generales -->
+				<!-- Contacto: nombre y fecha de alta ya están en el header -->
 				<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-					<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
+					<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Contacto</h2>
 
 					<dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
 						<div class="space-y-1">
-							<dt class="text-xs font-medium text-text-muted">Nombre</dt>
-							<dd class="text-text font-medium">{{ customer.name }}</dd>
-						</div>
-
-						<div class="space-y-1">
 							<dt class="text-xs font-medium text-text-muted">Teléfono</dt>
-							<dd :class="customer.phone ? 'text-text' : 'text-text-muted'">{{ customer.phone || 'Sin teléfono' }}</dd>
+							<dd v-if="customer.phone">
+								<a
+									:href="`tel:${customer.phone}`"
+									class="block w-fit text-text hover:underline"
+								>
+									{{ customer.phone }}
+								</a>
+							</dd>
+							<dd v-else class="text-text-muted">Sin teléfono</dd>
 						</div>
 
 						<div class="space-y-1">
 							<dt class="text-xs font-medium text-text-muted">Correo</dt>
-							<dd :class="customer.email ? 'text-text' : 'text-text-muted'">{{ customer.email || 'Sin correo' }}</dd>
-						</div>
-
-						<div class="space-y-1">
-							<dt class="text-xs font-medium text-text-muted">Fecha de alta</dt>
-							<dd class="text-text">{{ formatDate(customer.created_at) }}</dd>
+							<dd v-if="customer.email" class="min-w-0">
+								<a
+									:href="`mailto:${customer.email}`"
+									class="block w-fit max-w-full break-all text-text hover:underline"
+								>
+									{{ customer.email }}
+								</a>
+							</dd>
+							<dd v-else class="text-text-muted">Sin correo</dd>
 						</div>
 					</dl>
 				</div>
