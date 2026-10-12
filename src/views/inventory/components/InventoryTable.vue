@@ -4,7 +4,7 @@
 			:value="products"
 			dataKey="id"
 			v-model:expandedRows="expandedRows"
-			class="inventory-table"
+			class="data-table inventory-table"
 		>
 			<Column header="Producto">
 				<template #body="{ data, rowTogglerCallback }">
@@ -126,7 +126,7 @@
 						</div>
 
 						<div v-if="isGroupExpanded(data.id, group.key)" class="overflow-x-auto">
-							<table class="w-full text-xs border-t border-border">
+							<table class="variants-table w-full text-xs border-t border-border">
 								<thead>
 									<tr class="text-text-muted uppercase text-xs">
 										<th class="text-left font-medium py-1.5 pl-3 sm:pl-8">Color</th>
@@ -289,32 +289,22 @@ button.toggle-btn {
 	transform: rotate(90deg);
 }
 
-.inventory-table :deep(table) {
-	width: 100%;
-	border-collapse: collapse;
+/* Estilos base de tabla en `.data-table` (main.css); aquí solo la fila de expansión. */
+.inventory-table :deep([data-pc-section="rowexpansion"] > td) {
+	padding: 0;
 }
-.inventory-table :deep(thead th) {
-	text-align: left;
-	font-size: 0.75rem;
-	font-weight: 500;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: var(--color-text-muted);
-	background: var(--color-bg);
+
+/* Tabla de colores anidada: `.data-table` no la alcanza (solo la tabla raíz), así
+   que lleva su propio espaciado — el mismo que antes heredaba de los estilos de
+   la tabla principal. */
+.variants-table th {
 	padding: 0.5rem 0.75rem;
+	background: var(--color-bg);
 	border-bottom: 1px solid var(--color-border);
 }
-.inventory-table :deep(tbody > tr:not(.p-datatable-row-expansion) > td) {
+.variants-table td {
 	padding: 0.375rem 0.75rem;
 	vertical-align: middle;
-	border-bottom: 1px solid var(--color-border);
-}
-.inventory-table :deep(tbody > tr:hover:not(.p-datatable-row-expansion)) {
-	background: var(--color-bg);
-}
-.inventory-table :deep(.p-datatable-row-expansion > td) {
-	padding: 0;
-	border-bottom: 1px solid var(--color-border);
 }
 
 .group-header {

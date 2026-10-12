@@ -17,3 +17,46 @@
 	--font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 	--font-serif: "Source Serif 4", ui-serif, Georgia, serif;
 }
+
+/* Tablas de listado (PrimeVue DataTable unstyled). Aplicar `class="data-table"`
+   al DataTable; cada vista solo agrega lo propio (ej. expansión de filas).
+   - Se ancla a `[data-pc-section="table"]` con `>` para no alcanzar tablas
+     anidadas dentro de una fila de expansión (ej. colores en Inventario).
+   - La fila de expansión se detecta por `data-pc-section="rowexpansion"`: en
+     modo unstyled PrimeVue no pone clases `p-*` (como `.p-datatable-row-expansion`).
+   - En `components` para que las utilidades de Tailwind en header-class/body-class
+     (ej. `hidden sm:table-cell`, `w-px`) sigan ganando. */
+@layer components {
+	.data-table [data-pc-section="table"] {
+		width: 100%;
+		border-collapse: collapse;
+	}
+	.data-table [data-pc-section="table"] > thead > tr > th {
+		text-align: left;
+		font-size: 0.75rem;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: var(--color-text-muted);
+		background: var(--color-bg);
+		padding: 0.5rem 0.75rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+	.data-table [data-pc-section="table"] > tbody > tr > td {
+		font-size: 0.875rem;
+		vertical-align: middle;
+		border-bottom: 1px solid var(--color-border);
+	}
+	.data-table [data-pc-section="table"] > tbody > tr:not([data-pc-section="rowexpansion"]) > td {
+		padding: 0.5rem 0.75rem;
+	}
+	.data-table [data-pc-section="table"] > tbody > tr:last-child > td {
+		border-bottom: none;
+	}
+	.data-table [data-pc-section="table"] > tbody > tr:not([data-pc-section="rowexpansion"]) {
+		transition: background-color 150ms ease;
+	}
+	.data-table [data-pc-section="table"] > tbody > tr:not([data-pc-section="rowexpansion"]):hover {
+		background: var(--color-bg);
+	}
+}

@@ -1,103 +1,108 @@
 <template>
 	<div>
-		<InventoryFilters
-			v-model:searchQuery="searchQuery"
-			v-model:selectedCategory="selectedCategory"
-			:categoryOptions="categoryOptions"
-			search-placeholder="Buscar por nombre…"
-			:show-low-stock-filter="false"
-			@clear-filters="clearFilters"
-		/>
-
+		<!-- Mismo criterio que Catálogo de pisos: los filtros solo aparecen ya cargados. -->
 		<div v-if="simpleProducts.loading" class="text-text-muted text-sm">Cargando productos…</div>
 		<div v-else-if="simpleProducts.error" class="text-danger text-sm">
 			{{ simpleProducts.error }}
 		</div>
 
-		<div
-			v-else-if="filteredProducts.length === 0"
-			class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface"
-		>
-			{{
-				simpleProducts.simpleProducts.length === 0
-					? "Aún no hay otros productos registrados."
-					: "No se encontraron productos con esos filtros."
-			}}
-		</div>
+		<template v-else>
+			<InventoryFilters
+				v-model:searchQuery="searchQuery"
+				v-model:selectedCategory="selectedCategory"
+				:categoryOptions="categoryOptions"
+				search-placeholder="Buscar por nombre…"
+				:show-low-stock-filter="false"
+				@clear-filters="clearFilters"
+			/>
 
-		<div v-else class="bg-surface border border-border rounded-md overflow-x-auto">
-			<DataTable :value="filteredProducts" dataKey="id" class="simple-products-table">
-				<Column header="Nombre">
-					<template #body="{ data }">
-						<span class="font-medium text-text">{{ data.name }}</span>
-						<!-- Sin columna Categoría por debajo de sm: va debajo del nombre -->
-						<span class="block sm:hidden text-xs text-text-muted">{{
-							categoryName(data)
-						}}</span>
-					</template>
-				</Column>
+			<div
+				v-if="filteredProducts.length === 0"
+				class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface"
+			>
+				{{
+					simpleProducts.simpleProducts.length === 0
+						? "Aún no hay otros productos registrados."
+						: "No se encontraron productos con esos filtros."
+				}}
+			</div>
 
-				<Column
-					header="Categoría"
-					header-class="hidden sm:table-cell"
-					body-class="hidden sm:table-cell"
-				>
-					<template #body="{ data }">
-						<span class="text-muted">{{ categoryName(data) }}</span>
-					</template>
-				</Column>
+			<div v-else class="bg-surface border border-border rounded-md overflow-x-auto">
+				<DataTable :value="filteredProducts" dataKey="id" class="data-table">
+					<Column header="Nombre">
+						<template #body="{ data }">
+							<span class="font-medium text-text">{{ data.name }}</span>
+							<!-- Sin columna Categoría por debajo de sm: va debajo del nombre -->
+							<span class="block sm:hidden text-xs text-text-muted">{{
+								categoryName(data)
+							}}</span>
+						</template>
+					</Column>
 
-				<Column header="Precio" body-class="whitespace-nowrap">
-					<template #body="{ data }">
-						<span class="font-semibold text-primary tabular-nums">{{
-							formatCurrency(data.price)
-						}}</span>
-					</template>
-				</Column>
+					<Column
+						header="Categoría"
+						header-class="hidden sm:table-cell"
+						body-class="hidden sm:table-cell"
+					>
+						<template #body="{ data }">
+							<span class="text-muted">{{ categoryName(data) }}</span>
+						</template>
+					</Column>
 
-				<Column header="Stock">
-					<template #body="{ data }">
-						<div class="flex items-center gap-2">
-							<span class="text-text tabular-nums">{{ data.stock_quantity }}</span>
-						</div>
-					</template>
-				</Column>
+					<Column header="Precio" body-class="whitespace-nowrap">
+						<template #body="{ data }">
+							<span class="font-semibold text-primary tabular-nums">{{
+								formatCurrency(data.price)
+							}}</span>
+						</template>
+					</Column>
 
-				<Column header="" body-class="w-px">
-					<template #body="{ data }">
-						<div class="flex items-center">
-							<button
-								type="button"
-								class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-								aria-label="Ajustar stock"
-								title="Ajustar stock"
-								@click="openStockDialog(data)"
-							>
-								<i class="ti ti-adjustments-horizontal text-base"></i>
-							</button>
-							<button
-								type="button"
-								class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-								aria-label="Ver historial de stock"
-								title="Ver historial de stock"
-								@click="openMovementsDialog(data)"
-							>
-								<i class="ti ti-history text-base"></i>
-							</button>
-							<button
-								type="button"
-								class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-								aria-label="Editar producto"
-								title="Editar producto"
-								@click="editProduct(data.id)"
-							>
-								<i class="ti ti-pencil text-base"></i>
-							</button>
-						</div>
-					</template>
-				</Column>
-			</DataTable>
-		</div>
+					<Column header="Stock">
+						<template #body="{ data }">
+							<div class="flex items-center gap-2">
+								<span class="text-text tabular-nums"
+								>{{ data.stock_quantity }} uds.</span
+								>
+							</div>
+						</template>
+					</Column>
+
+					<Column header="" body-class="w-px">
+						<template #body="{ data }">
+							<div class="flex items-center">
+								<button
+									type="button"
+									class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+									aria-label="Ajustar stock"
+									title="Ajustar stock"
+									@click="openStockDialog(data)"
+								>
+									<i class="ti ti-adjustments-horizontal text-base"></i>
+								</button>
+								<button
+									type="button"
+									class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+									aria-label="Ver historial de stock"
+									title="Ver historial de stock"
+									@click="openMovementsDialog(data)"
+								>
+									<i class="ti ti-history text-base"></i>
+								</button>
+								<button
+									type="button"
+									class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+									aria-label="Editar producto"
+									title="Editar producto"
+									@click="editProduct(data.id)"
+								>
+									<i class="ti ti-pencil text-base"></i>
+								</button>
+							</div>
+						</template>
+					</Column>
+				</DataTable>
+			</div>
+		</template>
 
 		<StockAdjustDialog
 			v-model:visible="stockDialogOpen"
@@ -208,36 +213,3 @@ const filteredProducts = computed(() => {
 	});
 });
 </script>
-
-<style scoped>
-.simple-products-table :deep(table) {
-	width: 100%;
-	border-collapse: collapse;
-}
-.simple-products-table :deep(thead th) {
-	text-align: left;
-	font-size: 0.75rem;
-	font-weight: 500;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: var(--color-text-muted);
-	background: var(--color-bg);
-	padding: 0.5rem 0.75rem;
-	border-bottom: 1px solid var(--color-border);
-}
-.simple-products-table :deep(tbody > tr > td) {
-	padding: 0.5rem 0.75rem;
-	vertical-align: middle;
-	border-bottom: 1px solid var(--color-border);
-	font-size: 0.8125rem;
-}
-.simple-products-table :deep(tbody > tr:last-child > td) {
-	border-bottom: none;
-}
-.simple-products-table :deep(tbody > tr) {
-	transition: background-color 150ms ease;
-}
-.simple-products-table :deep(tbody > tr:hover) {
-	background: color-mix(in oklab, var(--color-bg) 60%, transparent);
-}
-</style>
