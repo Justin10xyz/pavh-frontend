@@ -9,7 +9,7 @@
 			<button
 				type="button"
 				@click="goBack"
-				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 			>
 				Volver
 			</button>
@@ -18,85 +18,89 @@
 		<template v-else-if="quote">
 			<!-- Header -->
 			<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
-				<div>
-					<div class="flex items-center gap-2">
-						<h1 class="font-serif text-xl text-primary">{{ quote.folio }}</h1>
-						<span
-							class="text-[10px] px-2 py-0.5 rounded"
-							:class="statusClasses(quote.status)"
-						>
-							{{ quote.status }}
-						</span>
+				<div class="flex items-start gap-3">
+					<!-- Volver en línea con el título (antes se perdía entre las acciones).
+					     Por debajo de lg solo la flecha. -->
+					<RouterLink
+						:to="{ name: 'quotes', query: quotes.listQuery }"
+						aria-label="Volver a cotizaciones"
+						title="Volver a cotizaciones"
+						class="shrink-0 inline-flex items-center justify-center gap-1.5 h-8 w-8 lg:w-auto lg:px-3 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text text-sm font-medium rounded-md transition-colors select-none"
+					>
+						<i class="ti ti-arrow-left text-base" aria-hidden="true"></i>
+						<span class="hidden lg:inline">Volver</span>
+					</RouterLink>
+					<div>
+						<div class="flex items-center gap-2">
+							<h1 class="font-serif text-xl text-primary">{{ quote.folio }}</h1>
+							<span
+								class="text-xs px-2 py-0.5 rounded"
+								:class="statusClasses(quote.status)"
+							>
+								{{ quote.status }}
+							</span>
+						</div>
+						<p class="text-sm text-text-muted mt-0.5">
+							Creada el {{ formatDate(quote.created_at) }}
+						</p>
 					</div>
-					<p class="text-sm text-text-muted mt-0.5">
-						Creada el {{ formatDate(quote.created_at) }}
-					</p>
 				</div>
 
 				<div class="flex flex-col items-end gap-1.5">
-					<div class="flex flex-wrap items-center gap-3">
-						<button
-							type="button"
-							@click="goBack"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
-						>
-							Volver
-						</button>
-						<button
-							type="button"
-							:disabled="!isEditable"
-							:title="
-								isEditable
-									? 'Editar cotización'
-									: 'Solo se pueden editar cotizaciones en estado Borrador'
-							"
-							@click="editQuote"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
-						>
-							Editar
-						</button>
-						<button
-							type="button"
-							:disabled="!isEditable || cancelling"
-							:title="
-								isEditable
-									? 'Cancelar cotización'
-									: 'Solo se pueden cancelar cotizaciones en estado Borrador'
-							"
-							@click="requestCancel"
-							class="bg-surface border border-border hover:bg-danger/10 text-danger font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
-						>
-							{{ cancelling ? "Cancelando…" : "Cancelar" }}
-						</button>
+					<div class="flex flex-wrap items-center justify-end gap-3">
+						<!-- Editar/Cancelar/Convertir solo existen en Borrador: en un estado
+						     terminal se ocultan en vez de quedar deshabilitados (el tooltip
+						     que explicaba por qué no se ve en touch ni en un botón disabled). -->
+						<template v-if="isEditable">
+							<!-- Destructiva: separada del resto para no quedar junto a "Editar" -->
+							<button
+								type="button"
+								:disabled="cancelling"
+								@click="requestCancel"
+								class="bg-surface border border-danger/40 hover:bg-danger/10 text-danger font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							>
+								{{ cancelling ? "Cancelando…" : "Cancelar cotización" }}
+							</button>
+							<span class="hidden sm:block w-px h-6 bg-border" aria-hidden="true"></span>
+							<button
+								type="button"
+								@click="editQuote"
+								class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+							>
+								Editar
+							</button>
+						</template>
+						<!-- Por debajo de sm solo ícono, para que las acciones no ocupen tres renglones -->
 						<button
 							v-if="canShareFiles"
 							type="button"
 							:disabled="pdfBusy"
 							@click="sharePdf"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							aria-label="Compartir"
+							title="Compartir"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 						>
-							<i class="ti ti-share text-[15px]"></i>
-							Compartir
+							<i class="ti ti-share text-base" aria-hidden="true"></i>
+							<span class="hidden sm:inline">Compartir</span>
 						</button>
 						<button
 							type="button"
 							:disabled="pdfBusy"
 							@click="downloadPdf"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							aria-label="Descargar PDF"
+							title="Descargar PDF"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 						>
-							<i class="ti ti-download text-[15px]"></i>
-							{{ pdfBusy ? "Generando PDF…" : "Descargar PDF" }}
+							<i class="ti ti-download text-base" aria-hidden="true"></i>
+							<span class="hidden sm:inline">{{
+								pdfBusy ? "Generando PDF…" : "Descargar PDF"
+							}}</span>
 						</button>
 						<button
+							v-if="isEditable"
 							type="button"
-							:disabled="!isEditable"
-							:title="
-								isEditable
-									? 'Convertir a venta'
-									: 'Solo se pueden convertir cotizaciones en estado Borrador'
-							"
 							@click="convertToSale"
-							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:bg-primary/50 disabled:cursor-not-allowed"
+							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Convertir a venta
 						</button>
@@ -110,7 +114,7 @@
 				<!-- Datos generales -->
 				<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
 					<h2
-						class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4"
+						class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4"
 					>
 						Datos generales
 					</h2>
@@ -120,25 +124,36 @@
 							<dt class="text-xs font-medium text-text-muted">Cliente</dt>
 							<dd v-if="quote.customer" class="text-text">
 								<div class="font-medium">{{ quote.customer.name }}</div>
-								<div
+								<a
 									v-if="quote.customer.phone"
-									class="text-text-muted text-[13px]"
+									:href="`tel:${quote.customer.phone}`"
+									class="block w-fit text-text-muted text-sm hover:text-text hover:underline"
 								>
 									{{ quote.customer.phone }}
-								</div>
-								<div
+								</a>
+								<a
 									v-if="quote.customer.email"
-									class="text-text-muted text-[13px]"
+									:href="`mailto:${quote.customer.email}`"
+									class="block w-fit text-text-muted text-sm hover:text-text hover:underline"
 								>
 									{{ quote.customer.email }}
-								</div>
+								</a>
 							</dd>
 							<dd v-else class="text-text-muted">Sin cliente</dd>
 						</div>
 
-						<div class="space-y-1">
-							<dt class="text-xs font-medium text-text-muted">Fecha de creación</dt>
-							<dd class="text-text">{{ formatDate(quote.created_at) }}</dd>
+						<!-- Solo en Convertida: `sale` viene de GET /quotes/{id} (null si no se ha convertido) -->
+						<div v-if="quote.sale" class="space-y-1">
+							<dt class="text-xs font-medium text-text-muted">Convertida en venta</dt>
+							<dd>
+								<RouterLink
+									:to="{ name: 'pos.sales.show', params: { id: quote.sale.id } }"
+									class="inline-flex items-center gap-1 font-medium text-accent hover:underline"
+								>
+									{{ quote.sale.folio }}
+									<i class="ti ti-arrow-up-right text-sm" aria-hidden="true"></i>
+								</RouterLink>
+							</dd>
 						</div>
 
 						<div v-if="quote.notes" class="space-y-1 sm:col-span-2">
@@ -151,7 +166,7 @@
 				<!-- Líneas -->
 				<div class="bg-surface border border-border rounded-md overflow-hidden">
 					<h2
-						class="text-[11px] font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4"
+						class="text-xs font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4"
 					>
 						Productos
 					</h2>
@@ -162,8 +177,9 @@
 								<tr>
 									<th>Producto</th>
 									<th class="text-right">Cantidad</th>
-									<th class="text-right">Cajas</th>
-									<th class="text-right">Precio unitario</th>
+									<!-- Cajas y precio unitario se ocultan por debajo de sm: el subtotal ya basta -->
+									<th class="text-right hidden sm:table-cell">Cajas</th>
+									<th class="text-right hidden sm:table-cell">Precio unitario</th>
 									<th class="text-right">Subtotal</th>
 								</tr>
 							</thead>
@@ -179,8 +195,8 @@
 										<td class="text-right text-text">
 											{{ formatQuantity(item.quantity) }} uds.
 										</td>
-										<td class="text-right text-text-muted">—</td>
-										<td class="text-right text-text">
+										<td class="text-right text-text-muted hidden sm:table-cell">—</td>
+										<td class="text-right text-text hidden sm:table-cell">
 											{{ formatCurrency(item.unit_price) }}
 										</td>
 									</template>
@@ -189,7 +205,7 @@
 											<div class="font-medium text-text">
 												{{ item.product_variant?.product?.name ?? "—" }}
 											</div>
-											<div class="text-text-muted text-[12px]">
+											<div class="text-text-muted text-xs">
 												{{ item.product_variant?.color }} ·
 												{{ item.product_variant?.size }}
 											</div>
@@ -197,10 +213,13 @@
 										<td class="text-right text-text">
 											{{ formatQuantity(item.quantity) }} m²
 										</td>
-										<td class="text-right text-text-muted">
+										<td
+											class="text-right hidden sm:table-cell"
+											:class="boxesFor(item) == null ? 'text-text-muted' : 'text-text'"
+										>
 											{{ boxesFor(item) ?? "—" }}
 										</td>
-										<td class="text-right text-text">
+										<td class="text-right text-text hidden sm:table-cell">
 											{{ formatCurrency(item.unit_price) }}/m²
 										</td>
 									</template>
@@ -238,14 +257,14 @@
 						<button
 							type="button"
 							@click="rejectCallback"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Volver
 						</button>
 						<button
 							type="button"
 							@click="acceptCallback"
-							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Cancelar cotización
 						</button>
@@ -264,6 +283,7 @@ import { useConfirm } from "primevue/useconfirm";
 import { useQuotesStore } from "@/stores/quotes";
 import { statusClasses } from "@/lib/quoteStatus";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
+import { useNotify } from "@/composables/useNotify";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
 
@@ -271,6 +291,7 @@ const route = useRoute();
 const router = useRouter();
 const quotes = useQuotesStore();
 const confirm = useConfirm();
+const notify = useNotify();
 
 const cancelling = ref(false);
 const cancelError = ref(null);
@@ -310,10 +331,12 @@ function boxesFor(item) {
 }
 
 function formatDate(value) {
-	return new Date(value).toLocaleDateString("es-MX", {
+	return new Date(value).toLocaleString("es-MX", {
 		day: "2-digit",
 		month: "short",
 		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
 	});
 }
 
@@ -338,7 +361,8 @@ async function cancelQuote() {
 	cancelError.value = null;
 
 	try {
-		await quotes.cancelQuote(quote.value.id);
+		const cancelled = await quotes.cancelQuote(quote.value.id);
+		notify.success(`Cotización ${cancelled.folio} cancelada`);
 	} catch (err) {
 		console.error(err);
 		cancelError.value =
@@ -351,7 +375,7 @@ async function cancelQuote() {
 }
 
 function goBack() {
-	router.push({ name: "quotes" });
+	router.push({ name: "quotes", query: quotes.listQuery });
 }
 </script>
 
@@ -361,7 +385,7 @@ function goBack() {
 	border-collapse: collapse;
 }
 .items-table thead th {
-	font-size: 11px;
+	font-size: 0.75rem;
 	font-weight: 500;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
@@ -378,7 +402,7 @@ function goBack() {
 	padding: 0.5rem 0.75rem;
 	vertical-align: middle;
 	border-bottom: 1px solid var(--color-border);
-	font-size: 0.8125rem;
+	font-size: 0.875rem;
 }
 .items-table tbody tr:last-child td {
 	border-bottom: none;

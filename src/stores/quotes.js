@@ -7,6 +7,9 @@ export const useQuotesStore = defineStore("quotes", () => {
 	const loading = ref(false);
 	const error = ref(null);
 	const initialized = ref(false);
+	// Último query del listado (ej. { estado: "Borrador" }), para que el
+	// "Volver" del detalle regrese con el mismo filtro. Lo escribe QuotesView.
+	const listQuery = ref({});
 
 	// Detalle de una sola cotización (con items + producto). Va en su propio
 	// ref y con loading/error propios: es un registro completo, no el resumen
@@ -122,6 +125,7 @@ export const useQuotesStore = defineStore("quotes", () => {
 		loading,
 		error,
 		initialized,
+		listQuery,
 		fetchQuotes,
 		createQuote,
 		updateQuote,

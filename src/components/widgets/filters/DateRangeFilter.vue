@@ -1,22 +1,15 @@
 <template>
-	<div class="flex flex-wrap items-center gap-2" role="group" :aria-label="label">
-		<button
-			v-for="filter in DATE_FILTERS"
-			:key="filter.key"
-			type="button"
-			class="text-sm px-3 py-2 bg-surface border rounded-md transition-colors select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-			:class="modelValue === filter.key
-				? 'border-accent text-text font-medium'
-				: 'border-border text-text-muted hover:text-text'"
-			:aria-pressed="modelValue === filter.key"
-			@click="emit('update:modelValue', filter.key)"
-		>
-			{{ filter.label }}
-		</button>
-	</div>
+	<QuickFilter
+		:model-value="modelValue"
+		:options="DATE_FILTERS"
+		:label="label"
+		@update:model-value="emit('update:modelValue', $event)"
+	/>
 </template>
 
 <script setup>
+import QuickFilter from './QuickFilter.vue'
+
 // Solo emite la clave del filtro ('all' | 'today' | 'week' | 'month'); el
 // padre la convierte a { from, to } con dateRangeFor() de @/lib/dateRanges.
 const DATE_FILTERS = [

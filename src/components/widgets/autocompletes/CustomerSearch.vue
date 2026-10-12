@@ -1,26 +1,38 @@
 <template>
 	<div class="flex items-start gap-2">
 		<div class="relative flex-1 min-w-0">
-			<!-- Cliente elegido: clic en el nombre para cambiarlo, × para dejar "Sin cliente" -->
+			<!-- Cliente elegido: clic en el nombre para cambiarlo, × para dejar "Sin cliente".
+			     Nombre y contacto en renglones separados (antes compartían uno de altura
+			     fija y ambos se truncaban); el contacto pasa a otro renglón si no cabe. -->
 			<div
 				v-if="selectedCustomer && !changing"
-				class="flex items-center h-[2.375rem] bg-surface border border-border rounded-md"
+				class="flex items-center min-h-[2.375rem] bg-surface border border-border rounded-md"
 			>
 				<button
 					:id="$attrs.id"
 					type="button"
-					class="flex-1 min-w-0 flex items-baseline gap-2 h-full px-3 text-left cursor-pointer"
+					class="flex-1 min-w-0 flex flex-col justify-center gap-0.5 self-stretch px-3 py-1.5 text-left rounded-l-md hover:bg-bg transition-colors cursor-pointer"
 					title="Cambiar cliente"
 					@click="startSearch"
 				>
-					<span class="text-sm text-text truncate">{{ selectedCustomer.name }}</span>
-					<span v-if="contactLine(selectedCustomer)" class="text-xs text-text-muted truncate">
-						{{ contactLine(selectedCustomer) }}
+					<span class="text-sm font-medium text-text truncate max-w-full">{{ selectedCustomer.name }}</span>
+					<span
+						v-if="selectedCustomer.phone || selectedCustomer.email"
+						class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text-muted max-w-full"
+					>
+						<span v-if="selectedCustomer.phone" class="inline-flex items-center gap-1">
+							<i class="ti ti-phone" aria-hidden="true"></i>
+							{{ selectedCustomer.phone }}
+						</span>
+						<span v-if="selectedCustomer.email" class="inline-flex items-center gap-1 min-w-0 max-w-full">
+							<i class="ti ti-mail shrink-0" aria-hidden="true"></i>
+							<span class="truncate">{{ selectedCustomer.email }}</span>
+						</span>
 					</span>
 				</button>
 				<button
 					type="button"
-					class="shrink-0 flex items-center p-1.5 mr-1 rounded text-text-muted hover:bg-bg hover:text-text transition-colors cursor-pointer"
+					class="shrink-0 flex items-center p-1.5 mx-1 rounded text-text-muted hover:bg-bg hover:text-text transition-colors cursor-pointer"
 					aria-label="Quitar cliente"
 					title="Quitar cliente"
 					@click="clearSelection"
@@ -88,7 +100,7 @@
 
 					<p
 						v-if="hiddenCount > 0"
-						class="px-3 py-1.5 text-[11px] text-text-muted bg-bg border-t border-border"
+						class="px-3 py-1.5 text-xs text-text-muted bg-bg border-t border-border"
 					>
 						{{ hiddenCount }} más — escribe para filtrar.
 					</p>
