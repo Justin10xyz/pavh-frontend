@@ -41,65 +41,75 @@
 			}}
 		</div>
 
-		<div v-else class="bg-surface border border-border rounded-md overflow-x-auto">
-			<DataTable
-				:value="filteredSales"
-				dataKey="id"
-				class="data-table"
-				:row-class="() => 'cursor-pointer'"
-				@row-click="openSale"
-			>
-				<Column header="Folio" body-class="whitespace-nowrap">
-					<template #body="{ data }">
-						<RouterLink
-							:to="{ name: 'pos.sales.show', params: { id: data.id } }"
-							class="font-medium text-text hover:text-accent transition-colors"
-						>
-							{{ data.folio }}
-						</RouterLink>
-						<!-- Sin columna Fecha por debajo de sm: va debajo del folio -->
-						<span class="block sm:hidden text-xs text-text-muted">{{ formatDate(data.created_at) }}</span>
-					</template>
-				</Column>
+		<template v-else>
+			<!-- Resumen de lo que se ve (periodo + búsqueda): con "Hoy" sirve como
+			     referencia para el corte de caja -->
+			<p class="text-sm text-text-muted mb-2 sm:text-right" aria-live="polite">
+				{{ filteredSales.length }} {{ filteredSales.length === 1 ? 'venta' : 'ventas' }}
+				<span aria-hidden="true">·</span>
+				Total <span class="font-semibold text-primary tabular-nums">{{ formatCurrency(filteredTotal) }}</span>
+			</p>
 
-				<Column header="Cliente">
-					<template #body="{ data }">
-						<span :class="data.customer ? 'text-text' : 'text-text-muted'">
-							{{ data.customer?.name ?? 'Sin cliente' }}
-						</span>
-					</template>
-				</Column>
-
-				<Column
-					header="Fecha"
-					header-class="hidden sm:table-cell"
-					body-class="hidden sm:table-cell whitespace-nowrap"
+			<div class="bg-surface border border-border rounded-md overflow-x-auto">
+				<DataTable
+					:value="filteredSales"
+					dataKey="id"
+					class="data-table"
+					:row-class="() => 'cursor-pointer'"
+					@row-click="openSale"
 				>
-					<template #body="{ data }">
-						<span class="text-text-muted">{{ formatDate(data.created_at) }}</span>
-					</template>
-				</Column>
+					<Column header="Folio" body-class="whitespace-nowrap">
+						<template #body="{ data }">
+							<RouterLink
+								:to="{ name: 'pos.sales.show', params: { id: data.id } }"
+								class="font-medium text-text hover:text-accent transition-colors"
+							>
+								{{ data.folio }}
+							</RouterLink>
+							<!-- Sin columna Fecha por debajo de sm: va debajo del folio -->
+							<span class="block sm:hidden text-xs text-text-muted">{{ formatDate(data.created_at) }}</span>
+						</template>
+					</Column>
 
-				<Column header="Total" header-class="text-right!" body-class="text-right whitespace-nowrap">
-					<template #body="{ data }">
-						<span class="font-semibold text-primary tabular-nums">{{ formatCurrency(data.total) }}</span>
-					</template>
-				</Column>
+					<Column header="Cliente">
+						<template #body="{ data }">
+							<span :class="data.customer ? 'text-text' : 'text-text-muted'">
+								{{ data.customer?.name ?? 'Sin cliente' }}
+							</span>
+						</template>
+					</Column>
 
-				<Column header="" body-class="w-px">
-					<template #body="{ data }">
-						<RouterLink
-							:to="{ name: 'pos.sales.show', params: { id: data.id } }"
-							class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-							aria-label="Ver venta"
-							title="Ver venta"
-						>
-							<i class="ti ti-eye text-base"></i>
-						</RouterLink>
-					</template>
-				</Column>
-			</DataTable>
-		</div>
+					<Column
+						header="Fecha"
+						header-class="hidden sm:table-cell"
+						body-class="hidden sm:table-cell whitespace-nowrap"
+					>
+						<template #body="{ data }">
+							<span class="text-text-muted">{{ formatDate(data.created_at) }}</span>
+						</template>
+					</Column>
+
+					<Column header="Total" header-class="text-right!" body-class="text-right whitespace-nowrap">
+						<template #body="{ data }">
+							<span class="font-semibold text-primary tabular-nums">{{ formatCurrency(data.total) }}</span>
+						</template>
+					</Column>
+
+					<Column header="" body-class="w-px">
+						<template #body="{ data }">
+							<RouterLink
+								:to="{ name: 'pos.sales.show', params: { id: data.id } }"
+								class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+								aria-label="Ver venta"
+								title="Ver venta"
+							>
+								<i class="ti ti-eye text-base"></i>
+							</RouterLink>
+						</template>
+					</Column>
+				</DataTable>
+			</div>
+		</template>
 	</div>
 </template>
 
@@ -181,6 +191,11 @@ const filteredSales = computed(() => {
 		(sale) => normalize(sale.folio).includes(q) || normalize(sale.customer?.name).includes(q)
 	)
 })
+
+// `total` llega como string decimal desde Laravel
+const filteredTotal = computed(() =>
+	filteredSales.value.reduce((sum, sale) => sum + (Number(sale.total) || 0), 0)
+)
 
 function formatDate(value) {
 	return new Date(value).toLocaleString('es-MX', {
