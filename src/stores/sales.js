@@ -28,7 +28,9 @@ export const useSalesStore = defineStore('sales', () => {
 		loading.value = true
 		error.value = null
 
-		const params = { with: 'customer,items' }
+		// Sin `items`: el listado no los muestra, y cada item carga su variante por
+		// separado en SaleItemResource (una consulta por línea de cada venta).
+		const params = { with: 'customer' }
 		if (from) params.from = from
 		if (to) params.to = to
 
