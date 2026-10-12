@@ -142,6 +142,20 @@
 							<dd v-else class="text-text-muted">Sin cliente</dd>
 						</div>
 
+						<!-- Solo en Convertida: `sale` viene de GET /quotes/{id} (null si no se ha convertido) -->
+						<div v-if="quote.sale" class="space-y-1">
+							<dt class="text-xs font-medium text-text-muted">Convertida en venta</dt>
+							<dd>
+								<RouterLink
+									:to="{ name: 'pos.sales.show', params: { id: quote.sale.id } }"
+									class="inline-flex items-center gap-1 font-medium text-accent hover:underline"
+								>
+									{{ quote.sale.folio }}
+									<i class="ti ti-arrow-up-right text-sm" aria-hidden="true"></i>
+								</RouterLink>
+							</dd>
+						</div>
+
 						<div v-if="quote.notes" class="space-y-1 sm:col-span-2">
 							<dt class="text-xs font-medium text-text-muted">Notas</dt>
 							<dd class="text-text whitespace-pre-line">{{ quote.notes }}</dd>
