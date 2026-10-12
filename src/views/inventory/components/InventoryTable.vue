@@ -23,7 +23,7 @@
 						<div class="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
 							<span class="font-semibold text-primary text-sm">{{ data.name }}</span>
 							<span
-								class="text-[0.6rem] text-text-muted border border-border rounded px-1.5 py-0.5"
+								class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
 							>
 								{{ data.category }} · {{ data.supplier }} · {{ data.unit_type }}
 							</span>
@@ -128,7 +128,7 @@
 						<div v-if="isGroupExpanded(data.id, group.key)" class="overflow-x-auto">
 							<table class="w-full text-xs border-t border-border">
 								<thead>
-									<tr class="text-text-muted uppercase text-[10px]">
+									<tr class="text-text-muted uppercase text-xs">
 										<th class="text-left font-medium py-1.5 pl-3 sm:pl-8">Color</th>
 										<th class="hidden md:table-cell text-left font-medium py-1.5">Código</th>
 										<th class="text-right font-medium py-1.5">Stock</th>
@@ -164,7 +164,7 @@
 										<td class="py-1.5 pr-3 sm:pr-6">
 											<div class="flex items-center justify-start gap-1.5">
 												<span
-													class="text-[0.6rem] px-2 py-0.5 rounded"
+													class="text-xs px-2 py-0.5 rounded"
 													:class="
 														variant.low_stock
 															? 'bg-danger/10 text-danger'
@@ -263,7 +263,7 @@ function lowStockLabel(variants) {
 	justify-content: center;
 	width: 1.25rem;
 	height: 1.25rem;
-	border-radius: 3px;
+	border-radius: 0.25rem;
 	color: var(--color-text-muted);
 	flex-shrink: 0;
 }
@@ -295,7 +295,7 @@ button.toggle-btn {
 }
 .inventory-table :deep(thead th) {
 	text-align: left;
-	font-size: 11px;
+	font-size: 0.75rem;
 	font-weight: 500;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
@@ -353,11 +353,11 @@ button.toggle-btn {
 }
 
 .spec-badge {
-	font-size: 10px;
+	font-size: 0.75rem;
 	font-weight: 400;
 	color: var(--color-text-muted);
 	border: 1px solid var(--color-border);
-	border-radius: 3px;
+	border-radius: 0.25rem;
 	padding: 0.125rem 0.375rem;
 }
 </style>

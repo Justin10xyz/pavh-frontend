@@ -216,7 +216,7 @@ const filteredProducts = computed(() => {
 }
 .simple-products-table :deep(thead th) {
 	text-align: left;
-	font-size: 11px;
+	font-size: 0.75rem;
 	font-weight: 500;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
