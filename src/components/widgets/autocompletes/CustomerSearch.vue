@@ -67,7 +67,7 @@
 					v-if="dropdownOpen"
 					class="absolute z-10 mt-1 w-full bg-surface border border-border rounded-md overflow-hidden"
 				>
-					<ul v-if="results.length > 0" :id="listboxId" role="listbox" class="max-h-64 overflow-y-auto">
+					<ul v-if="results.length > 0" :id="listboxId" ref="listbox" role="listbox" class="max-h-64 overflow-y-auto">
 						<li
 							v-for="(customer, index) in results"
 							:id="optionId(index)"
@@ -127,7 +127,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, useAttrs, useId } from 'vue'
+import { computed, nextTick, onMounted, ref, useAttrs, useId, useTemplateRef } from 'vue'
 import axios from '@/lib/axios'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import CustomerCreateDialog from '@/views/customers/components/CustomerCreateDialog.vue'
@@ -243,14 +243,23 @@ function closeDropdownDelayed() {
 	}, 150)
 }
 
+// La lista tiene scroll propio (max-h-64): la opción activa se mantiene visible
+// al moverse con flechas (mismo criterio que ProductAutocomplete).
+const listbox = useTemplateRef('listbox')
+async function moveActive(index) {
+	activeIndex.value = index
+	await nextTick()
+	listbox.value?.querySelector(`#${CSS.escape(optionId(index))}`)?.scrollIntoView({ block: 'nearest' })
+}
+
 function onKeydown(event) {
 	if (event.key === 'ArrowDown') {
 		event.preventDefault()
 		if (!dropdownOpen.value) return openDropdown()
-		activeIndex.value = Math.max(0, Math.min(activeIndex.value + 1, results.value.length - 1))
+		moveActive(Math.max(0, Math.min(activeIndex.value + 1, results.value.length - 1)))
 	} else if (event.key === 'ArrowUp') {
 		event.preventDefault()
-		activeIndex.value = Math.max(activeIndex.value - 1, 0)
+		moveActive(Math.max(activeIndex.value - 1, 0))
 	} else if (event.key === 'Enter') {
 		// Nunca envía el form de la cotización/venta desde el buscador.
 		event.preventDefault()

@@ -319,7 +319,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
@@ -492,6 +492,17 @@ function changeLine(row) {
 	row.simpleProduct = null
 }
 
+// Sin mouse: tras elegir un producto el foco pasa a su cantidad. En una variante
+// nueva va a "m² requeridos" (el cliente suele pedir en m² y de ahí salen las
+// cajas); en una fusión, a las cajas/unidades que acaban de sumar uno.
+async function focusLineQuantity(row, { merged = false } = {}) {
+	await nextTick()
+	const field = !merged && row.variant && Number(row.variant.m2_per_box) > 0 ? 'requested' : 'quantity'
+	const input = document.getElementById(`${field}-${row.id}`)
+	input?.focus()
+	input?.select()
+}
+
 // Si el producto (variante o simple) ya existe en otra línea del form, se suma
 // la cantidad nueva a esa línea existente en vez de duplicar la fila (ver
 // AGENT.md — listas repetibles no deben permitir estado duplicado inconsistente).
@@ -508,6 +519,7 @@ function selectProductForRow(row, option) {
 		flashMerge(target.id)
 		lines.value = lines.value.filter((l) => l.id !== row.id)
 		if (lines.value.length === 0) lines.value.push(createEmptyLine())
+		focusLineQuantity(target, { merged: true })
 		return
 	}
 
@@ -520,6 +532,8 @@ function selectProductForRow(row, option) {
 	row.quantity = row.quantity > 0 ? row.quantity : 1
 	if (isSimple) row.requestedM2 = null
 	else if (row.requestedM2 > 0) applyRequestedM2(row, row.requestedM2)
+
+	focusLineQuantity(row)
 }
 
 // Datos vivos del producto simple (precio, stock, categoría) desde el store; si

@@ -335,7 +335,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
@@ -611,6 +611,17 @@ function changeLine(row) {
 	row.simpleProduct = null
 }
 
+// Sin mouse: tras elegir un producto el foco pasa a su cantidad. En una variante
+// nueva va a "m² requeridos" (el cliente suele pedir en m² y de ahí salen las
+// cajas); en una fusión, a las cajas/unidades que acaban de sumar uno.
+async function focusLineQuantity(row, { merged = false } = {}) {
+	await nextTick()
+	const field = !merged && row.variant && Number(row.variant.m2_per_box) > 0 ? 'requested' : 'quantity'
+	const input = document.getElementById(`${field}-${row.id}`)
+	input?.focus()
+	input?.select()
+}
+
 // Misma fusión que QuoteFormView: si el producto (variante o simple) ya está en
 // otra línea se suma la cantidad ahí (conservando el precio que ya se haya
 // capturado en esa línea) en vez de duplicar la fila. Los ids son de tablas
@@ -626,6 +637,7 @@ function selectProductForRow(row, option) {
 		flashMerge(target.id)
 		lines.value = lines.value.filter((l) => l.id !== row.id)
 		if (lines.value.length === 0) lines.value.push(createEmptyLine())
+		focusLineQuantity(target, { merged: true })
 		return
 	}
 
@@ -642,6 +654,8 @@ function selectProductForRow(row, option) {
 	// En venta el backend sí acepta unit_price del cliente: se precarga con el
 	// precio de lista (por m² o por unidad) como valor inicial editable.
 	row.unit_price = Number(isSimple ? option.price : option.price_per_m2)
+
+	focusLineQuantity(row)
 }
 
 // Datos vivos del producto simple (stock, categoría) desde el store; si no
