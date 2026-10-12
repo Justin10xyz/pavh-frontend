@@ -7,11 +7,11 @@
 
 		<div v-if="loadingQuote" class="text-text-muted text-sm">Cargando cotización…</div>
 
-		<p v-if="loadError || generalError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+		<p v-if="loadError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 			</svg>
-			{{ loadError || generalError }}
+			{{ loadError }}
 		</p>
 
 		<form v-if="!loadingQuote && !loadError" @submit.prevent="handleSubmit" class="space-y-4">
@@ -208,6 +208,15 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- Junto a las acciones (no arriba del form): con varias líneas, el inicio
+			     del form queda fuera de vista al presionar Guardar. -->
+			<p v-if="generalError" role="alert" class="text-danger text-[13px] flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+				</svg>
+				{{ generalError }}
+			</p>
 
 			<!-- Acciones -->
 			<div class="flex items-center justify-end gap-3">
@@ -466,8 +475,9 @@ const handleSubmit = async () => {
 			await quotes.updateQuote(quoteId.value, payload)
 			router.push({ name: 'quotes.show', params: { id: quoteId.value } })
 		} else {
-			await quotes.createQuote(payload)
-			router.push({ name: 'quotes' })
+			// Al detalle, no al listado: lo siguiente suele ser descargar o compartir el PDF.
+			const created = await quotes.createQuote(payload)
+			router.push({ name: 'quotes.show', params: { id: created.id } })
 		}
 	} catch (err) {
 		console.error(err)
