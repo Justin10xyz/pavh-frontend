@@ -22,7 +22,7 @@
 					<!-- Volver en línea con el título (antes se perdía entre las acciones).
 					     Por debajo de lg solo la flecha. -->
 					<RouterLink
-						:to="{ name: 'quotes' }"
+						:to="{ name: 'quotes', query: quotes.listQuery }"
 						aria-label="Volver a cotizaciones"
 						title="Volver a cotizaciones"
 						class="shrink-0 inline-flex items-center justify-center gap-1.5 h-8 w-8 lg:w-auto lg:px-3 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text text-sm font-medium rounded-md transition-colors select-none"
@@ -361,7 +361,7 @@ async function cancelQuote() {
 }
 
 function goBack() {
-	router.push({ name: "quotes" });
+	router.push({ name: "quotes", query: quotes.listQuery });
 }
 </script>
 

@@ -136,16 +136,17 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { useQuotesStore } from "@/stores/quotes";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { QUOTE_STATUSES, statusClasses } from "@/lib/quoteStatus";
 import { formatCurrency } from "@/lib/formatCurrency";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import QuickFilter from "@/components/widgets/filters/QuickFilter.vue";
 
+const route = useRoute();
 const router = useRouter();
 const quotes = useQuotesStore();
 
@@ -165,7 +166,32 @@ function normalize(str) {
 
 // Filtro por status client-side: el listado ya trae todas las cotizaciones
 // (QuoteController@index no pagina ni filtra), igual que la búsqueda.
-const statusFilter = ref("all");
+//
+// El status activo vive en la URL (?estado=Borrador), no en un ref: así se
+// conserva al volver del detalle con Atrás y se puede enlazar directo (ej.
+// "Ver todo" del widget de cotizaciones activas). Un valor desconocido en la
+// URL cae a "Todas". Se usa replace para no llenar el historial de filtros.
+const statusFilter = computed({
+	get: () => (QUOTE_STATUSES.includes(route.query.estado) ? route.query.estado : "all"),
+	set: (key) => {
+		router.replace({
+			query: { ...route.query, estado: key === "all" ? undefined : key },
+		});
+	},
+});
+
+// El "Volver" del detalle regresa al listado con el mismo filtro, aunque se
+// haya pasado por la edición (donde Atrás del navegador ya no aplica).
+// Se filtra por nombre de ruta: al navegar al detalle, `route` ya cambió antes
+// de que este componente se desmonte, y sin el guard se guardaría el query del
+// detalle (vacío).
+watch(
+	() => route.query,
+	(query) => {
+		if (route.name === "quotes") quotes.listQuery = { ...query };
+	},
+	{ immediate: true },
+);
 
 const statusOptions = computed(() => [
 	{ key: "all", label: "Todas", count: quotes.quotes.length },
