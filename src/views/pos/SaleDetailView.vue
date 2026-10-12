@@ -142,6 +142,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSalesStore } from '@/stores/sales'
 import { useDocumentPdf } from '@/composables/useDocumentPdf'
 import { formatCurrency } from '@/lib/formatCurrency'
+import { formatQuantity } from '@/lib/formatQuantity'
 
 const route = useRoute()
 const router = useRouter()
@@ -169,10 +170,6 @@ watch(
 	},
 	{ immediate: true }
 )
-
-function formatQuantity(value) {
-	return Number(value).toLocaleString('es-MX', { maximumFractionDigits: 2 })
-}
 
 function formatDateTime(value) {
 	return new Date(value).toLocaleString('es-MX', {
