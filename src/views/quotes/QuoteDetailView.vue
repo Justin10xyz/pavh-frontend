@@ -35,6 +35,21 @@
 
 				<div class="flex flex-col items-end gap-1.5">
 					<div class="flex flex-wrap items-center gap-3">
+						<!-- Destructiva: separada del resto para no quedar junto a "Editar" -->
+						<button
+							type="button"
+							:disabled="!isEditable || cancelling"
+							:title="
+								isEditable
+									? 'Cancelar cotización'
+									: 'Solo se pueden cancelar cotizaciones en estado Borrador'
+							"
+							@click="requestCancel"
+							class="bg-surface border border-danger/40 hover:bg-danger/10 text-danger font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:border-border disabled:cursor-not-allowed"
+						>
+							{{ cancelling ? "Cancelando…" : "Cancelar cotización" }}
+						</button>
+						<span class="hidden sm:block w-px h-6 bg-border" aria-hidden="true"></span>
 						<button
 							type="button"
 							@click="goBack"
@@ -54,19 +69,6 @@
 							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 						>
 							Editar
-						</button>
-						<button
-							type="button"
-							:disabled="!isEditable || cancelling"
-							:title="
-								isEditable
-									? 'Cancelar cotización'
-									: 'Solo se pueden cancelar cotizaciones en estado Borrador'
-							"
-							@click="requestCancel"
-							class="bg-surface border border-border hover:bg-danger/10 text-danger font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
-						>
-							{{ cancelling ? "Cancelando…" : "Cancelar" }}
 						</button>
 						<button
 							v-if="canShareFiles"
@@ -197,7 +199,10 @@
 										<td class="text-right text-text">
 											{{ formatQuantity(item.quantity) }} m²
 										</td>
-										<td class="text-right text-text-muted">
+										<td
+											class="text-right"
+											:class="boxesFor(item) == null ? 'text-text-muted' : 'text-text'"
+										>
 											{{ boxesFor(item) ?? "—" }}
 										</td>
 										<td class="text-right text-text">
@@ -310,10 +315,12 @@ function boxesFor(item) {
 }
 
 function formatDate(value) {
-	return new Date(value).toLocaleDateString("es-MX", {
+	return new Date(value).toLocaleString("es-MX", {
 		day: "2-digit",
 		month: "short",
 		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
 	});
 }
 
