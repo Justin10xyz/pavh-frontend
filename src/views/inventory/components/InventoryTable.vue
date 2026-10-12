@@ -27,6 +27,14 @@
 							>
 								{{ data.category }} · {{ data.supplier }} · {{ data.unit_type }}
 							</span>
+							<!-- Aviso visible sin expandir: con "Solo stock bajo" activo, evita
+							     abrir producto y medida para saber dónde está el faltante. -->
+							<span
+								v-if="lowStockCount(visibleVariantsByProduct.get(data.id)) > 0"
+								class="low-stock-badge"
+							>
+								{{ lowStockLabel(visibleVariantsByProduct.get(data.id)) }}
+							</span>
 						</div>
 					</div>
 				</template>
@@ -108,9 +116,12 @@
 										{{ group.kilos_per_box }} kg/caja
 									</span>
 								</span>
-								<span class="shrink-0 whitespace-nowrap text-text-muted"
-								>{{ group.variants.length }} colores</span
-								>
+								<span class="shrink-0 flex items-center gap-2 whitespace-nowrap">
+									<span v-if="lowStockCount(group.variants) > 0" class="low-stock-badge">
+										{{ lowStockLabel(group.variants) }}
+									</span>
+									<span class="text-text-muted">{{ group.variants.length }} colores</span>
+								</span>
 							</button>
 						</div>
 
@@ -234,6 +245,15 @@ function toggleGroup(productId, groupKey) {
 function isGroupExpanded(productId, groupKey) {
 	return !!expandedGroups.value[groupExpansionKey(productId, groupKey)];
 }
+
+// Cuenta sobre las variantes visibles (ya filtradas), igual que la columna Variantes.
+function lowStockCount(variants = []) {
+	return variants.filter((v) => v.low_stock).length;
+}
+
+function lowStockLabel(variants) {
+	return `${lowStockCount(variants)} con stock bajo`;
+}
 </script>
 
 <style scoped>
@@ -320,6 +340,16 @@ button.toggle-btn {
 	.group-header-toggle {
 		align-items: center;
 	}
+}
+
+.low-stock-badge {
+	font-size: 0.75rem;
+	font-weight: 500;
+	white-space: nowrap;
+	color: var(--color-danger);
+	background: color-mix(in oklab, var(--color-danger) 10%, transparent);
+	border-radius: 0.25rem;
+	padding: 0.125rem 0.5rem;
 }
 
 .spec-badge {
