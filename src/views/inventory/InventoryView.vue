@@ -46,7 +46,11 @@
 				v-if="filteredProducts.length === 0"
 				class="text-text-muted text-sm py-8 text-center border border-border rounded-md bg-surface"
 			>
-				No se encontraron productos con esos filtros.
+				{{
+					inventory.products.length === 0
+						? "Aún no hay productos de pisos registrados."
+						: "No se encontraron productos con esos filtros."
+				}}
 			</div>
 
 			<InventoryTable
