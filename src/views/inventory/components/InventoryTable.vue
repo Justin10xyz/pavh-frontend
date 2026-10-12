@@ -14,9 +14,10 @@
 							class="toggle-btn cursor-pointer"
 							:class="{ 'is-open': expandedRows[data.id] }"
 							@click="rowTogglerCallback"
-							:aria-label="expandedRows[data.id] ? 'Colapsar' : 'Expandir'"
+							:aria-expanded="!!expandedRows[data.id]"
+							:aria-label="`Variantes de ${data.name}`"
 						>
-							<svg viewBox="0 0 8 8" width="8" height="8">
+							<svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
 								<path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
 							</svg>
 						</button>
@@ -77,17 +78,13 @@
 								class="group-header-toggle cursor-pointer"
 								@click="toggleGroup(data.id, group.key)"
 								title="Clic para ver stock por color"
-								:aria-label="
-									isGroupExpanded(data.id, group.key)
-										? 'Colapsar colores'
-										: 'Expandir colores'
-								"
+								:aria-expanded="isGroupExpanded(data.id, group.key)"
 							>
 								<span
 									class="toggle-btn"
 									:class="{ 'is-open': isGroupExpanded(data.id, group.key) }"
 								>
-									<svg viewBox="0 0 8 8" width="8" height="8">
+									<svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
 										<path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
 									</svg>
 								</span>

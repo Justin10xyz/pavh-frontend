@@ -59,11 +59,7 @@
 
 					<Column header="Stock">
 						<template #body="{ data }">
-							<div class="flex items-center gap-2">
-								<span class="text-text tabular-nums"
-								>{{ data.stock_quantity }} uds.</span
-								>
-							</div>
+							<span class="text-text tabular-nums">{{ data.stock_quantity }} uds.</span>
 						</template>
 					</Column>
 
