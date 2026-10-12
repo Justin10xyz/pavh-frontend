@@ -47,64 +47,60 @@
 				</div>
 
 				<div class="flex flex-col items-end gap-1.5">
-					<div class="flex flex-wrap items-center gap-3">
-						<!-- Destructiva: separada del resto para no quedar junto a "Editar" -->
-						<button
-							type="button"
-							:disabled="!isEditable || cancelling"
-							:title="
-								isEditable
-									? 'Cancelar cotización'
-									: 'Solo se pueden cancelar cotizaciones en estado Borrador'
-							"
-							@click="requestCancel"
-							class="bg-surface border border-danger/40 hover:bg-danger/10 text-danger font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:border-border disabled:cursor-not-allowed"
-						>
-							{{ cancelling ? "Cancelando…" : "Cancelar cotización" }}
-						</button>
-						<span class="hidden sm:block w-px h-6 bg-border" aria-hidden="true"></span>
-						<button
-							type="button"
-							:disabled="!isEditable"
-							:title="
-								isEditable
-									? 'Editar cotización'
-									: 'Solo se pueden editar cotizaciones en estado Borrador'
-							"
-							@click="editQuote"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
-						>
-							Editar
-						</button>
+					<div class="flex flex-wrap items-center justify-end gap-3">
+						<!-- Editar/Cancelar/Convertir solo existen en Borrador: en un estado
+						     terminal se ocultan en vez de quedar deshabilitados (el tooltip
+						     que explicaba por qué no se ve en touch ni en un botón disabled). -->
+						<template v-if="isEditable">
+							<!-- Destructiva: separada del resto para no quedar junto a "Editar" -->
+							<button
+								type="button"
+								:disabled="cancelling"
+								@click="requestCancel"
+								class="bg-surface border border-danger/40 hover:bg-danger/10 text-danger font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							>
+								{{ cancelling ? "Cancelando…" : "Cancelar cotización" }}
+							</button>
+							<span class="hidden sm:block w-px h-6 bg-border" aria-hidden="true"></span>
+							<button
+								type="button"
+								@click="editQuote"
+								class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+							>
+								Editar
+							</button>
+						</template>
+						<!-- Por debajo de sm solo ícono, para que las acciones no ocupen tres renglones -->
 						<button
 							v-if="canShareFiles"
 							type="button"
 							:disabled="pdfBusy"
 							@click="sharePdf"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							aria-label="Compartir"
+							title="Compartir"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 						>
-							<i class="ti ti-share text-base"></i>
-							Compartir
+							<i class="ti ti-share text-base" aria-hidden="true"></i>
+							<span class="hidden sm:inline">Compartir</span>
 						</button>
 						<button
 							type="button"
 							:disabled="pdfBusy"
 							@click="downloadPdf"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							aria-label="Descargar PDF"
+							title="Descargar PDF"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 						>
-							<i class="ti ti-download text-base"></i>
-							{{ pdfBusy ? "Generando PDF…" : "Descargar PDF" }}
+							<i class="ti ti-download text-base" aria-hidden="true"></i>
+							<span class="hidden sm:inline">{{
+								pdfBusy ? "Generando PDF…" : "Descargar PDF"
+							}}</span>
 						</button>
 						<button
+							v-if="isEditable"
 							type="button"
-							:disabled="!isEditable"
-							:title="
-								isEditable
-									? 'Convertir a venta'
-									: 'Solo se pueden convertir cotizaciones en estado Borrador'
-							"
 							@click="convertToSale"
-							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:bg-primary/50 disabled:cursor-not-allowed"
+							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Convertir a venta
 						</button>
@@ -128,25 +124,22 @@
 							<dt class="text-xs font-medium text-text-muted">Cliente</dt>
 							<dd v-if="quote.customer" class="text-text">
 								<div class="font-medium">{{ quote.customer.name }}</div>
-								<div
+								<a
 									v-if="quote.customer.phone"
-									class="text-text-muted text-sm"
+									:href="`tel:${quote.customer.phone}`"
+									class="block w-fit text-text-muted text-sm hover:text-text hover:underline"
 								>
 									{{ quote.customer.phone }}
-								</div>
-								<div
+								</a>
+								<a
 									v-if="quote.customer.email"
-									class="text-text-muted text-sm"
+									:href="`mailto:${quote.customer.email}`"
+									class="block w-fit text-text-muted text-sm hover:text-text hover:underline"
 								>
 									{{ quote.customer.email }}
-								</div>
+								</a>
 							</dd>
 							<dd v-else class="text-text-muted">Sin cliente</dd>
-						</div>
-
-						<div class="space-y-1">
-							<dt class="text-xs font-medium text-text-muted">Fecha de creación</dt>
-							<dd class="text-text">{{ formatDate(quote.created_at) }}</dd>
 						</div>
 
 						<div v-if="quote.notes" class="space-y-1 sm:col-span-2">
@@ -170,8 +163,9 @@
 								<tr>
 									<th>Producto</th>
 									<th class="text-right">Cantidad</th>
-									<th class="text-right">Cajas</th>
-									<th class="text-right">Precio unitario</th>
+									<!-- Cajas y precio unitario se ocultan por debajo de sm: el subtotal ya basta -->
+									<th class="text-right hidden sm:table-cell">Cajas</th>
+									<th class="text-right hidden sm:table-cell">Precio unitario</th>
 									<th class="text-right">Subtotal</th>
 								</tr>
 							</thead>
@@ -187,8 +181,8 @@
 										<td class="text-right text-text">
 											{{ formatQuantity(item.quantity) }} uds.
 										</td>
-										<td class="text-right text-text-muted">—</td>
-										<td class="text-right text-text">
+										<td class="text-right text-text-muted hidden sm:table-cell">—</td>
+										<td class="text-right text-text hidden sm:table-cell">
 											{{ formatCurrency(item.unit_price) }}
 										</td>
 									</template>
@@ -206,12 +200,12 @@
 											{{ formatQuantity(item.quantity) }} m²
 										</td>
 										<td
-											class="text-right"
+											class="text-right hidden sm:table-cell"
 											:class="boxesFor(item) == null ? 'text-text-muted' : 'text-text'"
 										>
 											{{ boxesFor(item) ?? "—" }}
 										</td>
-										<td class="text-right text-text">
+										<td class="text-right text-text hidden sm:table-cell">
 											{{ formatCurrency(item.unit_price) }}/m²
 										</td>
 									</template>
