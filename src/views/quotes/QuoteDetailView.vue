@@ -176,10 +176,11 @@
 							<thead>
 								<tr>
 									<th>Producto</th>
+									<!-- Variantes: cajas (lo que se entregó/cotizó) y debajo los m² que cubren -->
 									<th class="text-right">Cantidad</th>
-									<!-- Cajas y precio unitario se ocultan por debajo de sm: el subtotal ya basta -->
-									<th class="text-right hidden sm:table-cell">Cajas</th>
-									<th class="text-right hidden sm:table-cell">Precio unitario</th>
+									<!-- Precio unitario se oculta por debajo de sm: el subtotal ya basta.
+									     normal-case: el uppercase del encabezado convertiría m² en M² -->
+									<th class="text-right hidden sm:table-cell">Precio unitario<span class="normal-case">/m²</span></th>
 									<th class="text-right">Subtotal</th>
 								</tr>
 							</thead>
@@ -195,7 +196,6 @@
 										<td class="text-right text-text">
 											{{ formatQuantity(item.quantity) }} uds.
 										</td>
-										<td class="text-right text-text-muted hidden sm:table-cell">—</td>
 										<td class="text-right text-text hidden sm:table-cell">
 											{{ formatCurrency(item.unit_price) }}
 										</td>
@@ -211,16 +211,19 @@
 											</div>
 										</td>
 										<td class="text-right text-text">
-											{{ formatQuantity(item.quantity) }} m²
-										</td>
-										<td
-											class="text-right hidden sm:table-cell"
-											:class="boxesFor(item) == null ? 'text-text-muted' : 'text-text'"
-										>
-											{{ boxesFor(item) ?? "—" }}
+											<!-- Sin boxes: línea previa al cambio a cajas cuya variante no
+											     tenía m2_per_box; se muestra tal cual se emitió, en m² -->
+											<template v-if="item.boxes">
+												{{ item.boxes }} {{ item.boxes === 1 ? "caja" : "cajas" }}
+												<div class="text-text-muted text-xs tabular-nums">{{ formatQuantity(item.quantity) }} m²</div>
+											</template>
+											<template v-else>{{ formatQuantity(item.quantity) }} m²</template>
 										</td>
 										<td class="text-right text-text hidden sm:table-cell">
 											{{ formatCurrency(item.unit_price) }}/m²
+											<div v-if="item.boxes" class="text-text-muted text-xs tabular-nums">
+												{{ formatCurrency(boxPrice(item)) }}/caja
+											</div>
 										</td>
 									</template>
 									<td class="text-right text-text">
@@ -323,11 +326,10 @@ watch(
 
 const isEditable = computed(() => quote.value?.status === "Borrador");
 
-// Mismo cálculo que QuoteFormView: quantity está en m², el stock en cajas.
-function boxesFor(item) {
-	const m2PerBox = item.product_variant?.m2_per_box;
-	if (!m2PerBox) return null;
-	return Math.ceil((Number(item.quantity) || 0) / m2PerBox);
+// Lo que valió cada caja: precio por m² × m² que cubre una caja, ambos tal
+// como se guardaron en la línea (no el m2_per_box actual de la variante).
+function boxPrice(item) {
+	return Math.round(((Number(item.unit_price) * Number(item.quantity)) / item.boxes) * 100) / 100;
 }
 
 function formatDate(value) {
