@@ -9,7 +9,7 @@
 			<button
 				type="button"
 				@click="goBack"
-				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 			>
 				Volver
 			</button>
@@ -22,7 +22,7 @@
 					<div class="flex items-center gap-2">
 						<h1 class="font-serif text-xl text-primary">{{ quote.folio }}</h1>
 						<span
-							class="text-[10px] px-2 py-0.5 rounded"
+							class="text-xs px-2 py-0.5 rounded"
 							:class="statusClasses(quote.status)"
 						>
 							{{ quote.status }}
@@ -45,7 +45,7 @@
 									: 'Solo se pueden cancelar cotizaciones en estado Borrador'
 							"
 							@click="requestCancel"
-							class="bg-surface border border-danger/40 hover:bg-danger/10 text-danger font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:border-border disabled:cursor-not-allowed"
+							class="bg-surface border border-danger/40 hover:bg-danger/10 text-danger font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:border-border disabled:cursor-not-allowed"
 						>
 							{{ cancelling ? "Cancelando…" : "Cancelar cotización" }}
 						</button>
@@ -53,7 +53,7 @@
 						<button
 							type="button"
 							@click="goBack"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Volver
 						</button>
@@ -66,7 +66,7 @@
 									: 'Solo se pueden editar cotizaciones en estado Borrador'
 							"
 							@click="editQuote"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 						>
 							Editar
 						</button>
@@ -75,18 +75,18 @@
 							type="button"
 							:disabled="pdfBusy"
 							@click="sharePdf"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 						>
-							<i class="ti ti-share text-[15px]"></i>
+							<i class="ti ti-share text-base"></i>
 							Compartir
 						</button>
 						<button
 							type="button"
 							:disabled="pdfBusy"
 							@click="downloadPdf"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 						>
-							<i class="ti ti-download text-[15px]"></i>
+							<i class="ti ti-download text-base"></i>
 							{{ pdfBusy ? "Generando PDF…" : "Descargar PDF" }}
 						</button>
 						<button
@@ -98,7 +98,7 @@
 									: 'Solo se pueden convertir cotizaciones en estado Borrador'
 							"
 							@click="convertToSale"
-							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer disabled:bg-primary/50 disabled:cursor-not-allowed"
+							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:bg-primary/50 disabled:cursor-not-allowed"
 						>
 							Convertir a venta
 						</button>
@@ -112,7 +112,7 @@
 				<!-- Datos generales -->
 				<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
 					<h2
-						class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4"
+						class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4"
 					>
 						Datos generales
 					</h2>
@@ -124,13 +124,13 @@
 								<div class="font-medium">{{ quote.customer.name }}</div>
 								<div
 									v-if="quote.customer.phone"
-									class="text-text-muted text-[13px]"
+									class="text-text-muted text-sm"
 								>
 									{{ quote.customer.phone }}
 								</div>
 								<div
 									v-if="quote.customer.email"
-									class="text-text-muted text-[13px]"
+									class="text-text-muted text-sm"
 								>
 									{{ quote.customer.email }}
 								</div>
@@ -153,7 +153,7 @@
 				<!-- Líneas -->
 				<div class="bg-surface border border-border rounded-md overflow-hidden">
 					<h2
-						class="text-[11px] font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4"
+						class="text-xs font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4"
 					>
 						Productos
 					</h2>
@@ -191,7 +191,7 @@
 											<div class="font-medium text-text">
 												{{ item.product_variant?.product?.name ?? "—" }}
 											</div>
-											<div class="text-text-muted text-[12px]">
+											<div class="text-text-muted text-xs">
 												{{ item.product_variant?.color }} ·
 												{{ item.product_variant?.size }}
 											</div>
@@ -243,14 +243,14 @@
 						<button
 							type="button"
 							@click="rejectCallback"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Volver
 						</button>
 						<button
 							type="button"
 							@click="acceptCallback"
-							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Cancelar cotización
 						</button>
@@ -371,7 +371,7 @@ function goBack() {
 	border-collapse: collapse;
 }
 .items-table thead th {
-	font-size: 11px;
+	font-size: 0.75rem;
 	font-weight: 500;
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
@@ -388,7 +388,7 @@ function goBack() {
 	padding: 0.5rem 0.75rem;
 	vertical-align: middle;
 	border-bottom: 1px solid var(--color-border);
-	font-size: 0.8125rem;
+	font-size: 0.875rem;
 }
 .items-table tbody tr:last-child td {
 	border-bottom: none;

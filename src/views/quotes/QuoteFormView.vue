@@ -7,7 +7,7 @@
 
 		<div v-if="loadingQuote" class="text-text-muted text-sm">Cargando cotización…</div>
 
-		<p v-if="loadError" class="text-danger text-[13px] mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+		<p v-if="loadError" class="text-danger text-sm mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 			</svg>
@@ -17,16 +17,16 @@
 		<form v-if="!loadingQuote && !loadError" @submit.prevent="handleSubmit" class="space-y-4">
 			<!-- Sección 1 — Datos generales -->
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
+				<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5">
-						<label for="customer_id" class="text-xs font-medium text-text-muted block">Cliente</label>
+						<FieldLabel html-for="customer_id" text="Cliente" />
 						<CustomerSearch id="customer_id" v-model="form.customer_id" />
 					</div>
 
 					<div class="space-y-1.5 sm:col-span-2">
-						<label for="notes" class="text-xs font-medium text-text-muted block">Notas</label>
+						<FieldLabel html-for="notes" text="Notas" />
 						<TextareaCustom
 							id="notes"
 							v-model="form.notes"
@@ -39,12 +39,20 @@
 
 			<!-- Sección 2 — Líneas de producto -->
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-				<h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">Productos</h2>
+				<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Productos</h2>
 
 				<div class="space-y-3">
 					<div v-for="(row, index) in lines" :key="row.id" class="border border-border rounded-md p-4">
 						<div class="flex items-center justify-between mb-3">
-							<span class="text-xs font-medium text-text-muted">Producto {{ index + 1 }}</span>
+							<!-- Sin producto elegido, el encabezado es el label del buscador -->
+							<label
+								v-if="!hasProduct(row)"
+								:for="`product-${row.id}`"
+								class="text-xs font-medium text-text-muted"
+							>
+								Producto {{ index + 1 }}
+							</label>
+							<span v-else class="text-xs font-medium text-text-muted">Producto {{ index + 1 }}</span>
 							<button
 								type="button"
 								@click="removeLine(row.id)"
@@ -61,7 +69,8 @@
 
 						<!-- Sin producto seleccionado: buscador -->
 						<ProductAutocomplete
-							v-if="!row.variant && !row.simpleProduct"
+							v-if="!hasProduct(row)"
+							:input-id="`product-${row.id}`"
 							include-simple-products
 							@select="(option) => selectProductForRow(row, option)"
 						/>
@@ -73,7 +82,7 @@
 									{{ simpleProductFor(row).name }}
 									<span
 										v-if="simpleProductCategoryName(row)"
-										class="text-[10px] text-text-muted border border-border rounded px-1.5 py-0.5"
+										class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
 									>
 										{{ simpleProductCategoryName(row) }}
 									</span>
@@ -93,7 +102,7 @@
 
 							<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
 								<div class="space-y-1.5">
-									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (unidades)</label>
+									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (unidades)" required />
 									<InputNumberCustom
 										:id="`quantity-${row.id}`"
 										v-model="row.quantity"
@@ -102,25 +111,25 @@
 										:max-fraction-digits="0"
 										:error="quantityError(row)"
 									/>
-									<p v-if="quantityError(row)" class="text-danger text-[12px]">{{ quantityError(row) }}</p>
+									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Precio unitario</label>
+									<span class="text-xs font-medium text-text-muted block">Precio unitario</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
 										{{ formatCurrency(simpleProductFor(row).price) }}
 									</div>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Subtotal</label>
+									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
 										{{ formatCurrency(lineSubtotal(row)) }}
 									</div>
 								</div>
 							</div>
 
-							<p v-if="hasInsufficientStock(row)" class="text-danger text-[12px] mt-2">
+							<p v-if="hasInsufficientStock(row)" class="text-danger text-xs mt-2">
 								Stock insuficiente — consultar disponibilidad sobre pedido.
 							</p>
 						</div>
@@ -146,7 +155,7 @@
 
 							<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
 								<div class="space-y-1.5">
-									<label :for="`quantity-${row.id}`" class="text-xs font-medium text-text-muted block">Cantidad (m²)</label>
+									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (m²)" required />
 									<InputNumberCustom
 										:id="`quantity-${row.id}`"
 										v-model="row.quantity"
@@ -155,32 +164,32 @@
 										:max-fraction-digits="2"
 										:error="quantityError(row)"
 									/>
-									<p v-if="quantityError(row)" class="text-danger text-[12px]">{{ quantityError(row) }}</p>
+									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Equivalente</label>
+									<span class="text-xs font-medium text-text-muted block">Equivalente</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
-										{{ boxesFor(row) ?? '—' }} cajas
+										{{ boxesFor(row) === null ? '—' : `${boxesFor(row)} cajas` }}
 									</div>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Precio unitario</label>
+									<span class="text-xs font-medium text-text-muted block">Precio unitario</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
 										{{ formatCurrency(row.variant.price_per_m2) }}
 									</div>
 								</div>
 
 								<div class="space-y-1.5">
-									<label class="text-xs font-medium text-text-muted block">Subtotal</label>
+									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
 									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
 										{{ formatCurrency(lineSubtotal(row)) }}
 									</div>
 								</div>
 							</div>
 
-							<p v-if="hasInsufficientStock(row)" class="text-danger text-[12px] mt-2">
+							<p v-if="hasInsufficientStock(row)" class="text-danger text-xs mt-2">
 								Stock insuficiente — consultar disponibilidad sobre pedido.
 							</p>
 						</div>
@@ -211,7 +220,7 @@
 
 			<!-- Junto a las acciones (no arriba del form): con varias líneas, el inicio
 			     del form queda fuera de vista al presionar Guardar. -->
-			<p v-if="generalError" role="alert" class="text-danger text-[13px] flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+			<p v-if="generalError" role="alert" class="text-danger text-sm flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
 				<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
 				</svg>
@@ -223,14 +232,14 @@
 				<button
 					type="button"
 					@click="handleCancel"
-					class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 				>
 					Cancelar
 				</button>
 				<button
 					type="submit"
 					:disabled="submitting"
-					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 				>
 					{{ submitting ? 'Guardando…' : 'Guardar cotización' }}
 				</button>
@@ -246,14 +255,14 @@
 						<button
 							type="button"
 							@click="rejectCallback"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Seguir editando
 						</button>
 						<button
 							type="button"
 							@click="acceptCallback"
-							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Descartar cambios
 						</button>
@@ -277,6 +286,7 @@ import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vu
 import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
+import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { useNotify } from '@/composables/useNotify'
 
