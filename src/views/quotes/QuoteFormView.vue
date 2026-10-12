@@ -58,7 +58,8 @@
 							<span>Producto<span class="text-danger ml-0.5">*</span></span>
 							<span>m² requeridos</span>
 							<span>Cantidad<span class="text-danger ml-0.5">*</span></span>
-							<span>Precio unitario</span>
+							<!-- normal-case: el uppercase del encabezado convertiría m² en M² -->
+							<span>Precio unitario<span class="normal-case">/m²</span></span>
 							<span class="text-right">Subtotal</span>
 						</div>
 						<span class="w-8 shrink-0"></span>
@@ -195,9 +196,14 @@
 
 									<!-- Precio de lista, informativo: en cotización no se edita -->
 									<div class="space-y-1.5 sm:space-y-0">
-										<span class="text-xs font-medium text-text-muted block sm:sr-only">Precio unitario</span>
+										<span class="text-xs font-medium text-text-muted block sm:sr-only">
+											{{ row.variant ? 'Precio unitario (m²)' : 'Precio unitario' }}
+										</span>
 										<p class="sm:h-[2.375rem] flex items-center text-sm text-text-muted tabular-nums">
 											{{ row.variant ? `${formatCurrency(row.variant.price_per_m2)}/m²` : formatCurrency(simpleProductFor(row).price) }}
+										</p>
+										<p v-if="boxPrice(row) !== null" class="text-xs text-text-muted mt-1 tabular-nums">
+											{{ formatCurrency(boxPrice(row)) }}/caja
 										</p>
 									</div>
 
@@ -575,6 +581,15 @@ function stockWarning(row) {
 
 	const stock = row.variant.stock_boxes ?? 0
 	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se cotizan ${row.quantity}. Consultar disponibilidad sobre pedido.`
+}
+
+// Precio de una caja completa al precio por m² de la línea (lo que vale cada
+// caja que se entrega). Null en productos simples o sin m2_per_box.
+function boxPrice(row) {
+	if (!row.variant) return null
+	const m2PerBox = squareMetersForBoxes(1, row.variant.m2_per_box)
+	if (m2PerBox === null) return null
+	return Math.round(m2PerBox * (Number(row.variant.price_per_m2) || 0) * 100) / 100
 }
 
 function lineSubtotal(row) {

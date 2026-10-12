@@ -63,7 +63,8 @@
 							<span>Producto<span class="text-danger ml-0.5">*</span></span>
 							<span>m² requeridos</span>
 							<span>Cantidad<span class="text-danger ml-0.5">*</span></span>
-							<span>Precio unitario<span class="text-danger ml-0.5">*</span></span>
+							<!-- normal-case: el uppercase del encabezado convertiría m² en M² -->
+							<span>Precio unitario<span class="normal-case">/m²</span><span class="text-danger ml-0.5">*</span></span>
 							<span class="text-right">Subtotal</span>
 						</div>
 						<span class="w-8 shrink-0"></span>
@@ -215,11 +216,17 @@
 											:error="priceError(row)"
 										/>
 										<p v-if="priceError(row)" class="text-danger text-xs mt-1.5">{{ priceError(row) }}</p>
-										<!-- Referencia solo si el precio se ajustó: hace visible un descuento
-										     o un error de dedo antes de registrar -->
-										<p v-else-if="priceDiffersFromList(row)" class="text-xs text-text-muted mt-1 tabular-nums">
-											Lista: {{ formatCurrency(listPrice(row)) }}{{ row.variant ? '/m²' : '' }}
-										</p>
+										<template v-else>
+											<!-- Lo que vale cada caja al precio capturado -->
+											<p v-if="boxPrice(row) !== null" class="text-xs text-text-muted mt-1 tabular-nums">
+												{{ formatCurrency(boxPrice(row)) }}/caja
+											</p>
+											<!-- Referencia solo si el precio se ajustó: hace visible un descuento
+											     o un error de dedo antes de registrar -->
+											<p v-if="priceDiffersFromList(row)" class="text-xs text-text-muted mt-0.5 tabular-nums">
+												Lista: {{ formatCurrency(listPrice(row)) }}{{ row.variant ? '/m²' : '' }}
+											</p>
+										</template>
 									</div>
 
 									<div class="space-y-1.5 sm:space-y-0">
@@ -716,6 +723,15 @@ function listPrice(row) {
 function priceDiffersFromList(row) {
 	if (!hasProduct(row) || !(row.unit_price > 0)) return false
 	return Math.round(row.unit_price * 100) !== Math.round(listPrice(row) * 100)
+}
+
+// Precio de una caja completa al precio por m² de la línea (lo que vale cada
+// caja que se entrega). Null en productos simples o sin m2_per_box.
+function boxPrice(row) {
+	if (!row.variant) return null
+	const m2PerBox = squareMetersForBoxes(1, row.variant.m2_per_box)
+	if (m2PerBox === null) return null
+	return Math.round(m2PerBox * (Number(row.unit_price) || 0) * 100) / 100
 }
 
 function lineSubtotal(row) {
