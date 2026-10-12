@@ -7,7 +7,7 @@
 			<button
 				type="button"
 				@click="goBack"
-				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+				class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 			>
 				Volver
 			</button>
@@ -16,34 +16,42 @@
 		<template v-else-if="customer">
 			<!-- Header -->
 			<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
-				<div>
-					<h1 class="font-serif text-xl text-primary">{{ customer.name }}</h1>
-					<p class="text-sm text-text-muted mt-0.5">Cliente desde el {{ formatDate(customer.created_at) }}</p>
+				<div class="flex items-start gap-3">
+					<!-- Volver en línea con el título, igual que en los detalles de
+					     cotización y venta. Por debajo de lg solo la flecha. -->
+					<RouterLink
+						:to="{ name: 'customers' }"
+						aria-label="Volver a clientes"
+						title="Volver a clientes"
+						class="shrink-0 inline-flex items-center justify-center gap-1.5 h-8 w-8 lg:w-auto lg:px-3 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text text-sm font-medium rounded-md transition-colors select-none"
+					>
+						<i class="ti ti-arrow-left text-base" aria-hidden="true"></i>
+						<span class="hidden lg:inline">Volver</span>
+					</RouterLink>
+					<div>
+						<h1 class="font-serif text-xl text-primary">{{ customer.name }}</h1>
+						<p class="text-sm text-text-muted mt-0.5">Cliente desde el {{ formatDate(customer.created_at) }}</p>
+					</div>
 				</div>
 
-				<div class="flex flex-wrap items-center gap-3">
-					<button
-						type="button"
-						@click="goBack"
-						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
-					>
-						Volver
-					</button>
-					<RouterLink
-						:to="{ name: 'customers.edit', params: { id: customer.id } }"
-						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none inline-flex items-center"
-					>
-						Editar
-					</RouterLink>
+				<div class="flex flex-wrap items-center justify-end gap-3">
+					<!-- Destructiva: separada del resto para no quedar junto a "Editar" -->
 					<button
 						type="button"
 						:disabled="busyId === customer.id"
 						@click="requestDelete(customer)"
-						class="bg-surface border border-border hover:bg-danger/10 text-danger font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+						class="bg-surface border border-danger/40 hover:bg-danger/10 text-danger font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
 					>
-						<i class="ti ti-trash text-[15px]"></i>
+						<i class="ti ti-trash text-base" aria-hidden="true"></i>
 						Eliminar
 					</button>
+					<span class="hidden sm:block w-px h-6 bg-border" aria-hidden="true"></span>
+					<RouterLink
+						:to="{ name: 'customers.edit', params: { id: customer.id } }"
+						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none inline-flex items-center"
+					>
+						Editar
+					</RouterLink>
 				</div>
 			</div>
 
