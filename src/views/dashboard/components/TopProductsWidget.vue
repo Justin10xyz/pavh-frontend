@@ -38,9 +38,16 @@
 				<tbody v-else class="divide-y divide-border">
 					<tr v-for="product in products" :key="`${product.type}-${product.product_variant_id ?? product.simple_product_id}`">
 						<td class="px-5 py-3 text-text">{{ product.name }}</td>
-						<!-- Cada fila en su unidad: m² para variantes, unidades para productos simples -->
+						<!-- Cada fila en su unidad: variantes en cajas (con los m² que cubren
+						     debajo), productos simples en unidades. Sin boxes_sold (solo ventas
+						     previas al cambio a cajas sin m2_per_box) quedan solo los m². -->
 						<td class="px-5 py-3 text-right text-text tabular-nums whitespace-nowrap">
-							{{ formatQuantity(product.quantity_sold) }} {{ product.type === 'simple' ? 'uds.' : 'm²' }}
+							<template v-if="product.type === 'simple'">{{ formatQuantity(product.quantity_sold) }} uds.</template>
+							<template v-else-if="product.boxes_sold">
+								{{ product.boxes_sold }} {{ product.boxes_sold === 1 ? 'caja' : 'cajas' }}
+								<span class="block text-xs text-text-muted">{{ formatQuantity(product.quantity_sold) }} m²</span>
+							</template>
+							<template v-else>{{ formatQuantity(product.quantity_sold) }} m²</template>
 						</td>
 						<td class="px-5 py-3 text-right text-text tabular-nums whitespace-nowrap">{{ formatCurrency(product.revenue) }}</td>
 					</tr>
