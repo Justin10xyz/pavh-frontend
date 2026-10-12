@@ -100,7 +100,9 @@
 										:min="1"
 										placeholder="0"
 										:max-fraction-digits="0"
+										:error="quantityError(row)"
 									/>
+									<p v-if="quantityError(row)" class="text-danger text-[12px]">{{ quantityError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
@@ -151,7 +153,9 @@
 										:min="0.01"
 										placeholder="0.00"
 										:max-fraction-digits="2"
+										:error="quantityError(row)"
 									/>
+									<p v-if="quantityError(row)" class="text-danger text-[12px]">{{ quantityError(row) }}</p>
 								</div>
 
 								<div class="space-y-1.5">
@@ -416,10 +420,32 @@ const generalError = ref(null)
 // solo para errores de submit, que no desmontan el form.
 const loadError = ref(null)
 
+// Se activa en el primer intento de guardar; desde ahí el error de cantidad de
+// cada línea se evalúa en vivo y desaparece en cuanto se captura un valor válido.
+const submitAttempted = ref(false)
+
+function hasProduct(row) {
+	return !!(row.variant || row.simpleProduct)
+}
+
+function quantityError(row) {
+	if (!submitAttempted.value || !hasProduct(row) || row.quantity > 0) return ''
+	return 'Captura la cantidad.'
+}
+
 const handleSubmit = async () => {
 	generalError.value = null
+	submitAttempted.value = true
 
-	const validLines = lines.value.filter((l) => (l.variant || l.simpleProduct) && l.quantity > 0)
+	// Una línea con producto pero sin cantidad bloquea el guardado (antes se
+	// descartaba en silencio). Las líneas sin producto sí se ignoran: son filas
+	// agregadas con "+ Agregar producto" que no se llegaron a usar.
+	if (lines.value.some((l) => quantityError(l))) {
+		generalError.value = 'Hay productos sin cantidad. Captúrala o quita la línea.'
+		return
+	}
+
+	const validLines = lines.value.filter(hasProduct)
 	if (validLines.length === 0) {
 		generalError.value = 'Agrega al menos un producto con cantidad mayor a cero.'
 		return
