@@ -51,11 +51,17 @@
 
 		<div
 			v-else
-			class="bg-surface border border-border rounded-md overflow-hidden transition-opacity"
+			class="bg-surface border border-border rounded-md overflow-x-auto transition-opacity"
 			:class="{ 'opacity-60': customers.loading }"
 			:aria-busy="customers.loading"
 		>
-			<DataTable :value="customers.customers" dataKey="id" class="customers-table">
+			<DataTable
+				:value="customers.customers"
+				dataKey="id"
+				class="data-table"
+				:row-class="() => 'cursor-pointer'"
+				@row-click="openCustomer"
+			>
 				<Column header="Nombre">
 					<template #body="{ data }">
 						<RouterLink
@@ -131,6 +137,7 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import ConfirmDialog from 'primevue/confirmdialog'
@@ -138,6 +145,7 @@ import { useCustomersStore } from '@/stores/customers'
 import { useCustomerDelete } from '@/composables/useCustomerDelete'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 
+const router = useRouter()
 const customers = useCustomersStore()
 
 // La fila se quita in-place en customers.deleteCustomer(); no hay nada más que hacer.
@@ -166,6 +174,19 @@ onBeforeUnmount(() => {
 	clearTimeout(searchTimer)
 })
 
+// Toda la fila abre el detalle. Los clicks sobre el nombre (RouterLink) o el
+// botón de eliminar se dejan a ellos mismos.
+function openCustomer({ originalEvent, data }) {
+	if (originalEvent.target.closest('a, button')) return
+
+	const to = { name: 'customers.show', params: { id: data.id } }
+	if (originalEvent.ctrlKey || originalEvent.metaKey) {
+		window.open(router.resolve(to).href, '_blank')
+	} else {
+		router.push(to)
+	}
+}
+
 function formatDate(value) {
 	if (!value) return '—'
 	return new Date(value).toLocaleDateString('es-MX', {
@@ -177,31 +198,5 @@ function formatDate(value) {
 </script>
 
 <style scoped>
-.customers-table :deep(table) {
-	width: 100%;
-	border-collapse: collapse;
-}
-.customers-table :deep(thead th) {
-	text-align: left;
-	font-size: 11px;
-	font-weight: 500;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: var(--color-text-muted);
-	background: var(--color-bg);
-	padding: 0.5rem 0.75rem;
-	border-bottom: 1px solid var(--color-border);
-}
-.customers-table :deep(tbody > tr > td) {
-	padding: 0.5rem 0.75rem;
-	vertical-align: middle;
-	border-bottom: 1px solid var(--color-border);
-	font-size: 0.8125rem;
-}
-.customers-table :deep(tbody > tr:last-child > td) {
-	border-bottom: none;
-}
-.customers-table :deep(tbody > tr:hover) {
-	background: var(--color-bg);
-}
+
 </style>
