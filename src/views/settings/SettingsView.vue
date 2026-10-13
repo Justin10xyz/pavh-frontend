@@ -15,7 +15,7 @@
 				</span>
 				<span class="flex-1 min-w-0">
 					<span class="block text-sm font-medium text-text">Categorías de producto</span>
-					<span class="block text-xs text-text-muted mt-0.5">Consulta y agrega las categorías del inventario.</span>
+					<span class="block text-xs text-text-muted mt-0.5">Consulta, agrega y edita las categorías del inventario.</span>
 				</span>
 				<i class="ti ti-chevron-right text-text-muted group-hover:text-text transition-colors"></i>
 			</router-link>

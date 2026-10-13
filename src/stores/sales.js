@@ -6,15 +6,16 @@ export const useSalesStore = defineStore('sales', () => {
 	const sales = ref([])
 	const loading = ref(false)
 	const error = ref(null)
-	// Solo indica que ya hubo una carga inicial (para que la vista evite un
-	// doble-fetch al montar). NO bloquea fetchSales(): a diferencia de
-	// inventory/quotes, cada cambio de rango de fechas es una consulta distinta
-	// y siempre debe ir al backend.
-	const initialized = ref(false)
+	// Sin flag `initialized`: a diferencia de inventory/quotes, cada cambio de
+	// rango de fechas es una consulta distinta y siempre debe ir al backend.
 
 	// Si el usuario cambia el filtro antes de que responda la consulta anterior,
 	// solo la respuesta más reciente puede escribir en el estado.
 	let lastRequestId = 0
+
+	// Último query del listado (?periodo=…), para que "Volver" del detalle
+	// regrese con el mismo filtro (mismo criterio que quotes.listQuery).
+	const listQuery = ref({})
 
 	// Detalle de una sola venta, en su propio ref con loading/error propios
 	// (mismo criterio que currentQuote en quotes.js): no pisa el listado.
@@ -27,7 +28,9 @@ export const useSalesStore = defineStore('sales', () => {
 		loading.value = true
 		error.value = null
 
-		const params = { with: 'customer,items' }
+		// Sin `items`: el listado no los muestra, y cada item carga su variante por
+		// separado en SaleItemResource (una consulta por línea de cada venta).
+		const params = { with: 'customer' }
 		if (from) params.from = from
 		if (to) params.to = to
 
@@ -35,7 +38,6 @@ export const useSalesStore = defineStore('sales', () => {
 			const { data } = await axios.get('/api/sales', { params })
 			if (requestId !== lastRequestId) return
 			sales.value = data.data
-			initialized.value = true
 		} catch (err) {
 			if (requestId !== lastRequestId) return
 			error.value = 'No se pudieron cargar las ventas.'
@@ -83,7 +85,7 @@ export const useSalesStore = defineStore('sales', () => {
 		sales,
 		loading,
 		error,
-		initialized,
+		listQuery,
 		currentSale,
 		currentSaleLoading,
 		currentSaleError,

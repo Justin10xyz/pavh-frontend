@@ -41,161 +41,198 @@
 			<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
 				<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Productos</h2>
 
-				<div class="space-y-3">
-					<div v-for="(row, index) in lines" :key="row.id" class="border border-border rounded-md p-4">
-						<div class="flex items-center justify-between mb-3">
-							<!-- Sin producto elegido, el encabezado es el label del buscador -->
-							<label
-								v-if="!hasProduct(row)"
-								:for="`product-${row.id}`"
-								class="text-xs font-medium text-text-muted"
-							>
-								Producto {{ index + 1 }}
-							</label>
-							<span v-else class="text-xs font-medium text-text-muted">Producto {{ index + 1 }}</span>
-							<button
-								type="button"
-								@click="removeLine(row.id)"
-								:disabled="lines.length === 1"
-								class="text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors"
-								aria-label="Quitar producto"
-								title="Quitar producto"
-							>
-								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6" />
-								</svg>
-							</button>
+				<!-- Tabla compacta (mismo patrón que los colores en ProductFormView):
+				     encabezado una vez y una fila delgada por producto. Por debajo de sm
+				     cada fila apila sus campos con su label visible; desde sm los labels
+				     pasan a sr-only y el encabezado toma su lugar. Header y filas comparten
+				     el mismo grid + hueco del botón para alinear. `relative`: los labels
+				     sr-only son absolute y sin ancestro posicionado escapan del scroll. -->
+				<div class="relative border border-border rounded-md">
+					<div
+						class="hidden sm:flex items-center gap-2 bg-bg border-b border-border rounded-t-md px-3 py-2"
+						aria-hidden="true"
+					>
+						<div
+							class="flex-1 grid grid-cols-[minmax(0,2.2fr)_repeat(4,minmax(0,1fr))] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
+						>
+							<span>Producto<span class="text-danger ml-0.5">*</span></span>
+							<span>m² requeridos</span>
+							<span>Cantidad<span class="text-danger ml-0.5">*</span></span>
+							<!-- normal-case: el uppercase del encabezado convertiría m² en M² -->
+							<span>Precio unitario<span class="normal-case">/m²</span></span>
+							<span class="text-right">Subtotal</span>
 						</div>
+						<span class="w-8 shrink-0"></span>
+					</div>
 
-						<!-- Sin producto seleccionado: buscador -->
-						<ProductAutocomplete
-							v-if="!hasProduct(row)"
-							:input-id="`product-${row.id}`"
-							include-simple-products
-							@select="(option) => selectProductForRow(row, option)"
-						/>
-
-						<!-- Producto simple seleccionado -->
-						<div v-else-if="row.simpleProduct">
-							<div class="flex items-start justify-between gap-3 mb-3">
-								<p class="text-sm text-text flex items-center gap-2">
-									{{ simpleProductFor(row).name }}
-									<span
-										v-if="simpleProductCategoryName(row)"
-										class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
+					<div class="divide-y divide-border">
+						<div v-for="(row, index) in lines" :key="row.id" class="px-3 py-3 sm:py-2">
+							<div class="flex items-start gap-2">
+								<!-- Sin producto elegido: el buscador ocupa toda la fila -->
+								<div v-if="!hasProduct(row)" class="flex-1 min-w-0 space-y-1.5 sm:space-y-0">
+									<label
+										:for="`product-${row.id}`"
+										class="text-xs font-medium text-text-muted block sm:sr-only"
 									>
-										{{ simpleProductCategoryName(row) }}
-									</span>
-								</p>
+										Producto {{ index + 1 }}
+									</label>
+									<ProductAutocomplete
+										:input-id="`product-${row.id}`"
+										include-simple-products
+										@select="(option) => selectProductForRow(row, option)"
+									/>
+								</div>
+
+								<div
+									v-else
+									class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2.2fr)_repeat(4,minmax(0,1fr))] gap-3"
+								>
+									<!-- Producto: nombre + detalle en dos renglones, "Cambiar" en línea -->
+									<div class="min-w-0 sm:min-h-[2.375rem] flex flex-col justify-center">
+										<template v-if="row.simpleProduct">
+											<p class="text-sm font-medium text-text truncate" :title="simpleProductFor(row).name">
+												{{ simpleProductFor(row).name }}
+											</p>
+											<p class="text-xs text-text-muted flex items-center gap-2">
+												<span
+													v-if="simpleProductCategoryName(row)"
+													class="border border-border rounded px-1.5"
+												>
+													{{ simpleProductCategoryName(row) }}
+												</span>
+												<button
+													type="button"
+													@click="changeLine(row)"
+													class="text-accent hover:underline cursor-pointer"
+												>
+													Cambiar
+												</button>
+											</p>
+										</template>
+										<template v-else>
+											<p class="text-sm font-medium text-text truncate" :title="row.variant.lineName">
+												{{ row.variant.lineName }}
+											</p>
+											<p class="text-xs text-text-muted flex items-center gap-2 min-w-0">
+												<span class="truncate">{{ row.variant.color }} · {{ row.variant.size }}</span>
+												<button
+													type="button"
+													@click="changeLine(row)"
+													class="text-accent hover:underline shrink-0 cursor-pointer"
+												>
+													Cambiar
+												</button>
+											</p>
+										</template>
+										<p v-if="mergedRowId === row.id" class="text-xs text-success mt-0.5">
+											Cantidad fusionada con esta línea existente.
+										</p>
+										<p v-if="boxConversionError(row)" class="text-danger text-xs mt-0.5">
+											{{ boxConversionError(row) }}
+										</p>
+									</div>
+
+									<!-- m² que pide el cliente (opcional, solo variantes): sugieren las
+									     cajas con ceil. No se envían al backend: la cantidad real son las
+									     cajas, que se pueden ajustar después (ej. una de más por merma). -->
+									<div v-if="row.variant" class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`requested-${row.id}`"
+											text="m² requeridos"
+											class="sm:sr-only"
+										/>
+										<InputNumberCustom
+											:id="`requested-${row.id}`"
+											:model-value="row.requestedM2"
+											:min="0"
+											placeholder="Opcional"
+											suffix=" m²"
+											:max-fraction-digits="2"
+											:disabled="!row.variant.m2_per_box"
+											@update:model-value="(value) => applyRequestedM2(row, value)"
+										/>
+									</div>
+									<div v-else class="hidden sm:block" aria-hidden="true"></div>
+
+									<!-- Cantidad en la unidad física de stock: cajas completas (variante) o
+									     unidades (simple). En variantes, debajo los m² que cubren esas cajas. -->
+									<div class="space-y-1.5 sm:space-y-0">
+										<FieldLabel
+											:html-for="`quantity-${row.id}`"
+											:text="row.variant ? 'Cajas' : 'Cantidad (unidades)'"
+											required
+											class="sm:sr-only"
+										/>
+										<InputNumberCustom
+											v-if="row.variant"
+											:id="`quantity-${row.id}`"
+											v-model="row.quantity"
+											:min="1"
+											placeholder="0 cj"
+											suffix=" cj"
+											:max-fraction-digits="0"
+											:error="quantityError(row)"
+										/>
+										<InputNumberCustom
+											v-else
+											:id="`quantity-${row.id}`"
+											v-model="row.quantity"
+											:min="1"
+											placeholder="0 uds."
+											suffix=" uds."
+											:max-fraction-digits="0"
+											:error="quantityError(row)"
+										/>
+										<p v-if="quantityError(row)" class="text-danger text-xs mt-1.5">{{ quantityError(row) }}</p>
+										<p
+											v-else-if="row.variant && coveredM2(row) !== null"
+											class="text-xs mt-1 tabular-nums"
+											:class="coversRequested(row) ? 'text-text-muted' : 'text-amber-700'"
+										>
+											{{ formatQuantity(coveredM2(row)) }} m²<template v-if="!coversRequested(row)">
+												· no cubre {{ formatQuantity(row.requestedM2) }}</template>
+										</p>
+									</div>
+
+									<!-- Precio de lista, informativo: en cotización no se edita -->
+									<div class="space-y-1.5 sm:space-y-0">
+										<span class="text-xs font-medium text-text-muted block sm:sr-only">
+											{{ row.variant ? 'Precio unitario (m²)' : 'Precio unitario' }}
+										</span>
+										<p class="sm:h-[2.375rem] flex items-center text-sm text-text-muted tabular-nums">
+											{{ row.variant ? `${formatCurrency(row.variant.price_per_m2)}/m²` : formatCurrency(simpleProductFor(row).price) }}
+										</p>
+										<p v-if="boxPrice(row) !== null" class="text-xs text-text-muted mt-1 tabular-nums">
+											{{ formatCurrency(boxPrice(row)) }}/caja
+										</p>
+									</div>
+
+									<div class="space-y-1.5 sm:space-y-0">
+										<span class="text-xs font-medium text-text-muted block sm:sr-only">Subtotal</span>
+										<p class="sm:h-[2.375rem] flex items-center sm:justify-end text-sm font-medium text-text tabular-nums">
+											{{ formatCurrency(lineSubtotal(row)) }}
+										</p>
+									</div>
+								</div>
+
+								<!-- Mismo alto que los inputs para quedar centrado con ellos desde sm -->
 								<button
 									type="button"
-									@click="changeLine(row)"
-									class="text-xs text-accent hover:underline flex-shrink-0 cursor-pointer"
+									@click="removeLine(row.id)"
+									:disabled="lines.length === 1"
+									class="w-8 h-[2.375rem] shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
+									aria-label="Quitar producto"
+									title="Quitar producto"
 								>
-									Cambiar
+									<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6" />
+									</svg>
 								</button>
 							</div>
 
-							<p v-if="mergedRowId === row.id" class="text-xs text-success mb-3">
-								Cantidad fusionada con esta línea existente.
-							</p>
-
-							<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-								<div class="space-y-1.5">
-									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (unidades)" required />
-									<InputNumberCustom
-										:id="`quantity-${row.id}`"
-										v-model="row.quantity"
-										:min="1"
-										placeholder="0"
-										:max-fraction-digits="0"
-										:error="quantityError(row)"
-									/>
-									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Precio unitario</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
-										{{ formatCurrency(simpleProductFor(row).price) }}
-									</div>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
-										{{ formatCurrency(lineSubtotal(row)) }}
-									</div>
-								</div>
-							</div>
-
 							<p
-								v-if="hasInsufficientStock(row)"
-								class="mt-3 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
-							>
-								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
-								<span>{{ stockWarning(row) }}</span>
-							</p>
-						</div>
-
-						<!-- Variante seleccionada -->
-						<div v-else>
-							<div class="flex items-start justify-between gap-3 mb-3">
-								<p class="text-sm text-text">
-									{{ row.variant.lineName }} — {{ row.variant.color }} — {{ row.variant.size }}
-								</p>
-								<button
-									type="button"
-									@click="changeLine(row)"
-									class="text-xs text-accent hover:underline flex-shrink-0 cursor-pointer"
-								>
-									Cambiar
-								</button>
-							</div>
-
-							<p v-if="mergedRowId === row.id" class="text-xs text-success mb-3">
-								Cantidad fusionada con esta línea existente.
-							</p>
-
-							<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-								<div class="space-y-1.5">
-									<FieldLabel :html-for="`quantity-${row.id}`" text="Cantidad (m²)" required />
-									<InputNumberCustom
-										:id="`quantity-${row.id}`"
-										v-model="row.quantity"
-										:min="0.01"
-										placeholder="0.00"
-										:max-fraction-digits="2"
-										:error="quantityError(row)"
-									/>
-									<p v-if="quantityError(row)" class="text-danger text-xs">{{ quantityError(row) }}</p>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Equivalente</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
-										{{ boxesFor(row) === null ? '—' : `${boxesFor(row)} cajas` }}
-									</div>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Precio unitario</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text-muted bg-bg border border-border rounded-md">
-										{{ formatCurrency(row.variant.price_per_m2) }}
-									</div>
-								</div>
-
-								<div class="space-y-1.5">
-									<span class="text-xs font-medium text-text-muted block">Subtotal</span>
-									<div class="h-[38px] flex items-center px-3 text-sm text-text font-medium bg-bg border border-border rounded-md">
-										{{ formatCurrency(lineSubtotal(row)) }}
-									</div>
-								</div>
-							</div>
-
-							<p
-								v-if="hasInsufficientStock(row)"
-								class="mt-3 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
+								v-if="hasProduct(row) && hasInsufficientStock(row)"
+								class="mt-2 sm:mr-10 flex items-start gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
 							>
 								<i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
 								<span>{{ stockWarning(row) }}</span>
@@ -282,7 +319,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
@@ -297,6 +334,7 @@ import TextareaCustom from '@/components/widgets/TextareaCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatQuantity } from '@/lib/formatQuantity'
+import { boxesForSquareMeters, squareMetersForBoxes } from '@/lib/boxes'
 import { useNotify } from '@/composables/useNotify'
 
 const route = useRoute()
@@ -358,7 +396,9 @@ async function loadQuote() {
 			? { ...item.product_variant, type: 'variant', lineName: item.product_variant.product?.name }
 			: null,
 		simpleProduct: item.simple_product ? { ...item.simple_product, type: 'simple' } : null,
-		quantity: Number(item.quantity),
+		// Variante: sus cajas (null en líneas previas al cambio a cajas sin
+		// m2_per_box; se piden al guardar). Los m² requeridos no se guardan.
+		quantity: item.product_variant_id ? item.boxes : Number(item.quantity),
 	}))
 	lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()]
 	savedSnapshot.value = serializeForm()
@@ -371,12 +411,15 @@ const form = reactive({
 
 // Una línea lleva `variant` O `simpleProduct`, nunca ambos — refleja el arco
 // exclusivo product_variant_id / simple_product_id del backend.
+// `quantity` va en la unidad física de stock: cajas completas (variante) o
+// unidades (simple). `requestedM2` es solo ayuda de captura para variantes.
 function createEmptyLine() {
 	return {
 		id: crypto.randomUUID(),
 		variant: null,
 		simpleProduct: null,
 		quantity: null,
+		requestedM2: null,
 	}
 }
 
@@ -449,6 +492,17 @@ function changeLine(row) {
 	row.simpleProduct = null
 }
 
+// Sin mouse: tras elegir un producto el foco pasa a su cantidad. En una variante
+// nueva va a "m² requeridos" (el cliente suele pedir en m² y de ahí salen las
+// cajas); en una fusión, a las cajas/unidades que acaban de sumar uno.
+async function focusLineQuantity(row, { merged = false } = {}) {
+	await nextTick()
+	const field = !merged && row.variant && Number(row.variant.m2_per_box) > 0 ? 'requested' : 'quantity'
+	const input = document.getElementById(`${field}-${row.id}`)
+	input?.focus()
+	input?.select()
+}
+
 // Si el producto (variante o simple) ya existe en otra línea del form, se suma
 // la cantidad nueva a esa línea existente en vez de duplicar la fila (ver
 // AGENT.md — listas repetibles no deben permitir estado duplicado inconsistente).
@@ -465,16 +519,21 @@ function selectProductForRow(row, option) {
 		flashMerge(target.id)
 		lines.value = lines.value.filter((l) => l.id !== row.id)
 		if (lines.value.length === 0) lines.value.push(createEmptyLine())
+		focusLineQuantity(target, { merged: true })
 		return
 	}
 
 	row.variant = isSimple ? null : option
 	row.simpleProduct = isSimple ? option : null
 
-	// Al "Cambiar" de una variante (m², fraccionaria) a un producto simple, una
-	// cantidad no entera se descarta: el backend rechaza fraccionarios en simples.
-	const keepsQuantity = row.quantity > 0 && (!isSimple || Number.isInteger(row.quantity))
-	row.quantity = keepsQuantity ? row.quantity : 1
+	// Cajas y unidades son enteras: al "Cambiar" se conserva la cantidad. Los m²
+	// requeridos solo aplican a variantes; con otra variante (otro m² por caja)
+	// se recalculan las cajas.
+	row.quantity = row.quantity > 0 ? row.quantity : 1
+	if (isSimple) row.requestedM2 = null
+	else if (row.requestedM2 > 0) applyRequestedM2(row, row.requestedM2)
+
+	focusLineQuantity(row)
 }
 
 // Datos vivos del producto simple (precio, stock, categoría) desde el store; si
@@ -488,9 +547,32 @@ function simpleProductCategoryName(row) {
 	return catalogs.categories.find((c) => c.id === categoryId)?.name ?? ''
 }
 
-function boxesFor(row) {
-	if (!row.variant?.m2_per_box) return null
-	return Math.ceil((row.quantity || 0) / row.variant.m2_per_box)
+// La cantidad de una línea de variante son sus cajas (row.quantity); estos son
+// los m² que cubren, sobre los que se cobra el precio por m².
+function coveredM2(row) {
+	return squareMetersForBoxes(row.quantity || 0, row.variant?.m2_per_box)
+}
+
+// Solo UX: las cajas se pueden bajar a mano por debajo de lo requerido, y se avisa.
+function coversRequested(row) {
+	if (!(row.requestedM2 > 0)) return true
+	const covered = coveredM2(row)
+	return covered === null || covered >= row.requestedM2
+}
+
+// Los m² requeridos sugieren las cajas (hacia arriba); borrarlos no toca las
+// cajas ya capturadas.
+function applyRequestedM2(row, value) {
+	row.requestedM2 = value
+	const boxes = value > 0 ? boxesForSquareMeters(value, row.variant?.m2_per_box) : null
+	if (boxes) row.quantity = boxes
+}
+
+// Sin m2_per_box no se sabe qué cubren las cajas: el backend rechaza la línea
+// (nunca asume 1:1). Se avisa desde que se elige, no hasta guardar.
+function boxConversionError(row) {
+	if (!row.variant || Number(row.variant.m2_per_box) > 0) return ''
+	return 'Esta variante no tiene m² por caja configurado; no se puede cotizar.'
 }
 
 function hasInsufficientStock(row) {
@@ -500,9 +582,7 @@ function hasInsufficientStock(row) {
 		return (row.quantity || 0) > stock
 	}
 
-	const boxes = boxesFor(row)
-	if (boxes === null) return false
-	return boxes > (row.variant.stock_boxes ?? 0)
+	return (row.quantity || 0) > (row.variant.stock_boxes ?? 0)
 }
 
 // Es un aviso, no un error: la cotización se puede guardar igual (el stock se
@@ -514,13 +594,22 @@ function stockWarning(row) {
 	}
 
 	const stock = row.variant.stock_boxes ?? 0
-	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se requieren ${boxesFor(row)}. Consultar disponibilidad sobre pedido.`
+	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se cotizan ${row.quantity}. Consultar disponibilidad sobre pedido.`
+}
+
+// Precio de una caja completa al precio por m² de la línea (lo que vale cada
+// caja que se entrega). Null en productos simples o sin m2_per_box.
+function boxPrice(row) {
+	if (!row.variant) return null
+	const m2PerBox = squareMetersForBoxes(1, row.variant.m2_per_box)
+	if (m2PerBox === null) return null
+	return Math.round(m2PerBox * (Number(row.variant.price_per_m2) || 0) * 100) / 100
 }
 
 function lineSubtotal(row) {
 	if (!row.quantity) return 0
 	if (row.simpleProduct) return row.quantity * simpleProductFor(row).price
-	if (row.variant) return row.quantity * row.variant.price_per_m2
+	if (row.variant) return (coveredM2(row) ?? 0) * row.variant.price_per_m2
 	return 0
 }
 
@@ -544,7 +633,7 @@ function hasProduct(row) {
 
 function quantityError(row) {
 	if (!submitAttempted.value || !hasProduct(row) || row.quantity > 0) return ''
-	return 'Captura la cantidad.'
+	return row.variant ? 'Captura las cajas.' : 'Captura la cantidad.'
 }
 
 const handleSubmit = async () => {
@@ -556,6 +645,11 @@ const handleSubmit = async () => {
 	// agregadas con "+ Agregar producto" que no se llegaron a usar.
 	if (lines.value.some((l) => quantityError(l))) {
 		generalError.value = 'Hay productos sin cantidad. Captúrala o quita la línea.'
+		return
+	}
+
+	if (lines.value.some((l) => boxConversionError(l))) {
+		generalError.value = 'Hay variantes sin m² por caja configurado. Quítalas o corrígelas en Inventario.'
 		return
 	}
 
@@ -573,7 +667,7 @@ const handleSubmit = async () => {
 			notes: form.notes || null,
 			items: validLines.map((l) => (l.simpleProduct
 				? { simple_product_id: l.simpleProduct.id, quantity: l.quantity }
-				: { product_variant_id: l.variant.id, quantity: l.quantity })),
+				: { product_variant_id: l.variant.id, boxes: l.quantity })),
 		}
 
 		if (isEdit.value) {
