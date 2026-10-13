@@ -73,13 +73,8 @@ const props = defineProps({
 	},
 })
 
-// Lista corta: las más recientes primero. GET /api/quotes no ordena
-// explícitamente, así que no se depende del orden en que llegan.
-const visibleQuotes = computed(() =>
-	[...props.quotes]
-		.sort((a, b) => new Date(b.created_at) - new Date(a.created_at) || b.id - a.id)
-		.slice(0, MAX_ROWS)
-)
+// Lista corta: GET /api/quotes ya llega de la más reciente a la más antigua (`latest()`).
+const visibleQuotes = computed(() => props.quotes.slice(0, MAX_ROWS))
 
 const hiddenCount = computed(() => Math.max(props.quotes.length - MAX_ROWS, 0))
 </script>
