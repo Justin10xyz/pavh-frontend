@@ -14,7 +14,7 @@
 		</p>
 
 		<p v-else-if="!loading && products.length === 0" class="px-5 py-6 text-sm text-text-muted text-center">
-			No hay ventas en este periodo.
+			{{ filter === 'all' ? 'Aún no hay ventas registradas.' : 'No hay ventas en este periodo.' }}
 		</p>
 
 		<!-- Al cambiar de filtro con datos ya cargados, la tabla se queda visible
