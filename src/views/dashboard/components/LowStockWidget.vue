@@ -3,7 +3,7 @@
 		<div class="flex items-center justify-between px-5 py-3 border-b border-border">
 			<h2 id="low-stock-heading" class="text-sm font-medium text-text">Stock bajo</h2>
 			<router-link
-				:to="{ name: 'inventory' }"
+				:to="{ name: 'inventory', query: { stockBajo: '1' } }"
 				class="text-xs text-text-muted hover:text-text focus:outline-none focus-visible:underline transition-colors"
 			>
 				Ver todo

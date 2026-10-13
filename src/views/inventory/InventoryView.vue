@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useInventoryStore } from "@/stores/inventory";
 
@@ -119,7 +119,7 @@ const newProductRoute = computed(() =>
 );
 
 function selectSection(key) {
-	router.replace({ query: key === "other" ? { seccion: "otros" } : {} });
+	router.replace({ query: key === "other" ? { seccion: "otros" } : floorsFilterQuery() });
 }
 
 function editProduct(productId) {
@@ -150,9 +150,25 @@ function openMovementsDialog(variant) {
 }
 
 // Filters logic
-const searchQuery = ref("");
+// Búsqueda y "solo stock bajo" viven en la URL (?buscar=…&stockBajo=1) para que
+// el Dashboard pueda abrir el catálogo ya filtrado. Se leen al montar y se
+// escriben con router.replace; un computed sobre route.query perdería letras al
+// teclear rápido.
+const searchQuery = ref(typeof route.query.buscar === "string" ? route.query.buscar : "");
 const selectedCategory = ref("");
-const lowStockOnly = ref(false);
+const lowStockOnly = ref(route.query.stockBajo === "1");
+
+function floorsFilterQuery() {
+	return {
+		...(searchQuery.value ? { buscar: searchQuery.value } : {}),
+		...(lowStockOnly.value ? { stockBajo: "1" } : {}),
+	};
+}
+
+// Solo aplican a Catálogo de pisos; en "Otros productos" la URL es solo la sección.
+watch([searchQuery, lowStockOnly], () => {
+	if (activeSection.value === "floors") router.replace({ query: floorsFilterQuery() });
+});
 
 function clearFilters() {
 	searchQuery.value = "";
