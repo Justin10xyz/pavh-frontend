@@ -1,7 +1,20 @@
 <template>
 	<div class="p-2">
-		<div class="flex items-center justify-between mb-4">
-			<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
+		<div class="flex items-center justify-between gap-3 mb-4">
+			<div class="flex items-center gap-3">
+				<!-- Volver en línea con el título, igual que en los detalles. Por
+				     debajo de lg solo la flecha. -->
+				<RouterLink
+					:to="{ name: 'settings.index' }"
+					aria-label="Volver a configuración"
+					title="Volver a configuración"
+					class="shrink-0 inline-flex items-center justify-center gap-1.5 h-8 w-8 lg:w-auto lg:px-3 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text text-sm font-medium rounded-md transition-colors select-none"
+				>
+					<i class="ti ti-arrow-left text-base" aria-hidden="true"></i>
+					<span class="hidden lg:inline">Volver</span>
+				</RouterLink>
+				<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
+			</div>
 			<button
 				type="button"
 				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center select-none cursor-pointer"
@@ -27,7 +40,13 @@
 			</p>
 
 			<div class="bg-surface border border-border rounded-md overflow-hidden">
-				<DataTable :value="catalogs.categories" dataKey="id" class="data-table">
+				<DataTable
+					:value="catalogs.categories"
+					dataKey="id"
+					class="data-table"
+					:row-class="() => 'cursor-pointer'"
+					@row-click="onRowClick"
+				>
 					<Column header="Nombre">
 						<template #body="{ data }">
 							<span class="font-medium text-text">{{ data.name }}</span>
@@ -48,16 +67,16 @@
 						</template>
 					</Column>
 
-					<Column header="" style="width: 3rem">
+					<Column header="" body-class="w-px">
 						<template #body="{ data }">
 							<button
 								type="button"
-								class="text-text-muted hover:text-accent transition-colors cursor-pointer"
-								aria-label="Editar categoría"
-								title="Editar categoría"
+								class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+								:aria-label="`Editar categoría ${data.name}`"
+								:title="`Editar categoría ${data.name}`"
 								@click="openEdit(data)"
 							>
-								<i class="ti ti-pencil text-lg"></i>
+								<i class="ti ti-pencil text-base" aria-hidden="true"></i>
 							</button>
 						</template>
 					</Column>
@@ -96,6 +115,14 @@ function openCreate() {
 function openEdit(category) {
 	selectedCategory.value = category;
 	dialogVisible.value = true;
+}
+
+// Toda la fila abre la edición, como en los demás listados (aquí el destino es
+// un diálogo, no una ruta). El lápiz sigue siendo el acceso por teclado; su
+// propio clic ya abre el diálogo, así que se ignora aquí para no abrirlo dos veces.
+function onRowClick({ originalEvent, data }) {
+	if (originalEvent.target.closest("a, button")) return;
+	openEdit(data);
 }
 </script>
 
