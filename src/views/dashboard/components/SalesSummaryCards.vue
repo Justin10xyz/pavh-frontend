@@ -6,18 +6,27 @@
 			{{ error }}
 		</p>
 
-		<div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-			<div
+		<!-- 3 columnas desde md (no sm): en sm cada card deja ~120px y un monto de
+		     6 cifras en text-2xl no cabe. -->
+		<div v-else class="grid grid-cols-1 md:grid-cols-3 gap-3">
+			<!-- Cada card abre el listado de ventas ya filtrado a su periodo
+			     (?periodo= de SalesView), como "Ver todo" de Cotizaciones activas. -->
+			<router-link
 				v-for="card in cards"
 				:key="card.key"
-				class="bg-surface border border-border rounded-md p-5"
+				:to="{ name: 'pos.sales.index', query: { periodo: card.period } }"
+				class="group block bg-surface border border-border rounded-md p-5 hover:border-accent focus:outline-none focus-visible:border-accent transition-colors"
 			>
-				<span class="block text-xs text-text-muted">{{ card.label }}</span>
-				<span v-if="loading" class="block h-8 w-36 mt-1 rounded bg-border animate-pulse" aria-hidden="true"></span>
-				<span v-else class="block text-2xl font-semibold text-text mt-1 tabular-nums">
+				<span class="flex items-center justify-between gap-2 text-xs text-text-muted">
+					{{ card.label }}
+					<i class="ti ti-chevron-right group-hover:text-text transition-colors" aria-hidden="true"></i>
+				</span>
+				<span v-if="loading" class="block h-7 lg:h-8 w-36 mt-1 rounded bg-border animate-pulse" aria-hidden="true"></span>
+				<span v-else class="block text-xl lg:text-2xl font-semibold text-text mt-1 tabular-nums">
 					{{ formatCurrency(summary[card.key]) }}
 				</span>
-			</div>
+				<span class="sr-only">, ver ventas</span>
+			</router-link>
 		</div>
 	</section>
 </template>
@@ -41,10 +50,11 @@ defineProps({
 	},
 })
 
+// `period`: valor de ?periodo= que entiende SalesView.
 const cards = [
-	{ key: 'today', label: 'Hoy' },
-	{ key: 'week', label: 'Esta semana' },
-	{ key: 'month', label: 'Este mes' },
+	{ key: 'today', label: 'Hoy', period: 'hoy' },
+	{ key: 'week', label: 'Esta semana', period: 'semana' },
+	{ key: 'month', label: 'Este mes', period: 'mes' },
 ]
 </script>
 

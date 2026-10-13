@@ -208,13 +208,13 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { groupVariants } from "@/lib/groupVariants";
 import { formatCurrency } from "@/lib/formatCurrency";
 
-defineProps({
+const props = defineProps({
 	products: {
 		type: Array,
 		required: true,
@@ -222,6 +222,12 @@ defineProps({
 	visibleVariantsByProduct: {
 		type: Map,
 		required: true,
+	},
+	// Al montar, abre todos los productos recibidos y sus medidas (ej. al llegar
+	// desde una alerta de stock bajo del Dashboard, ya filtrado a un producto).
+	initiallyExpanded: {
+		type: Boolean,
+		default: false,
 	},
 });
 
@@ -242,6 +248,17 @@ function toggleGroup(productId, groupKey) {
 function isGroupExpanded(productId, groupKey) {
 	return !!expandedGroups.value[groupExpansionKey(productId, groupKey)];
 }
+
+onMounted(() => {
+	if (!props.initiallyExpanded) return;
+
+	for (const product of props.products) {
+		expandedRows.value[product.id] = true;
+		for (const group of groupVariants(props.visibleVariantsByProduct.get(product.id) ?? [])) {
+			expandedGroups.value[groupExpansionKey(product.id, group.key)] = true;
+		}
+	}
+});
 
 // Cuenta sobre las variantes visibles (ya filtradas), igual que la columna Variantes.
 function lowStockCount(variants = []) {

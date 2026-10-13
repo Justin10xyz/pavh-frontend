@@ -3,7 +3,7 @@
 		<div class="flex items-center justify-between px-5 py-3 border-b border-border">
 			<h2 id="low-stock-heading" class="text-sm font-medium text-text">Stock bajo</h2>
 			<router-link
-				:to="{ name: 'inventory' }"
+				:to="{ name: 'inventory', query: { stockBajo: '1' } }"
 				class="text-xs text-text-muted hover:text-text focus:outline-none focus-visible:underline transition-colors"
 			>
 				Ver todo
@@ -20,9 +20,13 @@
 					<span class="block h-4 w-32 rounded bg-border animate-pulse"></span>
 					<span class="block h-3 w-24 mt-1.5 rounded bg-border animate-pulse"></span>
 				</span>
-				<span class="flex flex-col items-end">
-					<span class="block h-4 w-16 rounded bg-border animate-pulse"></span>
-					<span class="block h-3 w-14 mt-1.5 rounded bg-border animate-pulse"></span>
+				<!-- Mismo hueco que el chevron de las filas, para que no se recorran al cargar. -->
+				<span class="flex items-center gap-3">
+					<span class="flex flex-col items-end">
+						<span class="block h-4 w-16 rounded bg-border animate-pulse"></span>
+						<span class="block h-3 w-14 mt-1.5 rounded bg-border animate-pulse"></span>
+					</span>
+					<span class="block w-4"></span>
 				</span>
 			</li>
 		</ul>
@@ -31,19 +35,33 @@
 			No hay productos con stock bajo.
 		</p>
 		<ul v-else class="divide-y divide-border">
-			<li
-				v-for="variant in visibleVariants"
-				:key="variant.id"
-				class="flex items-center justify-between gap-4 px-5 py-3"
-			>
-				<span class="min-w-0">
-					<span class="block text-sm text-text truncate">{{ variant.product.name }}</span>
-					<span class="block text-xs text-text-muted truncate">{{ variant.color }} · {{ variant.size }}</span>
-				</span>
-				<span class="text-right flex-shrink-0">
-					<span class="block text-sm font-medium text-danger tabular-nums">{{ variant.stock_boxes }} cajas</span>
-					<span class="block text-xs text-text-muted tabular-nums">Mínimo {{ variant.minimum_stock }}</span>
-				</span>
+			<li v-for="variant in visibleVariants" :key="variant.id">
+				<!-- Abre Inventario filtrado al producto (no su form de edición): ahí
+				     están el ajuste de stock y el historial de movimientos. -->
+				<router-link
+					:to="{ name: 'inventory', query: { stockBajo: '1', buscar: variant.product.name } }"
+					class="group flex items-center justify-between gap-4 px-5 py-3 hover:bg-bg focus:outline-none focus-visible:bg-bg transition-colors"
+				>
+					<span class="min-w-0">
+						<span class="block text-sm text-text truncate">{{ variant.product.name }}</span>
+						<span class="block text-xs text-text-muted truncate">{{ variant.color }} · {{ variant.size }}</span>
+					</span>
+					<span class="flex items-center gap-3 flex-shrink-0">
+						<span class="text-right">
+							<!-- Sin stock es lo más urgente de la lista: badge sólido en vez del
+							     mismo rojo que "stock bajo". -->
+							<span
+								v-if="Number(variant.stock_boxes) === 0"
+								class="inline-block text-xs font-medium text-white bg-danger rounded px-2 py-0.5"
+							>
+								Agotado
+							</span>
+							<span v-else class="block text-sm font-medium text-danger tabular-nums">{{ boxesLabel(variant.stock_boxes) }}</span>
+							<span class="block text-xs text-text-muted tabular-nums">Mínimo {{ boxesLabel(variant.minimum_stock) }}</span>
+						</span>
+						<i class="ti ti-chevron-right text-text-muted group-hover:text-text transition-colors" aria-hidden="true"></i>
+					</span>
+				</router-link>
 			</li>
 			<li v-if="hiddenCount > 0" class="px-5 py-2.5 text-xs text-text-muted">
 				Y {{ hiddenCount }} más con stock bajo.
@@ -80,6 +98,10 @@ const visibleVariants = computed(() =>
 		.sort((a, b) => a.stock_boxes - b.stock_boxes)
 		.slice(0, MAX_ROWS)
 )
+
+function boxesLabel(count) {
+	return `${count} ${Number(count) === 1 ? 'caja' : 'cajas'}`
+}
 
 const hiddenCount = computed(() => Math.max(props.variants.length - MAX_ROWS, 0))
 </script>
