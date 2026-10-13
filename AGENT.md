@@ -111,8 +111,8 @@ Importadas en `main.js` (pesos 400/500/600/700 de Inter, 400/600 de Source Serif
 
 | Token          | Hex       | Uso                                                                                                              |
 | -------------- | --------- | ---------------------------------------------------------------------------------------------------------------- |
-| `primary`      | `#14293D` | Sidebar, headers, botones primarios, texto sobre fondo claro en marca                                            |
-| `primary-dark` | `#0B1A29` | Hover/active de elementos `primary`                                                                              |
+| `primary`      | `#1C1B19` | Sidebar, headers, botones primarios, texto sobre fondo claro en marca                                            |
+| `primary-dark` | `#11100F` | Hover/active de elementos `primary`                                                                              |
 | `accent`       | `#A67C3D` | Focus rings, indicador de sección/nav activa. Uso **limitado** — no decorativo, no botones grandes de este color |
 | `bg`           | `#F7F8FA` | Fondo general de la app                                                                                          |
 | `surface`      | `#FFFFFF` | Cards, modales, inputs                                                                                           |

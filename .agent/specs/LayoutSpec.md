@@ -80,7 +80,7 @@ El guard `beforeEach` existente (hidratación de sesión + redirect a `/login`) 
  
 ## Diseño del sidebar/topbar (ya aprobado)
  
-**Sidebar** — fijo, ancho ~200px, fondo `primary` (`#14293D`):
+**Sidebar** — fijo, ancho ~200px, fondo `primary` (`#1C1B19`):
 - Wordmark "PV" arriba, fuente Source Serif 4, separado por borde inferior sutil
 - Grupo de navegación principal, en este orden:
   1. Dashboard (`ti-layout-dashboard`)
