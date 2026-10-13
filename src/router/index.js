@@ -25,7 +25,7 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-	if (!to.meta.requiresAuth) return true
+	if (!to.meta.requiresAuth && !to.meta.guestOnly) return true
 
 	const auth = useAuthStore()
 
@@ -35,8 +35,14 @@ router.beforeEach(async (to) => {
 		await auth.fetchUser()
 	}
 
+	// An active session has nothing to do on the login screen.
+	if (to.meta.guestOnly) {
+		return auth.isAuthenticated ? { name: 'dashboard' } : true
+	}
+
+	// Remember the requested route so login can return to it.
 	if (!auth.isAuthenticated) {
-		return { name: 'login' }
+		return { name: 'login', query: { redirect: to.fullPath } }
 	}
 
 	return true

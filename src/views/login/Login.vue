@@ -81,11 +81,12 @@
 
 <script setup>
 import { ref, reactive, toRefs, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { loading: isLoading } = toRefs(auth)
@@ -130,12 +131,21 @@ const validateForm = () => {
 	return !errors.email && !errors.password
 }
 
+// Only internal paths from ?redirect= (set by the guard); anything else falls back to the dashboard.
+const redirectTarget = () => {
+	const redirect = route.query.redirect
+	if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+		return redirect
+	}
+	return { name: 'dashboard' }
+}
+
 const handleSubmit = async () => {
 	if (!validateForm()) return
 
 	try {
 		await auth.login(form.email.trim(), form.password)
-		router.push('/dashboard')
+		router.replace(redirectTarget())
 	} catch {
 		// auth.error is already set in the store and shown in the template
 	}
