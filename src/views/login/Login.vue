@@ -1,10 +1,13 @@
 <template>
 	<div class="bg-surface border border-border rounded-md p-6 sm:p-8 relative">
-		<!-- Header: same logo as the sidebar wordmark + page title -->
+		<!-- Header: wordmark like the sidebar's (logo + PAVH) + page title -->
 		<div class="flex flex-col items-center mb-6">
-			<img src="@/assets/logo_pavh.png" alt="PAVH" class="w-14 h-14 mb-4 select-none" />
-			<h1 class="font-serif text-2xl text-primary text-center">¡Bienvenido de nuevo!</h1>
-			<p class="text-sm text-text-muted mt-1.5 text-center">Ingresa tus credenciales para acceder al sistema</p>
+			<div class="flex items-center gap-2 mb-5 select-none">
+				<img src="@/assets/logo_pavh.png" alt="" class="w-10 h-10" />
+				<span class="font-serif text-2xl text-primary tracking-wide">PAVH</span>
+			</div>
+			<h1 class="font-serif text-xl text-primary text-center">Iniciar sesión</h1>
+			<p class="text-sm text-text-muted mt-1 text-center">Ingresa tus credenciales para continuar</p>
 		</div>
 
 		<!-- Form -->
@@ -39,7 +42,6 @@
 						:error="errors.password"
 						:type="showPassword ? 'text' : 'password'"
 						autocomplete="current-password"
-						placeholder="••••••••"
 						class="pl-9 pr-10"
 						@input="errors.password = ''; auth.error = null"
 					/>
