@@ -1,141 +1,104 @@
 <template>
-	<div class="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-8 shadow-sm relative">
-		<!-- Header with logo placeholder and title -->
+	<div class="bg-surface border border-border rounded-md p-6 sm:p-8 relative">
+		<!-- Header: wordmark like the sidebar's (logo + PAVH) + page title -->
 		<div class="flex flex-col items-center mb-6">
-			<!-- Logo placeholder (48x48px, rounded corner) -->
-			<div class="w-12 h-12 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-center text-[15px] font-bold text-zinc-800 select-none mb-4">
-				PV
+			<div class="flex items-center gap-2 mb-5 select-none">
+				<img src="@/assets/logo_pavh.png" alt="" class="w-10 h-10" />
+				<span class="font-serif text-2xl text-primary tracking-wide">PAVH</span>
 			</div>
-			<!-- Hierarchy: title 22px/500, subtitle 13px gray -->
-			<h2 class="text-[22px] font-medium text-zinc-900 tracking-tight leading-7 text-center">¡Bienvenido de nuevo!</h2>
-			<p class="text-[13px] text-zinc-500 mt-1.5 text-center">Ingresa tus credenciales para acceder al sistema</p>
+			<h1 class="font-serif text-xl text-primary text-center">Iniciar sesión</h1>
+			<p class="text-sm text-text-muted mt-1 text-center">Ingresa tus credenciales para continuar</p>
 		</div>
 
-		<!-- General server error (invalid credentials, etc.) -->
-		<p v-if="auth.error" class="text-red-600 text-[12px] mb-4 flex items-center gap-1.5 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-			<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-			</svg>
-			{{ auth.error }}
-		</p>
-
 		<!-- Form -->
-		<form @submit.prevent="handleSubmit" class="space-y-4">
+		<form novalidate @submit.prevent="handleSubmit" class="space-y-4">
 			<!-- Email input -->
 			<div class="space-y-1.5">
-				<label for="email" class="text-xs font-medium text-zinc-650 block">Correo Electrónico</label>
+				<FieldLabel html-for="email" text="Correo electrónico" required />
 				<div class="relative">
-					<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-						<!-- Envelope icon on the left -->
-						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-						</svg>
-					</span>
-					<input
+					<i class="ti ti-mail absolute left-3 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none" aria-hidden="true"></i>
+					<InputTextCustom
 						id="email"
 						v-model="form.email"
+						:error="errors.email"
 						type="email"
+						autocomplete="username"
 						placeholder="ejemplo@correo.com"
+						class="pl-9"
 						@input="errors.email = ''; auth.error = null"
-						class="w-full bg-white border text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-colors pl-9 pr-4 h-[38px] rounded-lg"
-						:class="[
-							errors.email
-								? 'border-red-400 focus:border-red-500'
-								: 'border-zinc-200 focus:border-zinc-400'
-						]"
 					/>
 				</div>
-				<!-- Error near the relevant field -->
-				<p v-if="errors.email" class="text-red-600 text-[12px] mt-1.5 flex items-center gap-1.5">
-					<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-					</svg>
-					{{ errors.email }}
-				</p>
+				<p v-if="errors.email" class="text-danger text-xs mt-1.5">{{ errors.email }}</p>
 			</div>
 
 			<!-- Password input -->
 			<div class="space-y-1.5">
-				<label for="password" class="text-xs font-medium text-zinc-650 block">Contraseña</label>
+				<FieldLabel html-for="password" text="Contraseña" required />
 				<div class="relative">
-					<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-						<!-- Lock icon on the left -->
-						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-						</svg>
-					</span>
-					<input
+					<i class="ti ti-lock absolute left-3 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none" aria-hidden="true"></i>
+					<InputTextCustom
 						id="password"
 						v-model="form.password"
+						:error="errors.password"
 						:type="showPassword ? 'text' : 'password'"
-						placeholder="••••••••"
+						autocomplete="current-password"
+						class="pl-9 pr-10"
 						@input="errors.password = ''; auth.error = null"
-						class="w-full bg-white border text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-colors pl-9 pr-10 h-[38px] rounded-lg"
-						:class="[
-							errors.password
-								? 'border-red-400 focus:border-red-500'
-								: 'border-zinc-200 focus:border-zinc-400'
-						]"
+						@keydown="checkCapsLock"
+						@keyup="checkCapsLock"
+						@blur="capsLockOn = false"
 					/>
-					<!-- Show/hide password toggle (eye icon on the right) -->
+					<!-- Toggle with a fixed name: aria-pressed carries the state, the label doesn't alternate -->
 					<button
 						type="button"
+						aria-label="Mostrar contraseña"
+						title="Mostrar contraseña"
+						:aria-pressed="showPassword"
+						aria-controls="password"
 						@click="showPassword = !showPassword"
-						class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600 transition-colors"
-						title="Mostrar/Ocultar contraseña"
+						class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text focus:outline-none focus-visible:ring-1 focus-visible:ring-accent transition-colors cursor-pointer"
 					>
-						<!-- Open eye if showPassword is true, otherwise closed eye -->
-						<svg v-if="showPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.024 10.024 0 014.168-5.33m2.7-1.95A9.97 9.97 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.3" />
-							<path stroke-linecap="round" stroke-linejoin="round" d="M9.88 9.88a3 3 0 104.24 4.24M3 3l18 18" />
-						</svg>
-						<svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-							<path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-						</svg>
+						<i class="ti text-base" :class="showPassword ? 'ti-eye-off' : 'ti-eye'" aria-hidden="true"></i>
 					</button>
 				</div>
-				<!-- Error near the relevant field -->
-				<p v-if="errors.password" class="text-red-600 text-[12px] mt-1.5 flex items-center gap-1.5">
-					<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-					</svg>
-					{{ errors.password }}
+				<p v-if="errors.password" class="text-danger text-xs mt-1.5">{{ errors.password }}</p>
+				<!-- Persistent live region: inserting it with v-if wouldn't be announced reliably -->
+				<p aria-live="polite" class="text-text-muted text-xs">
+					<span v-if="capsLockOn" class="flex items-center gap-1 mt-1.5">
+						<i class="ti ti-arrow-big-up text-sm" aria-hidden="true"></i>
+						Bloq Mayús está activado
+					</span>
 				</p>
 			</div>
 
-			<!-- Additional options (fully neutral) -->
-			<div class="flex items-center justify-between pt-1 text-[12px]">
-				<label class="flex items-center gap-2 cursor-pointer select-none">
-					<CheckboxCustom v-model="form.rememberMe" size="sm" />
-					<span class="text-zinc-500 hover:text-zinc-700 transition-colors">Recordar contraseña</span>
-				</label>
-				<a href="#" class="text-zinc-500 hover:text-zinc-700 transition-colors hover:underline">¿Olvidaste tu contraseña?</a>
-			</div>
+			<div class="pt-2 space-y-3">
+				<!-- Submit error (invalid credentials, etc.) next to the button, same as the other forms -->
+				<p v-if="auth.error" role="alert" class="text-danger text-sm flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
+					<i class="ti ti-alert-triangle text-base shrink-0" aria-hidden="true"></i>
+					{{ auth.error }}
+				</p>
 
-			<!-- Submit button (only solid blue accent element) -->
-			<button
-				type="submit"
-				:disabled="isLoading"
-				class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-600/50 text-white font-medium text-sm h-[38px] rounded-lg transition-colors flex items-center justify-center gap-2 select-none cursor-pointer mt-4"
-			>
-				<svg v-if="isLoading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-				</svg>
-				<span v-if="!isLoading">Iniciar Sesión</span>
-				<span v-else>Iniciando sesión...</span>
-			</button>
+				<button
+					type="submit"
+					:disabled="isLoading"
+					class="w-full bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors flex items-center justify-center gap-2 select-none cursor-pointer disabled:cursor-not-allowed"
+				>
+					<i v-if="isLoading" class="ti ti-loader animate-spin text-base" aria-hidden="true"></i>
+					{{ isLoading ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+				</button>
+			</div>
 		</form>
 	</div>
 </template>
 
 <script setup>
-import { ref, reactive, toRefs } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, toRefs, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import CheckboxCustom from '@/components/widgets/CheckboxCustom.vue'
+import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
+import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const { loading: isLoading } = toRefs(auth)
@@ -143,7 +106,6 @@ const { loading: isLoading } = toRefs(auth)
 const form = reactive({
 	email: '',
 	password: '',
-	rememberMe: false,
 })
 
 const errors = reactive({
@@ -153,38 +115,70 @@ const errors = reactive({
 
 const showPassword = ref(false)
 
+// Caps Lock is the usual cause of "invalid credentials" with the right password.
+// Only detectable from a key event, so it's checked while typing in the field.
+const capsLockOn = ref(false)
+const checkCapsLock = (event) => {
+	capsLockOn.value = event.getModifierState?.('CapsLock') ?? false
+}
+
+onMounted(() => {
+	document.getElementById('email')?.focus()
+})
+
+// auth.error lives in the store: clear it so it doesn't reappear on the next visit to login.
+onBeforeUnmount(() => {
+	auth.error = null
+})
+
+// Login only checks presence and email format: password rules belong to
+// account creation, and the backend only requires a non-empty password.
 const validateForm = () => {
-	let isValid = true
 	errors.email = ''
 	errors.password = ''
 
-	if (!form.email) {
-		errors.email = 'El correo electrónico es requerido'
-		isValid = false
-	} else if (!/\S+@\S+\.\S+/.test(form.email)) {
+	if (!form.email.trim()) {
+		errors.email = 'Este campo es requerido'
+	} else if (!/\S+@\S+\.\S+/.test(form.email.trim())) {
 		errors.email = 'El formato del correo electrónico no es válido'
-		isValid = false
 	}
 
 	if (!form.password) {
-		errors.password = 'La contraseña es requerida'
-		isValid = false
-	} else if (form.password.length < 6) {
-		errors.password = 'La contraseña debe tener al menos 6 caracteres'
-		isValid = false
+		errors.password = 'Este campo es requerido'
 	}
 
-	return isValid
+	return !errors.email && !errors.password
 }
 
+// Only internal paths from ?redirect= (set by the guard); anything else falls back to the dashboard.
+const redirectTarget = () => {
+	const redirect = route.query.redirect
+	if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+		return redirect
+	}
+	return { name: 'dashboard' }
+}
+
+const focusField = (id) => document.getElementById(id)?.focus()
+
 const handleSubmit = async () => {
-	if (!validateForm()) return
+	if (!validateForm()) {
+		// Focus the first field with an error so it can be fixed without the mouse.
+		focusField(errors.email ? 'email' : 'password')
+		return
+	}
 
 	try {
-		await auth.login(form.email, form.password)
-		router.push('/dashboard')
-	} catch {
-		// auth.error is already set in the store and shown in the template
+		await auth.login(form.email.trim(), form.password)
+		router.replace(redirectTarget())
+	} catch (err) {
+		// auth.error is already set in the store and shown in the template.
+		// Invalid credentials (422): keep the email, clear the password and focus it
+		// to retype. Other errors (network, throttling) keep both for a plain retry.
+		if (err.response?.status === 422) {
+			form.password = ''
+			focusField('password')
+		}
 	}
 }
 </script>

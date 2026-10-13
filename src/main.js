@@ -24,6 +24,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { setupSessionExpiry } from './lib/sessionExpiry'
 
 const app = createApp(App)
 
@@ -47,5 +48,6 @@ app.directive('tooltip', Tooltip)
 
 app.use(createPinia())
 app.use(router)
+setupSessionExpiry(router)
 
 app.mount('#app')

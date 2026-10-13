@@ -14,10 +14,13 @@
 		</p>
 
 		<p v-else-if="!loading && products.length === 0" class="px-5 py-6 text-sm text-text-muted text-center">
-			No hay ventas en este periodo.
+			{{ filter === 'all' ? 'Aún no hay ventas registradas.' : 'No hay ventas en este periodo.' }}
 		</p>
 
-		<div v-else class="overflow-x-auto">
+		<!-- Al cambiar de filtro con datos ya cargados, la tabla se queda visible
+		     (atenuada) en vez de volver al esqueleto, para que no parpadee. El
+		     esqueleto solo aparece en la primera carga. -->
+		<div v-else class="overflow-x-auto transition-opacity" :class="{ 'opacity-60': loading && products.length > 0 }">
 			<table class="w-full text-sm">
 				<thead>
 					<tr class="border-b border-border">
@@ -27,7 +30,7 @@
 					</tr>
 				</thead>
 
-				<tbody v-if="loading" class="divide-y divide-border" aria-hidden="true">
+				<tbody v-if="loading && products.length === 0" class="divide-y divide-border" aria-hidden="true">
 					<tr v-for="n in 3" :key="n">
 						<td class="px-5 py-3"><span class="block h-4 w-40 rounded bg-border animate-pulse"></span></td>
 						<td class="px-5 py-3"><span class="block h-4 w-16 ml-auto rounded bg-border animate-pulse"></span></td>

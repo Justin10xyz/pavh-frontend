@@ -57,6 +57,7 @@
 				v-else
 				:products="filteredProducts"
 				:visibleVariantsByProduct="visibleVariantsByProduct"
+				:initially-expanded="expandOnArrival"
 				@edit-product="editProduct"
 				@open-stock-dialog="openStockDialog"
 				@open-movements-dialog="openMovementsDialog"
@@ -84,7 +85,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useInventoryStore } from "@/stores/inventory";
 
@@ -119,7 +120,7 @@ const newProductRoute = computed(() =>
 );
 
 function selectSection(key) {
-	router.replace({ query: key === "other" ? { seccion: "otros" } : {} });
+	router.replace({ query: key === "other" ? { seccion: "otros" } : floorsFilterQuery() });
 }
 
 function editProduct(productId) {
@@ -150,9 +151,35 @@ function openMovementsDialog(variant) {
 }
 
 // Filters logic
-const searchQuery = ref("");
+// Búsqueda y "solo stock bajo" viven en la URL (?buscar=…&stockBajo=1) para que
+// el Dashboard pueda abrir el catálogo ya filtrado. Se leen al montar y se
+// escriben con router.replace; un computed sobre route.query perdería letras al
+// teclear rápido.
+const searchQuery = ref(typeof route.query.buscar === "string" ? route.query.buscar : "");
 const selectedCategory = ref("");
-const lowStockOnly = ref(false);
+const lowStockOnly = ref(route.query.stockBajo === "1");
+
+function floorsFilterQuery() {
+	return {
+		...(searchQuery.value ? { buscar: searchQuery.value } : {}),
+		...(lowStockOnly.value ? { stockBajo: "1" } : {}),
+	};
+}
+
+// Llegar con ?buscar=…&stockBajo=1 (fila de Stock bajo del Dashboard) abre ya
+// expandido lo que quede visible, para ajustar stock sin dos clics más. Solo
+// esa vez: al tocar cualquier filtro se apaga, para que la tabla no vuelva a
+// expandir todo si se remonta (ej. tras un filtro sin resultados).
+const expandOnArrival = ref(searchQuery.value !== "" && lowStockOnly.value);
+
+// Solo aplican a Catálogo de pisos; en "Otros productos" la URL es solo la sección.
+watch([searchQuery, lowStockOnly], () => {
+	if (activeSection.value === "floors") router.replace({ query: floorsFilterQuery() });
+});
+
+watch([searchQuery, selectedCategory, lowStockOnly], () => {
+	expandOnArrival.value = false;
+});
 
 function clearFilters() {
 	searchQuery.value = "";
