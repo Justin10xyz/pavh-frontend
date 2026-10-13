@@ -31,19 +31,25 @@
 			No hay productos con stock bajo.
 		</p>
 		<ul v-else class="divide-y divide-border">
-			<li
-				v-for="variant in visibleVariants"
-				:key="variant.id"
-				class="flex items-center justify-between gap-4 px-5 py-3"
-			>
-				<span class="min-w-0">
-					<span class="block text-sm text-text truncate">{{ variant.product.name }}</span>
-					<span class="block text-xs text-text-muted truncate">{{ variant.color }} · {{ variant.size }}</span>
-				</span>
-				<span class="text-right flex-shrink-0">
-					<span class="block text-sm font-medium text-danger tabular-nums">{{ variant.stock_boxes }} cajas</span>
-					<span class="block text-xs text-text-muted tabular-nums">Mínimo {{ variant.minimum_stock }}</span>
-				</span>
+			<li v-for="variant in visibleVariants" :key="variant.id">
+				<!-- Abre Inventario filtrado al producto (no su form de edición): ahí
+				     están el ajuste de stock y el historial de movimientos. -->
+				<router-link
+					:to="{ name: 'inventory', query: { stockBajo: '1', buscar: variant.product.name } }"
+					class="group flex items-center justify-between gap-4 px-5 py-3 hover:bg-bg focus:outline-none focus-visible:bg-bg transition-colors"
+				>
+					<span class="min-w-0">
+						<span class="block text-sm text-text truncate">{{ variant.product.name }}</span>
+						<span class="block text-xs text-text-muted truncate">{{ variant.color }} · {{ variant.size }}</span>
+					</span>
+					<span class="flex items-center gap-3 flex-shrink-0">
+						<span class="text-right">
+							<span class="block text-sm font-medium text-danger tabular-nums">{{ variant.stock_boxes }} cajas</span>
+							<span class="block text-xs text-text-muted tabular-nums">Mínimo {{ variant.minimum_stock }}</span>
+						</span>
+						<i class="ti ti-chevron-right text-text-muted group-hover:text-text transition-colors" aria-hidden="true"></i>
+					</span>
+				</router-link>
 			</li>
 			<li v-if="hiddenCount > 0" class="px-5 py-2.5 text-xs text-text-muted">
 				Y {{ hiddenCount }} más con stock bajo.
