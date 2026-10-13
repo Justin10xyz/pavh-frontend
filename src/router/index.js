@@ -48,4 +48,10 @@ router.beforeEach(async (to) => {
 	return true
 })
 
+// Título de la pestaña por ruta, para distinguir varias pestañas abiertas
+// (ej. una cotización y una venta). `index.html` deja "PAVH" de respaldo.
+router.afterEach((to) => {
+	document.title = to.meta.title ? `${to.meta.title} · PAVH` : 'PAVH'
+})
+
 export default router
