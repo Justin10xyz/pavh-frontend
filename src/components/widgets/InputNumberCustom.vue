@@ -39,7 +39,7 @@ const pt = computed(() => ({
 	pcInputText: {
 		root: {
 			class: [
-				'w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-[38px] rounded-md disabled:opacity-60 disabled:cursor-not-allowed',
+				'w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-10 rounded-md disabled:opacity-60 disabled:cursor-not-allowed',
 				props.error ? 'border-danger focus:border-danger' : 'border-border focus:border-accent',
 			],
 		},

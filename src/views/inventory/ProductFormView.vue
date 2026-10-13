@@ -428,7 +428,7 @@
 											Stock actual (cajas)
 										</span>
 										<p
-											class="h-[2.375rem] flex items-center text-sm text-text tabular-nums"
+											class="h-10 flex items-center text-sm text-text tabular-nums"
 											title="Se ajusta desde Inventario con «Ajustar stock»"
 										>
 											{{ row.stock_boxes }} cj
@@ -482,7 +482,7 @@
 									type="button"
 									@click="removeColorRow(group, row.id)"
 									:disabled="group.colorRows.length === 1 || deletingRowId === row.id"
-									class="w-8 h-[2.375rem] shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
+									class="w-8 h-10 shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
 									:aria-label="row.color ? `Eliminar color ${row.color}` : 'Eliminar color'"
 									title="Eliminar color"
 								>
@@ -528,14 +528,14 @@
 				<button
 					type="button"
 					@click="handleCancel"
-					class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 				>
 					Cancelar
 				</button>
 				<button
 					type="submit"
 					:disabled="submitting || loadingProduct"
-					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+					class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 				>
 					{{
 						submitting
@@ -557,14 +557,14 @@
 						<button
 							type="button"
 							@click="rejectCallback"
-							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Cancelar
 						</button>
 						<button
 							type="button"
 							@click="acceptCallback"
-							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+							class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 						>
 							Eliminar
 						</button>

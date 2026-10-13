@@ -6,7 +6,7 @@
 			     fija y ambos se truncaban); el contacto pasa a otro renglón si no cabe. -->
 			<div
 				v-if="selectedCustomer && !changing"
-				class="flex items-center min-h-[2.375rem] bg-surface border border-border rounded-md"
+				class="flex items-center min-h-10 bg-surface border border-border rounded-md"
 			>
 				<button
 					:id="$attrs.id"
@@ -110,7 +110,7 @@
 
 		<button
 			type="button"
-			class="shrink-0 inline-flex items-center justify-center h-[2.375rem] w-[2.375rem] bg-surface border border-border hover:bg-bg text-text-muted hover:text-accent rounded-md transition-colors cursor-pointer"
+			class="shrink-0 inline-flex items-center justify-center h-10 w-10 bg-surface border border-border hover:bg-bg text-text-muted hover:text-accent rounded-md transition-colors cursor-pointer"
 			aria-label="Registrar cliente nuevo"
 			title="Registrar cliente nuevo"
 			@click="openCreateDialog"
