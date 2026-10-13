@@ -15,7 +15,10 @@
 				</RouterLink>
 				<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
 			</div>
+			<!-- Solo con el catálogo cargado: crear a media carga agregaría la
+			     categoría a un arreglo que la respuesta pendiente luego reemplaza. -->
 			<button
+				v-if="catalogs.initialized"
 				type="button"
 				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center select-none cursor-pointer"
 				@click="openCreate"
