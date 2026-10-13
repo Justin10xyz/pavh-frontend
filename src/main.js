@@ -9,6 +9,7 @@ import '@fontsource/inter/700.css'
 // Source Serif 4 — solo wordmark y títulos de página
 import '@fontsource/source-serif-4/400.css'
 import '@fontsource/source-serif-4/600.css'
+import '@fontsource/source-serif-4/700.css'
 
 // Tabler Icons — íconos del sidebar (self-hosted, sin CDN)
 import '@tabler/icons-webfont/dist/tabler-icons.min.css'

@@ -6,14 +6,9 @@
 			:to="{ name: 'dashboard' }"
 			class="h-13 flex items-center justify-center lg:justify-start gap-2 px-3 lg:px-5 border-b border-white/10 shrink-0"
 		>
-			<!-- Colapsado: solo el ícono. Expandido: logo sin tagline (el wordmark va
-			     dentro de la imagen); con tagline sería ilegible en los 52px del header. -->
-			<img src="@/assets/branding/icono-blanco-dorado-transparente.png" alt="INNOVA" class="w-10 h-auto lg:hidden" />
-			<img
-				src="@/assets/branding/logo-sin-tagline-blanco-dorado-transparente.png"
-				alt="INNOVA"
-				class="hidden lg:block h-11 w-auto"
-			/>
+			<!-- Ícono + wordmark como texto real; en la barra colapsada solo el ícono. -->
+			<img src="@/assets/branding/icono-color-transparente.png" alt="INNOVA" class="w-10 h-auto" />
+			<span class="hidden lg:inline font-serif font-bold text-lg text-white tracking-wide" aria-hidden="true">INNOVA</span>
 		</router-link>
 
 		<!-- Main navigation -->
