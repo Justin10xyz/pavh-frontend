@@ -4,7 +4,7 @@
 			<h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
 			<button
 				type="button"
-				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors inline-flex items-center select-none cursor-pointer"
+				class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center select-none cursor-pointer"
 				@click="openCreate"
 			>
 				Nueva categoría
@@ -22,7 +22,7 @@
 		</div>
 
 		<div v-else class="bg-surface border border-border rounded-md overflow-hidden">
-			<DataTable :value="catalogs.categories" dataKey="id" class="categories-table">
+			<DataTable :value="catalogs.categories" dataKey="id" class="data-table">
 				<Column header="Nombre">
 					<template #body="{ data }">
 						<span class="font-medium text-text">{{ data.name }}</span>
@@ -31,9 +31,9 @@
 
 				<Column header="Prefijo" style="width: 9rem">
 					<template #body="{ data }">
-						<div class="px-2 py-1 bg-gray-100 border-gray-200 rounded">
-							<span class="text-xs text-gray-500">{{ data.code_prefix }}</span>
-						</div>
+						<span class="inline-block px-2 py-0.5 bg-bg border border-border rounded text-xs font-medium text-text-muted">
+							{{ data.code_prefix }}
+						</span>
 					</template>
 				</Column>
 
@@ -86,32 +86,4 @@ function openEdit(category) {
 }
 </script>
 
-<style scoped>
-.categories-table :deep(table) {
-	width: 100%;
-	border-collapse: collapse;
-}
-.categories-table :deep(thead th) {
-	text-align: left;
-	font-size: 11px;
-	font-weight: 500;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: var(--color-text-muted);
-	background: var(--color-bg);
-	padding: 0.5rem 0.75rem;
-	border-bottom: 1px solid var(--color-border);
-}
-.categories-table :deep(tbody > tr > td) {
-	padding: 0.5rem 0.75rem;
-	vertical-align: middle;
-	border-bottom: 1px solid var(--color-border);
-	font-size: 0.8125rem;
-}
-.categories-table :deep(tbody > tr:last-child > td) {
-	border-bottom: none;
-}
-.categories-table :deep(tbody > tr:hover) {
-	background: var(--color-bg);
-}
-</style>
+<style scoped></style>
