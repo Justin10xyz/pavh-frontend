@@ -16,62 +16,40 @@
 		</p>
 
 		<!-- Form -->
-		<form @submit.prevent="handleSubmit" class="space-y-4">
+		<form novalidate @submit.prevent="handleSubmit" class="space-y-4">
 			<!-- Email input -->
 			<div class="space-y-1.5">
-				<label for="email" class="text-xs font-medium text-zinc-650 block">Correo Electrónico</label>
+				<FieldLabel html-for="email" text="Correo electrónico" required />
 				<div class="relative">
-					<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-						<!-- Envelope icon on the left -->
-						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-						</svg>
-					</span>
-					<input
+					<i class="ti ti-mail absolute left-3 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none" aria-hidden="true"></i>
+					<InputTextCustom
 						id="email"
 						v-model="form.email"
+						:error="errors.email"
 						type="email"
+						autocomplete="username"
 						placeholder="ejemplo@correo.com"
+						class="pl-9"
 						@input="errors.email = ''; auth.error = null"
-						class="w-full bg-white border text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-colors pl-9 pr-4 h-[38px] rounded-lg"
-						:class="[
-							errors.email
-								? 'border-red-400 focus:border-red-500'
-								: 'border-zinc-200 focus:border-zinc-400'
-						]"
 					/>
 				</div>
-				<!-- Error near the relevant field -->
-				<p v-if="errors.email" class="text-red-600 text-[12px] mt-1.5 flex items-center gap-1.5">
-					<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-					</svg>
-					{{ errors.email }}
-				</p>
+				<p v-if="errors.email" class="text-danger text-xs mt-1.5">{{ errors.email }}</p>
 			</div>
 
 			<!-- Password input -->
 			<div class="space-y-1.5">
-				<label for="password" class="text-xs font-medium text-zinc-650 block">Contraseña</label>
+				<FieldLabel html-for="password" text="Contraseña" required />
 				<div class="relative">
-					<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-						<!-- Lock icon on the left -->
-						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-						</svg>
-					</span>
-					<input
+					<i class="ti ti-lock absolute left-3 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none" aria-hidden="true"></i>
+					<InputTextCustom
 						id="password"
 						v-model="form.password"
+						:error="errors.password"
 						:type="showPassword ? 'text' : 'password'"
+						autocomplete="current-password"
 						placeholder="••••••••"
+						class="pl-9 pr-10"
 						@input="errors.password = ''; auth.error = null"
-						class="w-full bg-white border text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-colors pl-9 pr-10 h-[38px] rounded-lg"
-						:class="[
-							errors.password
-								? 'border-red-400 focus:border-red-500'
-								: 'border-zinc-200 focus:border-zinc-400'
-						]"
 					/>
 					<!-- Show/hide password toggle (eye icon on the right) -->
 					<button
@@ -91,13 +69,7 @@
 						</svg>
 					</button>
 				</div>
-				<!-- Error near the relevant field -->
-				<p v-if="errors.password" class="text-red-600 text-[12px] mt-1.5 flex items-center gap-1.5">
-					<svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-					</svg>
-					{{ errors.password }}
-				</p>
+				<p v-if="errors.password" class="text-danger text-xs mt-1.5">{{ errors.password }}</p>
 			</div>
 
 			<!-- Submit button (only solid blue accent element) -->
@@ -118,9 +90,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, toRefs } from 'vue'
+import { ref, reactive, toRefs, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
+import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -138,35 +112,34 @@ const errors = reactive({
 
 const showPassword = ref(false)
 
+onMounted(() => {
+	document.getElementById('email')?.focus()
+})
+
+// Login only checks presence and email format: password rules belong to
+// account creation, and the backend only requires a non-empty password.
 const validateForm = () => {
-	let isValid = true
 	errors.email = ''
 	errors.password = ''
 
-	if (!form.email) {
-		errors.email = 'El correo electrónico es requerido'
-		isValid = false
-	} else if (!/\S+@\S+\.\S+/.test(form.email)) {
+	if (!form.email.trim()) {
+		errors.email = 'Este campo es requerido'
+	} else if (!/\S+@\S+\.\S+/.test(form.email.trim())) {
 		errors.email = 'El formato del correo electrónico no es válido'
-		isValid = false
 	}
 
 	if (!form.password) {
-		errors.password = 'La contraseña es requerida'
-		isValid = false
-	} else if (form.password.length < 6) {
-		errors.password = 'La contraseña debe tener al menos 6 caracteres'
-		isValid = false
+		errors.password = 'Este campo es requerido'
 	}
 
-	return isValid
+	return !errors.email && !errors.password
 }
 
 const handleSubmit = async () => {
 	if (!validateForm()) return
 
 	try {
-		await auth.login(form.email, form.password)
+		await auth.login(form.email.trim(), form.password)
 		router.push('/dashboard')
 	} catch {
 		// auth.error is already set in the store and shown in the template
