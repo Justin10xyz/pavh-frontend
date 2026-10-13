@@ -51,22 +51,17 @@
 						class="pl-9 pr-10"
 						@input="errors.password = ''; auth.error = null"
 					/>
-					<!-- Show/hide password toggle (eye icon on the right) -->
+					<!-- Toggle with a fixed name: aria-pressed carries the state, the label doesn't alternate -->
 					<button
 						type="button"
+						aria-label="Mostrar contraseña"
+						title="Mostrar contraseña"
+						:aria-pressed="showPassword"
+						aria-controls="password"
 						@click="showPassword = !showPassword"
-						class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600 transition-colors"
-						title="Mostrar/Ocultar contraseña"
+						class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded text-text-muted hover:text-text focus:outline-none focus-visible:ring-1 focus-visible:ring-accent transition-colors cursor-pointer"
 					>
-						<!-- Open eye if showPassword is true, otherwise closed eye -->
-						<svg v-if="showPassword" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.024 10.024 0 014.168-5.33m2.7-1.95A9.97 9.97 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.3" />
-							<path stroke-linecap="round" stroke-linejoin="round" d="M9.88 9.88a3 3 0 104.24 4.24M3 3l18 18" />
-						</svg>
-						<svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-							<path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-						</svg>
+						<i class="ti text-base" :class="showPassword ? 'ti-eye-off' : 'ti-eye'" aria-hidden="true"></i>
 					</button>
 				</div>
 				<p v-if="errors.password" class="text-danger text-xs mt-1.5">{{ errors.password }}</p>
