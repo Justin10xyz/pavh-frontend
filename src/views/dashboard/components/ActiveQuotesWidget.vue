@@ -20,7 +20,11 @@
 					<span class="block h-4 w-20 rounded bg-border animate-pulse"></span>
 					<span class="block h-3 w-32 mt-1.5 rounded bg-border animate-pulse"></span>
 				</span>
-				<span class="block h-4 w-20 rounded bg-border animate-pulse"></span>
+				<!-- Mismo hueco que el chevron de las filas, para que no se recorran al cargar. -->
+				<span class="flex items-center gap-3">
+					<span class="block h-4 w-20 rounded bg-border animate-pulse"></span>
+					<span class="block w-4"></span>
+				</span>
 			</li>
 		</ul>
 
@@ -41,7 +45,7 @@
 					</span>
 					<span class="flex items-center gap-3 flex-shrink-0">
 						<span class="text-sm text-text tabular-nums">{{ formatCurrency(quote.total) }}</span>
-						<i class="ti ti-chevron-right text-text-muted group-hover:text-text transition-colors"></i>
+						<i class="ti ti-chevron-right text-text-muted group-hover:text-text transition-colors" aria-hidden="true"></i>
 					</span>
 				</router-link>
 			</li>

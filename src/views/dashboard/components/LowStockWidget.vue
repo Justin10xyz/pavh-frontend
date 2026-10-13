@@ -20,9 +20,13 @@
 					<span class="block h-4 w-32 rounded bg-border animate-pulse"></span>
 					<span class="block h-3 w-24 mt-1.5 rounded bg-border animate-pulse"></span>
 				</span>
-				<span class="flex flex-col items-end">
-					<span class="block h-4 w-16 rounded bg-border animate-pulse"></span>
-					<span class="block h-3 w-14 mt-1.5 rounded bg-border animate-pulse"></span>
+				<!-- Mismo hueco que el chevron de las filas, para que no se recorran al cargar. -->
+				<span class="flex items-center gap-3">
+					<span class="flex flex-col items-end">
+						<span class="block h-4 w-16 rounded bg-border animate-pulse"></span>
+						<span class="block h-3 w-14 mt-1.5 rounded bg-border animate-pulse"></span>
+					</span>
+					<span class="block w-4"></span>
 				</span>
 			</li>
 		</ul>

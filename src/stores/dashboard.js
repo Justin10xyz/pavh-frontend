@@ -74,8 +74,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
 		return { today, week, month }
 	}
 
-	// Inventario cambia poco y ya se cachea con `initialized`; fetchProducts() no
-	// lanza, deja el error en el store, así que se convierte a excepción aquí.
+	// fetchProducts() no revisa `initialized`: vuelve a pedir el catálogo en cada
+	// visita, así Stock bajo nunca se queda viejo. No lanza, deja el error en el
+	// store, así que se convierte a excepción aquí.
 	async function ensureInventory() {
 		await inventory.fetchProducts()
 		if (inventory.error) throw new Error(inventory.error)
