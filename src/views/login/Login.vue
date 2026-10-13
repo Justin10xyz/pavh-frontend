@@ -44,6 +44,9 @@
 						autocomplete="current-password"
 						class="pl-9 pr-10"
 						@input="errors.password = ''; auth.error = null"
+						@keydown="checkCapsLock"
+						@keyup="checkCapsLock"
+						@blur="capsLockOn = false"
 					/>
 					<!-- Toggle with a fixed name: aria-pressed carries the state, the label doesn't alternate -->
 					<button
@@ -59,6 +62,13 @@
 					</button>
 				</div>
 				<p v-if="errors.password" class="text-danger text-xs mt-1.5">{{ errors.password }}</p>
+				<!-- Persistent live region: inserting it with v-if wouldn't be announced reliably -->
+				<p aria-live="polite" class="text-text-muted text-xs">
+					<span v-if="capsLockOn" class="flex items-center gap-1 mt-1.5">
+						<i class="ti ti-arrow-big-up text-sm" aria-hidden="true"></i>
+						Bloq Mayús está activado
+					</span>
+				</p>
 			</div>
 
 			<div class="pt-2 space-y-3">
@@ -104,6 +114,13 @@ const errors = reactive({
 })
 
 const showPassword = ref(false)
+
+// Caps Lock is the usual cause of "invalid credentials" with the right password.
+// Only detectable from a key event, so it's checked while typing in the field.
+const capsLockOn = ref(false)
+const checkCapsLock = (event) => {
+	capsLockOn.value = event.getModifierState?.('CapsLock') ?? false
+}
 
 onMounted(() => {
 	document.getElementById('email')?.focus()
