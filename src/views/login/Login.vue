@@ -142,14 +142,26 @@ const redirectTarget = () => {
 	return { name: 'dashboard' }
 }
 
+const focusField = (id) => document.getElementById(id)?.focus()
+
 const handleSubmit = async () => {
-	if (!validateForm()) return
+	if (!validateForm()) {
+		// Focus the first field with an error so it can be fixed without the mouse.
+		focusField(errors.email ? 'email' : 'password')
+		return
+	}
 
 	try {
 		await auth.login(form.email.trim(), form.password)
 		router.replace(redirectTarget())
-	} catch {
-		// auth.error is already set in the store and shown in the template
+	} catch (err) {
+		// auth.error is already set in the store and shown in the template.
+		// Invalid credentials (422): keep the email, clear the password and focus it
+		// to retype. Other errors (network, throttling) keep both for a plain retry.
+		if (err.response?.status === 422) {
+			form.password = ''
+			focusField('password')
+		}
 	}
 }
 </script>
