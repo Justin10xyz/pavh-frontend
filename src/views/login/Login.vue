@@ -1,14 +1,10 @@
 <template>
-	<div class="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-8 shadow-sm relative">
-		<!-- Header with logo placeholder and title -->
+	<div class="bg-surface border border-border rounded-md p-6 sm:p-8 relative">
+		<!-- Header: same logo as the sidebar wordmark + page title -->
 		<div class="flex flex-col items-center mb-6">
-			<!-- Logo placeholder (48x48px, rounded corner) -->
-			<div class="w-12 h-12 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-center text-[15px] font-bold text-zinc-800 select-none mb-4">
-				PV
-			</div>
-			<!-- Hierarchy: title 22px/500, subtitle 13px gray -->
-			<h2 class="text-[22px] font-medium text-zinc-900 tracking-tight leading-7 text-center">¡Bienvenido de nuevo!</h2>
-			<p class="text-[13px] text-zinc-500 mt-1.5 text-center">Ingresa tus credenciales para acceder al sistema</p>
+			<img src="@/assets/logo_pavh.png" alt="PAVH" class="w-14 h-14 mb-4 select-none" />
+			<h1 class="font-serif text-2xl text-primary text-center">¡Bienvenido de nuevo!</h1>
+			<p class="text-sm text-text-muted mt-1.5 text-center">Ingresa tus credenciales para acceder al sistema</p>
 		</div>
 
 		<!-- General server error (invalid credentials, etc.) -->
