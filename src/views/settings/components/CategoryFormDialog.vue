@@ -78,6 +78,7 @@ import { useCatalogsStore } from '@/stores/catalogs'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import SelectCustom from '@/components/widgets/SelectCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
+import { DEFAULT_PRODUCT_FORM_TYPE, PRODUCT_FORM_TYPE_OPTIONS } from '@/lib/productFormTypes'
 
 const visible = defineModel('visible', { type: Boolean, default: false })
 const props = defineProps({
@@ -87,12 +88,8 @@ const props = defineProps({
 
 const catalogs = useCatalogsStore()
 
-// Define qué formulario de producto usa la categoría. Mismo default que el backend.
-const DEFAULT_PRODUCT_FORM_TYPE = 'variant'
-const productFormTypeOptions = [
-	{ value: 'variant', label: 'Pisos (con variantes)' },
-	{ value: 'simple', label: 'General (nombre, precio, descripción)' },
-]
+// Define qué formulario de producto usa la categoría.
+const productFormTypeOptions = PRODUCT_FORM_TYPE_OPTIONS
 
 const name = ref('')
 const codePrefix = ref('')

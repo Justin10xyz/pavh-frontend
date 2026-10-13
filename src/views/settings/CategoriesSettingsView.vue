@@ -21,37 +21,49 @@
 			Todavía no hay categorías registradas.
 		</div>
 
-		<div v-else class="bg-surface border border-border rounded-md overflow-hidden">
-			<DataTable :value="catalogs.categories" dataKey="id" class="data-table">
-				<Column header="Nombre">
-					<template #body="{ data }">
-						<span class="font-medium text-text">{{ data.name }}</span>
-					</template>
-				</Column>
+		<template v-else>
+			<p class="text-sm text-text-muted mb-2 sm:text-right" aria-live="polite">
+				{{ catalogs.categories.length }} {{ catalogs.categories.length === 1 ? 'categoría' : 'categorías' }}
+			</p>
 
-				<Column header="Prefijo" style="width: 9rem">
-					<template #body="{ data }">
-						<span class="inline-block px-2 py-0.5 bg-bg border border-border rounded text-xs font-medium text-text-muted">
-							{{ data.code_prefix }}
-						</span>
-					</template>
-				</Column>
+			<div class="bg-surface border border-border rounded-md overflow-hidden">
+				<DataTable :value="catalogs.categories" dataKey="id" class="data-table">
+					<Column header="Nombre">
+						<template #body="{ data }">
+							<span class="font-medium text-text">{{ data.name }}</span>
+						</template>
+					</Column>
 
-				<Column header="" style="width: 3rem">
-					<template #body="{ data }">
-						<button
-							type="button"
-							class="text-text-muted hover:text-accent transition-colors cursor-pointer"
-							aria-label="Editar categoría"
-							title="Editar categoría"
-							@click="openEdit(data)"
-						>
-							<i class="ti ti-pencil text-lg"></i>
-						</button>
-					</template>
-				</Column>
-			</DataTable>
-		</div>
+					<Column header="Prefijo" style="width: 9rem">
+						<template #body="{ data }">
+							<span class="inline-block px-2 py-0.5 bg-bg border border-border rounded text-xs font-medium text-text-muted">
+								{{ data.code_prefix }}
+							</span>
+						</template>
+					</Column>
+
+					<Column header="Tipo" style="width: 9rem">
+						<template #body="{ data }">
+							<span class="text-text">{{ productFormTypeShortLabel(data.product_form_type) }}</span>
+						</template>
+					</Column>
+
+					<Column header="" style="width: 3rem">
+						<template #body="{ data }">
+							<button
+								type="button"
+								class="text-text-muted hover:text-accent transition-colors cursor-pointer"
+								aria-label="Editar categoría"
+								title="Editar categoría"
+								@click="openEdit(data)"
+							>
+								<i class="ti ti-pencil text-lg"></i>
+							</button>
+						</template>
+					</Column>
+				</DataTable>
+			</div>
+		</template>
 
 		<CategoryFormDialog v-model:visible="dialogVisible" :category="selectedCategory" />
 	</div>
@@ -64,6 +76,7 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { useCatalogsStore } from "@/stores/catalogs";
 import CategoryFormDialog from "./components/CategoryFormDialog.vue";
+import { productFormTypeShortLabel } from "@/lib/productFormTypes";
 
 const route = useRoute();
 const catalogs = useCatalogsStore();
