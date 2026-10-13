@@ -71,8 +71,8 @@
 					</button>
 					<button
 						type="submit"
-						:disabled="!isValid || submitting"
-						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+						:disabled="submitting"
+						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
 					>
 						{{ submitting ? 'Guardando…' : (isEditMode ? 'Guardar cambios' : 'Guardar') }}
 					</button>
@@ -118,8 +118,6 @@ const productFormTypeDescription = computed(
 	() => productFormTypeOptions.find((option) => option.value === productFormType.value)?.description ?? ''
 )
 
-const isValid = computed(() => name.value.trim() !== '' && codePrefix.value.trim() !== '')
-
 // El backend guarda el prefijo en mayúsculas (forma parte del código de cada
 // variante); aquí solo se refleja al teclear para que se vea lo que se va a
 // guardar. Se conserva la posición del cursor por si se edita a la mitad.
@@ -139,6 +137,8 @@ function fillForm() {
 	name.value = props.category?.name ?? ''
 	codePrefix.value = props.category?.code_prefix ?? ''
 	productFormType.value = props.category?.product_form_type ?? DEFAULT_PRODUCT_FORM_TYPE
+	// Sin esto el foco cae en el botón de cerrar (el primer enfocable del diálogo).
+	document.getElementById('category_name')?.focus()
 }
 
 function reset() {
@@ -151,14 +151,23 @@ function reset() {
 	generalError.value = null
 }
 
-async function submitCategory() {
-	if (!isValid.value || submitting.value) return
+// Mismo criterio que los forms de Clientes: el botón queda habilitado y lo que
+// falta se marca en su campo al intentar guardar, en vez de un botón gris sin
+// explicación.
+function validateRequired() {
+	errors.name = name.value.trim() ? '' : 'Este campo es requerido'
+	errors.code_prefix = codePrefix.value.trim() ? '' : 'Este campo es requerido'
+	return !errors.name && !errors.code_prefix
+}
 
-	submitting.value = true
-	errors.name = ''
-	errors.code_prefix = ''
+async function submitCategory() {
+	if (submitting.value) return
+
 	errors.product_form_type = ''
 	generalError.value = null
+	if (!validateRequired()) return
+
+	submitting.value = true
 
 	try {
 		const payload = {
