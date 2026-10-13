@@ -181,6 +181,18 @@ watch([searchQuery, selectedCategory, lowStockOnly], () => {
 	expandOnArrival.value = false;
 });
 
+// Guardar/cancelar en el form de producto regresa al listado con el mismo
+// filtro (ej. desde una alerta de stock bajo del Dashboard). Se filtra por
+// nombre de ruta: al navegar al form, `route` ya cambió antes de que este
+// componente se desmonte, y sin el guard se guardaría el query del form (vacío).
+watch(
+	() => route.query,
+	(query) => {
+		if (route.name === "inventory") inventory.listQuery = { ...query };
+	},
+	{ immediate: true },
+);
+
 function clearFilters() {
 	searchQuery.value = "";
 	selectedCategory.value = "";

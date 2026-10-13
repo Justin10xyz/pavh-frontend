@@ -928,7 +928,7 @@ const handleSubmit = async () => {
 		);
 
 		await inventory.fetchProducts();
-		router.push({ name: "inventory" });
+		router.push({ name: "inventory", query: inventory.listQuery });
 	} catch (err) {
 		if (productSaved) {
 			console.error(err);
@@ -947,7 +947,7 @@ const handleSubmit = async () => {
 };
 
 function handleCancel() {
-	router.push({ name: "inventory" });
+	router.push({ name: "inventory", query: inventory.listQuery });
 }
 </script>
 
