@@ -100,15 +100,6 @@
 				</p>
 			</div>
 
-			<!-- Additional options (fully neutral) -->
-			<div class="flex items-center justify-between pt-1 text-[12px]">
-				<label class="flex items-center gap-2 cursor-pointer select-none">
-					<CheckboxCustom v-model="form.rememberMe" size="sm" />
-					<span class="text-zinc-500 hover:text-zinc-700 transition-colors">Recordar contraseña</span>
-				</label>
-				<a href="#" class="text-zinc-500 hover:text-zinc-700 transition-colors hover:underline">¿Olvidaste tu contraseña?</a>
-			</div>
-
 			<!-- Submit button (only solid blue accent element) -->
 			<button
 				type="submit"
@@ -130,7 +121,6 @@
 import { ref, reactive, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import CheckboxCustom from '@/components/widgets/CheckboxCustom.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -139,7 +129,6 @@ const { loading: isLoading } = toRefs(auth)
 const form = reactive({
 	email: '',
 	password: '',
-	rememberMe: false,
 })
 
 const errors = reactive({
