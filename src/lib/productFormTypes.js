@@ -6,8 +6,18 @@
 export const DEFAULT_PRODUCT_FORM_TYPE = "variant";
 
 export const PRODUCT_FORM_TYPE_OPTIONS = [
-	{ value: "variant", label: "Pisos (con variantes)", shortLabel: "Pisos" },
-	{ value: "simple", label: "General (nombre, precio, descripción)", shortLabel: "General" },
+	{
+		value: "variant",
+		label: "Pisos (con variantes)",
+		shortLabel: "Pisos",
+		description: "Cada producto es una línea con colores y medidas, vendida por caja.",
+	},
+	{
+		value: "simple",
+		label: "General (nombre, precio, descripción)",
+		shortLabel: "General",
+		description: "Cada producto tiene un solo precio y stock por unidad, sin variantes.",
+	},
 ];
 
 // Nombre corto para tablas; si llega un valor desconocido se muestra tal cual.

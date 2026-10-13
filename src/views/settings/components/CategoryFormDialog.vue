@@ -1,11 +1,16 @@
 <template>
 	<Dialog v-model:visible="visible" modal :pt="{ mask: { class: 'bg-primary/50' } }" @show="fillForm" @hide="reset">
 		<template #container="{ closeCallback }">
-			<form @submit.prevent="submitCategory" class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+			<form @submit.prevent="submitCategory" class="bg-surface border border-border rounded-md p-4 sm:p-5 w-110 max-w-[90vw]">
 				<div class="flex items-center justify-between mb-4">
 					<h3 class="font-serif text-base text-primary">{{ isEditMode ? 'Editar categoría' : 'Nueva categoría' }}</h3>
-					<button type="button" @click="closeCallback" class="text-text-muted hover:text-text transition-colors" aria-label="Cerrar">
-						<i class="ti ti-x text-base"></i>
+					<button
+						type="button"
+						@click="closeCallback"
+						class="text-text-muted hover:text-text transition-colors cursor-pointer"
+						aria-label="Cerrar"
+					>
+						<i class="ti ti-x text-base" aria-hidden="true"></i>
 					</button>
 				</div>
 
@@ -18,7 +23,7 @@
 						placeholder="Ej. Porcelanato"
 						@input="errors.name = ''"
 					/>
-					<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">{{ errors.name }}</p>
+					<p v-if="errors.name" class="text-danger text-xs mt-1.5">{{ errors.name }}</p>
 				</div>
 
 				<div class="space-y-1.5 mb-4">
@@ -30,7 +35,7 @@
 						placeholder="Ej. POR"
 						@input="errors.code_prefix = ''"
 					/>
-					<p v-if="errors.code_prefix" class="text-danger text-[12px] mt-1.5">{{ errors.code_prefix }}</p>
+					<p v-if="errors.code_prefix" class="text-danger text-xs mt-1.5">{{ errors.code_prefix }}</p>
 				</div>
 
 				<div class="space-y-1.5 mb-4">
@@ -44,23 +49,27 @@
 						:error="errors.product_form_type"
 						@change="errors.product_form_type = ''"
 					/>
-					<p v-if="errors.product_form_type" class="text-danger text-[12px] mt-1.5">{{ errors.product_form_type }}</p>
+					<p v-if="errors.product_form_type" class="text-danger text-xs mt-1.5">{{ errors.product_form_type }}</p>
+					<p v-else class="text-xs text-text-muted mt-1.5">
+						{{ productFormTypeDescription }}
+						<template v-if="isEditMode">No se puede cambiar si la categoría ya tiene productos.</template>
+					</p>
 				</div>
 
-				<p v-if="generalError" class="text-danger text-[12px] mb-4">{{ generalError }}</p>
+				<p v-if="generalError" class="text-danger text-xs mb-4" role="alert">{{ generalError }}</p>
 
 				<div class="flex items-center justify-end gap-3">
 					<button
 						type="button"
 						@click="closeCallback"
-						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 					>
 						Cancelar
 					</button>
 					<button
 						type="submit"
 						:disabled="!isValid || submitting"
-						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 					>
 						{{ submitting ? 'Guardando…' : (isEditMode ? 'Guardar cambios' : 'Guardar') }}
 					</button>
@@ -99,6 +108,10 @@ const generalError = ref(null)
 const submitting = ref(false)
 
 const isEditMode = computed(() => !!props.category?.id)
+
+const productFormTypeDescription = computed(
+	() => productFormTypeOptions.find((option) => option.value === productFormType.value)?.description ?? ''
+)
 
 const isValid = computed(() => name.value.trim() !== '' && codePrefix.value.trim() !== '')
 
