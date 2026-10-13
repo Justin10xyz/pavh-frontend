@@ -33,7 +33,10 @@
 						v-model="codePrefix"
 						:error="errors.code_prefix"
 						placeholder="Ej. POR"
-						@input="errors.code_prefix = ''"
+						autocomplete="off"
+						autocapitalize="characters"
+						spellcheck="false"
+						@input="onCodePrefixInput"
 					/>
 					<p v-if="errors.code_prefix" class="text-danger text-xs mt-1.5">{{ errors.code_prefix }}</p>
 				</div>
@@ -116,6 +119,21 @@ const productFormTypeDescription = computed(
 )
 
 const isValid = computed(() => name.value.trim() !== '' && codePrefix.value.trim() !== '')
+
+// El backend guarda el prefijo en mayúsculas (forma parte del código de cada
+// variante); aquí solo se refleja al teclear para que se vea lo que se va a
+// guardar. Se conserva la posición del cursor por si se edita a la mitad.
+function onCodePrefixInput(event) {
+	errors.code_prefix = ''
+	const input = event.target
+	const upper = input.value.toUpperCase()
+	if (upper !== input.value) {
+		const { selectionStart, selectionEnd } = input
+		input.value = upper
+		input.setSelectionRange(selectionStart, selectionEnd)
+	}
+	codePrefix.value = upper
+}
 
 function fillForm() {
 	name.value = props.category?.name ?? ''
