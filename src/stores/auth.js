@@ -31,6 +31,9 @@ export const useAuthStore = defineStore('auth', {
 			this.loading = true
 			try {
 				await api.post('/api/logout')
+			} catch {
+				// La sesión pudo vencer en el servidor (401): localmente se cierra igual,
+				// para no dejar al usuario dentro de la app sin sesión.
 			} finally {
 				this.user = null
 				this.isAuthenticated = false

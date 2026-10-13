@@ -104,10 +104,9 @@ const handleLogout = async () => {
 	if (isLoggingOut.value) return
 	isLoggingOut.value = true
 	try {
+		// logout() no falla: si la petición se cae, la sesión local se limpia igual.
 		await auth.logout()
 		router.push({ name: 'login' })
-	} catch (error) {
-		console.error('Error al cerrar sesión:', error)
 	} finally {
 		isLoggingOut.value = false
 		isUserMenuOpen.value = false
