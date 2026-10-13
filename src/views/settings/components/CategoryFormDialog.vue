@@ -1,11 +1,16 @@
 <template>
 	<Dialog v-model:visible="visible" modal :pt="{ mask: { class: 'bg-primary/50' } }" @show="fillForm" @hide="reset">
 		<template #container="{ closeCallback }">
-			<form @submit.prevent="submitCategory" class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+			<form @submit.prevent="submitCategory" class="bg-surface border border-border rounded-md p-4 sm:p-5 w-110 max-w-[90vw]">
 				<div class="flex items-center justify-between mb-4">
 					<h3 class="font-serif text-base text-primary">{{ isEditMode ? 'Editar categoría' : 'Nueva categoría' }}</h3>
-					<button type="button" @click="closeCallback" class="text-text-muted hover:text-text transition-colors" aria-label="Cerrar">
-						<i class="ti ti-x text-base"></i>
+					<button
+						type="button"
+						@click="closeCallback"
+						class="text-text-muted hover:text-text transition-colors cursor-pointer"
+						aria-label="Cerrar"
+					>
+						<i class="ti ti-x text-base" aria-hidden="true"></i>
 					</button>
 				</div>
 
@@ -18,7 +23,7 @@
 						placeholder="Ej. Porcelanato"
 						@input="errors.name = ''"
 					/>
-					<p v-if="errors.name" class="text-danger text-[12px] mt-1.5">{{ errors.name }}</p>
+					<p v-if="errors.name" class="text-danger text-xs mt-1.5">{{ errors.name }}</p>
 				</div>
 
 				<div class="space-y-1.5 mb-4">
@@ -28,9 +33,15 @@
 						v-model="codePrefix"
 						:error="errors.code_prefix"
 						placeholder="Ej. POR"
-						@input="errors.code_prefix = ''"
+						autocomplete="off"
+						autocapitalize="characters"
+						spellcheck="false"
+						@input="onCodePrefixInput"
 					/>
-					<p v-if="errors.code_prefix" class="text-danger text-[12px] mt-1.5">{{ errors.code_prefix }}</p>
+					<p v-if="errors.code_prefix" class="text-danger text-xs mt-1.5">{{ errors.code_prefix }}</p>
+					<p v-else-if="codePrefixChanged" class="text-xs text-text-muted mt-1.5">
+						Los productos ya creados conservan su código actual ({{ category.code_prefix }}-…); solo los nuevos usarán {{ codePrefix.trim() }}.
+					</p>
 				</div>
 
 				<div class="space-y-1.5 mb-4">
@@ -44,23 +55,27 @@
 						:error="errors.product_form_type"
 						@change="errors.product_form_type = ''"
 					/>
-					<p v-if="errors.product_form_type" class="text-danger text-[12px] mt-1.5">{{ errors.product_form_type }}</p>
+					<p v-if="errors.product_form_type" class="text-danger text-xs mt-1.5">{{ errors.product_form_type }}</p>
+					<p v-else class="text-xs text-text-muted mt-1.5">
+						{{ productFormTypeDescription }}
+						<template v-if="isEditMode">No se puede cambiar si la categoría ya tiene productos.</template>
+					</p>
 				</div>
 
-				<p v-if="generalError" class="text-danger text-[12px] mb-4">{{ generalError }}</p>
+				<p v-if="generalError" class="text-danger text-xs mb-4" role="alert">{{ generalError }}</p>
 
 				<div class="flex items-center justify-end gap-3">
 					<button
 						type="button"
 						@click="closeCallback"
-						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
 					>
 						Cancelar
 					</button>
 					<button
 						type="submit"
-						:disabled="!isValid || submitting"
-						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-[38px] px-4 rounded-md transition-colors select-none cursor-pointer"
+						:disabled="submitting"
+						class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
 					>
 						{{ submitting ? 'Guardando…' : (isEditMode ? 'Guardar cambios' : 'Guardar') }}
 					</button>
@@ -75,9 +90,11 @@ import { ref, reactive, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 import axios from '@/lib/axios'
 import { useCatalogsStore } from '@/stores/catalogs'
+import { useNotify } from '@/composables/useNotify'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import SelectCustom from '@/components/widgets/SelectCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
+import { DEFAULT_PRODUCT_FORM_TYPE, PRODUCT_FORM_TYPE_OPTIONS } from '@/lib/productFormTypes'
 
 const visible = defineModel('visible', { type: Boolean, default: false })
 const props = defineProps({
@@ -86,13 +103,10 @@ const props = defineProps({
 })
 
 const catalogs = useCatalogsStore()
+const notify = useNotify()
 
-// Define qué formulario de producto usa la categoría. Mismo default que el backend.
-const DEFAULT_PRODUCT_FORM_TYPE = 'variant'
-const productFormTypeOptions = [
-	{ value: 'variant', label: 'Pisos (con variantes)' },
-	{ value: 'simple', label: 'General (nombre, precio, descripción)' },
-]
+// Define qué formulario de producto usa la categoría.
+const productFormTypeOptions = PRODUCT_FORM_TYPE_OPTIONS
 
 const name = ref('')
 const codePrefix = ref('')
@@ -103,12 +117,37 @@ const submitting = ref(false)
 
 const isEditMode = computed(() => !!props.category?.id)
 
-const isValid = computed(() => name.value.trim() !== '' && codePrefix.value.trim() !== '')
+// El prefijo solo se usa al generar el código de una variante nueva
+// (VariantCodeGenerator), así que cambiarlo no toca los códigos existentes.
+const codePrefixChanged = computed(
+	() => isEditMode.value && codePrefix.value.trim() !== '' && codePrefix.value.trim() !== props.category.code_prefix
+)
+
+const productFormTypeDescription = computed(
+	() => productFormTypeOptions.find((option) => option.value === productFormType.value)?.description ?? ''
+)
+
+// El backend guarda el prefijo en mayúsculas (forma parte del código de cada
+// variante); aquí solo se refleja al teclear para que se vea lo que se va a
+// guardar. Se conserva la posición del cursor por si se edita a la mitad.
+function onCodePrefixInput(event) {
+	errors.code_prefix = ''
+	const input = event.target
+	const upper = input.value.toUpperCase()
+	if (upper !== input.value) {
+		const { selectionStart, selectionEnd } = input
+		input.value = upper
+		input.setSelectionRange(selectionStart, selectionEnd)
+	}
+	codePrefix.value = upper
+}
 
 function fillForm() {
 	name.value = props.category?.name ?? ''
 	codePrefix.value = props.category?.code_prefix ?? ''
 	productFormType.value = props.category?.product_form_type ?? DEFAULT_PRODUCT_FORM_TYPE
+	// Sin esto el foco cae en el botón de cerrar (el primer enfocable del diálogo).
+	document.getElementById('category_name')?.focus()
 }
 
 function reset() {
@@ -121,14 +160,23 @@ function reset() {
 	generalError.value = null
 }
 
-async function submitCategory() {
-	if (!isValid.value || submitting.value) return
+// Mismo criterio que los forms de Clientes: el botón queda habilitado y lo que
+// falta se marca en su campo al intentar guardar, en vez de un botón gris sin
+// explicación.
+function validateRequired() {
+	errors.name = name.value.trim() ? '' : 'Este campo es requerido'
+	errors.code_prefix = codePrefix.value.trim() ? '' : 'Este campo es requerido'
+	return !errors.name && !errors.code_prefix
+}
 
-	submitting.value = true
-	errors.name = ''
-	errors.code_prefix = ''
+async function submitCategory() {
+	if (submitting.value) return
+
 	errors.product_form_type = ''
 	generalError.value = null
+	if (!validateRequired()) return
+
+	submitting.value = true
 
 	try {
 		const payload = {
@@ -140,9 +188,11 @@ async function submitCategory() {
 		if (isEditMode.value) {
 			const { data } = await axios.put(`/api/categories/${props.category.id}`, payload)
 			catalogs.updateCategory(props.category.id, data.data)
+			notify.success('Categoría actualizada', data.data.name)
 		} else {
 			const { data } = await axios.post('/api/categories', payload)
 			catalogs.addCategory(data.data)
+			notify.success('Categoría guardada', data.data.name)
 		}
 
 		visible.value = false
@@ -153,7 +203,14 @@ async function submitCategory() {
 			errors.code_prefix = serverErrors.code_prefix?.[0] ?? ''
 			errors.product_form_type = serverErrors.product_form_type?.[0] ?? ''
 			if (!errors.name && !errors.code_prefix && !errors.product_form_type) {
-				generalError.value = err.response.data.message || 'No se pudo guardar la categoría.'
+				const message = err.response.data.message || 'No se pudo guardar la categoría.'
+				// El bloqueo de cambio de tipo (Category::productFormTypeChangeBlockedMessage)
+				// llega sin `errors`; si el tipo cambió, el error es de ese campo.
+				if (isEditMode.value && productFormType.value !== props.category.product_form_type) {
+					errors.product_form_type = message
+				} else {
+					generalError.value = message
+				}
 			}
 		} else {
 			generalError.value = err.response?.data?.message || 'No se pudo guardar la categoría. Intenta de nuevo.'
