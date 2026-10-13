@@ -84,6 +84,7 @@ import { ref, reactive, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 import axios from '@/lib/axios'
 import { useCatalogsStore } from '@/stores/catalogs'
+import { useNotify } from '@/composables/useNotify'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import SelectCustom from '@/components/widgets/SelectCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
@@ -96,6 +97,7 @@ const props = defineProps({
 })
 
 const catalogs = useCatalogsStore()
+const notify = useNotify()
 
 // Define qué formulario de producto usa la categoría.
 const productFormTypeOptions = PRODUCT_FORM_TYPE_OPTIONS
@@ -150,9 +152,11 @@ async function submitCategory() {
 		if (isEditMode.value) {
 			const { data } = await axios.put(`/api/categories/${props.category.id}`, payload)
 			catalogs.updateCategory(props.category.id, data.data)
+			notify.success('Categoría actualizada', data.data.name)
 		} else {
 			const { data } = await axios.post('/api/categories', payload)
 			catalogs.addCategory(data.data)
+			notify.success('Categoría guardada', data.data.name)
 		}
 
 		visible.value = false
