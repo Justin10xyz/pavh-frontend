@@ -6,7 +6,9 @@
 			{{ error }}
 		</p>
 
-		<div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+		<!-- 3 columnas desde md (no sm): en sm cada card deja ~120px y un monto de
+		     6 cifras en text-2xl no cabe. -->
+		<div v-else class="grid grid-cols-1 md:grid-cols-3 gap-3">
 			<!-- Cada card abre el listado de ventas ya filtrado a su periodo
 			     (?periodo= de SalesView), como "Ver todo" de Cotizaciones activas. -->
 			<router-link
@@ -19,8 +21,8 @@
 					{{ card.label }}
 					<i class="ti ti-chevron-right group-hover:text-text transition-colors" aria-hidden="true"></i>
 				</span>
-				<span v-if="loading" class="block h-8 w-36 mt-1 rounded bg-border animate-pulse" aria-hidden="true"></span>
-				<span v-else class="block text-2xl font-semibold text-text mt-1 tabular-nums">
+				<span v-if="loading" class="block h-7 lg:h-8 w-36 mt-1 rounded bg-border animate-pulse" aria-hidden="true"></span>
+				<span v-else class="block text-xl lg:text-2xl font-semibold text-text mt-1 tabular-nums">
 					{{ formatCurrency(summary[card.key]) }}
 				</span>
 				<span class="sr-only">, ver ventas</span>
