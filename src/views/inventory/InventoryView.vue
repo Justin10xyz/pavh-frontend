@@ -57,6 +57,7 @@
 				v-else
 				:products="filteredProducts"
 				:visibleVariantsByProduct="visibleVariantsByProduct"
+				:initially-expanded="expandOnArrival"
 				@edit-product="editProduct"
 				@open-stock-dialog="openStockDialog"
 				@open-movements-dialog="openMovementsDialog"
@@ -165,9 +166,19 @@ function floorsFilterQuery() {
 	};
 }
 
+// Llegar con ?buscar=…&stockBajo=1 (fila de Stock bajo del Dashboard) abre ya
+// expandido lo que quede visible, para ajustar stock sin dos clics más. Solo
+// esa vez: al tocar cualquier filtro se apaga, para que la tabla no vuelva a
+// expandir todo si se remonta (ej. tras un filtro sin resultados).
+const expandOnArrival = ref(searchQuery.value !== "" && lowStockOnly.value);
+
 // Solo aplican a Catálogo de pisos; en "Otros productos" la URL es solo la sección.
 watch([searchQuery, lowStockOnly], () => {
 	if (activeSection.value === "floors") router.replace({ query: floorsFilterQuery() });
+});
+
+watch([searchQuery, selectedCategory, lowStockOnly], () => {
+	expandOnArrival.value = false;
 });
 
 function clearFilters() {
