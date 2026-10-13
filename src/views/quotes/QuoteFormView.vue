@@ -88,7 +88,7 @@
 									class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2.2fr)_repeat(4,minmax(0,1fr))] gap-3"
 								>
 									<!-- Producto: nombre + detalle en dos renglones, "Cambiar" en línea -->
-									<div class="min-w-0 sm:min-h-[2.375rem] flex flex-col justify-center">
+									<div class="min-w-0 sm:min-h-10 flex flex-col justify-center">
 										<template v-if="row.simpleProduct">
 											<p class="text-sm font-medium text-text truncate" :title="simpleProductFor(row).name">
 												{{ simpleProductFor(row).name }}
@@ -199,7 +199,7 @@
 										<span class="text-xs font-medium text-text-muted block sm:sr-only">
 											{{ row.variant ? 'Precio unitario (m²)' : 'Precio unitario' }}
 										</span>
-										<p class="sm:h-[2.375rem] flex items-center text-sm text-text-muted tabular-nums">
+										<p class="sm:h-10 flex items-center text-sm text-text-muted tabular-nums">
 											{{ row.variant ? `${formatCurrency(row.variant.price_per_m2)}/m²` : formatCurrency(simpleProductFor(row).price) }}
 										</p>
 										<p v-if="boxPrice(row) !== null" class="text-xs text-text-muted mt-1 tabular-nums">
@@ -209,7 +209,7 @@
 
 									<div class="space-y-1.5 sm:space-y-0">
 										<span class="text-xs font-medium text-text-muted block sm:sr-only">Subtotal</span>
-										<p class="sm:h-[2.375rem] flex items-center sm:justify-end text-sm font-medium text-text tabular-nums">
+										<p class="sm:h-10 flex items-center sm:justify-end text-sm font-medium text-text tabular-nums">
 											{{ formatCurrency(lineSubtotal(row)) }}
 										</p>
 									</div>
@@ -220,7 +220,7 @@
 									type="button"
 									@click="removeLine(row.id)"
 									:disabled="lines.length === 1"
-									class="w-8 h-[2.375rem] shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
+									class="w-8 h-10 shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
 									aria-label="Quitar producto"
 									title="Quitar producto"
 								>

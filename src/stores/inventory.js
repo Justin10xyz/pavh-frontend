@@ -7,6 +7,10 @@ export const useInventoryStore = defineStore('inventory', () => {
 	const loading = ref(false)
 	const error = ref(null)
 	const initialized = ref(false)
+	// Último query del listado (ej. { buscar: "Roble", stockBajo: "1" }), para que
+	// guardar/cancelar en el form de producto regrese con el mismo filtro. Lo
+	// escribe InventoryView (mismo criterio que quotes.listQuery).
+	const listQuery = ref({})
 
 	async function fetchProducts() {
 		loading.value = true
@@ -38,5 +42,5 @@ export const useInventoryStore = defineStore('inventory', () => {
 		}
 	}
 
-	return { products, loading, error, initialized, fetchProducts, updateVariantStock }
+	return { products, loading, error, initialized, listQuery, fetchProducts, updateVariantStock }
 })
