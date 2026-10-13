@@ -39,6 +39,9 @@
 						@input="onCodePrefixInput"
 					/>
 					<p v-if="errors.code_prefix" class="text-danger text-xs mt-1.5">{{ errors.code_prefix }}</p>
+					<p v-else-if="codePrefixChanged" class="text-xs text-text-muted mt-1.5">
+						Los productos ya creados conservan su código actual ({{ category.code_prefix }}-…); solo los nuevos usarán {{ codePrefix.trim() }}.
+					</p>
 				</div>
 
 				<div class="space-y-1.5 mb-4">
@@ -113,6 +116,12 @@ const generalError = ref(null)
 const submitting = ref(false)
 
 const isEditMode = computed(() => !!props.category?.id)
+
+// El prefijo solo se usa al generar el código de una variante nueva
+// (VariantCodeGenerator), así que cambiarlo no toca los códigos existentes.
+const codePrefixChanged = computed(
+	() => isEditMode.value && codePrefix.value.trim() !== '' && codePrefix.value.trim() !== props.category.code_prefix
+)
 
 const productFormTypeDescription = computed(
 	() => productFormTypeOptions.find((option) => option.value === productFormType.value)?.description ?? ''
@@ -194,7 +203,14 @@ async function submitCategory() {
 			errors.code_prefix = serverErrors.code_prefix?.[0] ?? ''
 			errors.product_form_type = serverErrors.product_form_type?.[0] ?? ''
 			if (!errors.name && !errors.code_prefix && !errors.product_form_type) {
-				generalError.value = err.response.data.message || 'No se pudo guardar la categoría.'
+				const message = err.response.data.message || 'No se pudo guardar la categoría.'
+				// El bloqueo de cambio de tipo (Category::productFormTypeChangeBlockedMessage)
+				// llega sin `errors`; si el tipo cambió, el error es de ese campo.
+				if (isEditMode.value && productFormType.value !== props.category.product_form_type) {
+					errors.product_form_type = message
+				} else {
+					generalError.value = message
+				}
 			}
 		} else {
 			generalError.value = err.response?.data?.message || 'No se pudo guardar la categoría. Intenta de nuevo.'
