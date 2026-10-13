@@ -1,5 +1,5 @@
 <template>
-	<div class="min-h-screen bg-zinc-100 flex flex-col items-center justify-center p-4 sm:p-6 font-sans antialiased selection:bg-zinc-800 selection:text-zinc-100">
+	<div class="min-h-screen bg-bg flex flex-col items-center justify-center p-4 sm:p-6 font-sans antialiased">
 		<!-- Auth content container -->
 		<div class="w-full max-w-[380px] z-10">
 			<slot></slot>
