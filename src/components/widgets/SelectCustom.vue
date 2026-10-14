@@ -74,7 +74,7 @@ const srOnly = { class: 'sr-only' }
 const pt = computed(() => ({
 	root: {
 		class: [
-			'relative flex items-center w-full h-[38px] bg-surface border rounded-md px-3 gap-2 transition-colors select-none',
+			'relative flex items-center w-full h-10 bg-surface border rounded-md px-3 gap-2 transition-colors select-none',
 			props.error ? 'border-danger' : 'border-border focus-within:border-accent',
 			props.disabled || props.loading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
 		],

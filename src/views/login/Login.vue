@@ -1,11 +1,12 @@
 <template>
 	<div class="bg-surface border border-border rounded-md p-6 sm:p-8 relative">
-		<!-- Header: wordmark like the sidebar's (logo + PAVH) + page title -->
+		<!-- Header: logo completo (el wordmark INNOVA va dentro de la imagen) + page title -->
 		<div class="flex flex-col items-center mb-6">
-			<div class="flex items-center gap-2 mb-5 select-none">
-				<img src="@/assets/logo_pavh.png" alt="" class="w-10 h-10" />
-				<span class="font-serif text-2xl text-primary tracking-wide">PAVH</span>
-			</div>
+			<img
+				src="@/assets/branding/logo-color-fondo-blanco.png"
+				alt="INNOVA Pisos y Acabados"
+				class="w-40 h-auto mb-4 select-none"
+			/>
 			<h1 class="font-serif text-xl text-primary text-center">Iniciar sesión</h1>
 			<p class="text-sm text-text-muted mt-1 text-center">Ingresa tus credenciales para continuar</p>
 		</div>

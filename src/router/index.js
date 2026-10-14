@@ -49,9 +49,9 @@ router.beforeEach(async (to) => {
 })
 
 // Título de la pestaña por ruta, para distinguir varias pestañas abiertas
-// (ej. una cotización y una venta). `index.html` deja "PAVH" de respaldo.
+// (ej. una cotización y una venta). `index.html` deja "INNOVA" de respaldo.
 router.afterEach((to) => {
-	document.title = to.meta.title ? `${to.meta.title} · PAVH` : 'PAVH'
+	document.title = to.meta.title ? `${to.meta.title} · INNOVA` : 'INNOVA'
 })
 
 export default router
