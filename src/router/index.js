@@ -8,6 +8,7 @@ import quotesRoutes from './quotes/quotes.routes.js'
 import posRoutes from './pos/pos.routes.js'
 import customersRoutes from './customers/customers.routes.js'
 import settingsRoutes from './settings/settings.routes.js'
+import NotFoundView from '@/views/errors/NotFoundView.vue'
 
 const routes = [
 	...authRoutes,
@@ -17,6 +18,14 @@ const routes = [
 	...posRoutes,
 	...customersRoutes,
 	...settingsRoutes,
+	// Catch-all: debe ir al final. requiresAuth para que una ruta inexistente
+	// sin sesión mande al login en vez de mostrar el 404.
+	{
+		path: '/:pathMatch(.*)*',
+		name: 'not-found',
+		component: NotFoundView,
+		meta: { layout: 'AppLayout', title: 'Página no encontrada', requiresAuth: true },
+	},
 ]
 
 const router = createRouter({
@@ -25,7 +34,11 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-	if (!to.meta.requiresAuth && !to.meta.guestOnly) return true
+	// to.matched vacío = ningún route record coincidió y meta llega vacío.
+	// Respaldo por si el catch-all falta o se reordena: nunca saltarse la sesión.
+	const isUnmatched = to.matched.length === 0
+
+	if (!isUnmatched && !to.meta.requiresAuth && !to.meta.guestOnly) return true
 
 	const auth = useAuthStore()
 
@@ -33,6 +46,12 @@ router.beforeEach(async (to) => {
 	// against /api/user before deciding whether the route requires login.
 	if (!auth.initialized) {
 		await auth.fetchUser()
+	}
+
+	// Sin sesión, ni siquiera revelamos que la ruta no existe: al login.
+	// Con sesión, se resuelve como 404 normal.
+	if (isUnmatched) {
+		return auth.isAuthenticated ? true : { name: 'login', query: { redirect: to.fullPath } }
 	}
 
 	// An active session has nothing to do on the login screen.
