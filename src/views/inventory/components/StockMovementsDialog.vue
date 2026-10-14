@@ -36,7 +36,7 @@
 						</thead>
 						<tbody>
 							<tr v-for="movement in movements" :key="movement.id" class="border-t border-border">
-								<td class="py-2 px-3 text-text-muted whitespace-nowrap">{{ formatDate(movement.created_at) }}</td>
+								<td class="py-2 px-3 text-text-muted whitespace-nowrap">{{ formatDateTime(movement.created_at) }}</td>
 								<td class="py-2 px-3">
 									<span
 										class="text-[10px] px-2 py-0.5 rounded"
@@ -66,6 +66,7 @@
 import { ref } from 'vue'
 import Dialog from 'primevue/dialog'
 import axios from '@/lib/axios'
+import { formatDateTime } from '@/lib/dates'
 
 // Solo lectura y agnóstico del tipo de producto, igual que StockAdjustDialog:
 // recibe el endpoint GET del historial. La consulta es puntual al abrir, así
@@ -114,15 +115,5 @@ function reset() {
 	movements.value = []
 	loading.value = false
 	error.value = null
-}
-
-function formatDate(value) {
-	return new Date(value).toLocaleString('es-MX', {
-		day: '2-digit',
-		month: 'short',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit',
-	})
 }
 </script>

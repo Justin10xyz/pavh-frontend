@@ -149,6 +149,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import { useCustomersStore } from '@/stores/customers'
 import { useCustomerDelete } from '@/composables/useCustomerDelete'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
+import { formatDate } from '@/lib/dates'
 
 const router = useRouter()
 const customers = useCustomersStore()
@@ -190,15 +191,6 @@ function openCustomer({ originalEvent, data }) {
 	} else {
 		router.push(to)
 	}
-}
-
-function formatDate(value) {
-	if (!value) return '—'
-	return new Date(value).toLocaleDateString('es-MX', {
-		day: '2-digit',
-		month: 'short',
-		year: 'numeric',
-	})
 }
 </script>
 

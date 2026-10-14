@@ -252,6 +252,7 @@ import { useCustomersStore } from '@/stores/customers'
 import { useCustomerDelete } from '@/composables/useCustomerDelete'
 import { statusClasses } from '@/lib/quoteStatus'
 import { formatCurrency } from '@/lib/formatCurrency'
+import { formatDate, formatDateTime } from '@/lib/dates'
 
 const route = useRoute()
 const router = useRouter()
@@ -368,23 +369,6 @@ watch(
 	{ immediate: true }
 )
 
-function formatDate(value) {
-	return new Date(value).toLocaleDateString('es-MX', {
-		day: '2-digit',
-		month: 'short',
-		year: 'numeric',
-	})
-}
-
-function formatDateTime(value) {
-	return new Date(value).toLocaleString('es-MX', {
-		day: '2-digit',
-		month: 'short',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit',
-	})
-}
 
 function goBack() {
 	router.push({ name: 'customers' })

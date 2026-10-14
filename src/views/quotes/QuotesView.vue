@@ -71,7 +71,7 @@
 							</RouterLink>
 							<!-- Sin columna Fecha por debajo de sm: va debajo del folio -->
 							<span class="block sm:hidden text-xs text-text-muted">{{
-								formatDate(data.created_at)
+								formatDateTime(data.created_at)
 							}}</span>
 						</template>
 					</Column>
@@ -90,7 +90,7 @@
 						body-class="hidden sm:table-cell whitespace-nowrap"
 					>
 						<template #body="{ data }">
-							<span class="text-text-muted">{{ formatDate(data.created_at) }}</span>
+							<span class="text-text-muted">{{ formatDateTime(data.created_at) }}</span>
 						</template>
 					</Column>
 
@@ -145,6 +145,7 @@ import { QUOTE_STATUSES, statusClasses } from "@/lib/quoteStatus";
 import { formatCurrency } from "@/lib/formatCurrency";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import QuickFilter from "@/components/widgets/filters/QuickFilter.vue";
+import { formatDateTime } from "@/lib/dates";
 
 const route = useRoute();
 const router = useRouter();
@@ -223,16 +224,6 @@ function openQuote({ originalEvent, data }) {
 	} else {
 		router.push(to);
 	}
-}
-
-function formatDate(value) {
-	return new Date(value).toLocaleString("es-MX", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
 }
 </script>
 

@@ -204,6 +204,7 @@ import { useSalesStore } from '@/stores/sales'
 import { useDocumentPdf } from '@/composables/useDocumentPdf'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatQuantity } from '@/lib/formatQuantity'
+import { formatDateTime } from '@/lib/dates'
 
 const route = useRoute()
 const router = useRouter()
@@ -236,16 +237,6 @@ watch(
 // como se guardaron en la línea (no el m2_per_box actual de la variante).
 function boxPrice(item) {
 	return Math.round(((Number(item.unit_price) * Number(item.quantity)) / item.boxes) * 100) / 100
-}
-
-function formatDateTime(value) {
-	return new Date(value).toLocaleString('es-MX', {
-		day: '2-digit',
-		month: 'short',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit',
-	})
 }
 
 function goBack() {
