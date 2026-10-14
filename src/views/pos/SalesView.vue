@@ -67,7 +67,7 @@
 								{{ data.folio }}
 							</RouterLink>
 							<!-- Sin columna Fecha por debajo de sm: va debajo del folio -->
-							<span class="block sm:hidden text-xs text-text-muted">{{ formatDate(data.created_at) }}</span>
+							<span class="block sm:hidden text-xs text-text-muted">{{ formatDateTime(data.created_at) }}</span>
 						</template>
 					</Column>
 
@@ -85,7 +85,7 @@
 						body-class="hidden sm:table-cell whitespace-nowrap"
 					>
 						<template #body="{ data }">
-							<span class="text-text-muted">{{ formatDate(data.created_at) }}</span>
+							<span class="text-text-muted">{{ formatDateTime(data.created_at) }}</span>
 						</template>
 					</Column>
 
@@ -123,6 +123,7 @@ import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import DateRangeFilter from '@/components/widgets/filters/DateRangeFilter.vue'
 import { dateRangeFor } from '@/lib/dateRanges'
 import { formatCurrency } from '@/lib/formatCurrency'
+import { formatDateTime } from '@/lib/dates'
 
 const route = useRoute()
 const router = useRouter()
@@ -196,16 +197,6 @@ const filteredSales = computed(() => {
 const filteredTotal = computed(() =>
 	filteredSales.value.reduce((sum, sale) => sum + (Number(sale.total) || 0), 0)
 )
-
-function formatDate(value) {
-	return new Date(value).toLocaleString('es-MX', {
-		day: '2-digit',
-		month: 'short',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit',
-	})
-}
 </script>
 
 <style scoped></style>

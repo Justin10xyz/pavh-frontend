@@ -41,7 +41,7 @@
 							</span>
 						</div>
 						<p class="text-sm text-text-muted mt-0.5">
-							Creada el {{ formatDate(quote.created_at) }}
+							Creada el {{ formatDateTime(quote.created_at) }}
 						</p>
 					</div>
 				</div>
@@ -289,6 +289,7 @@ import { useDocumentPdf } from "@/composables/useDocumentPdf";
 import { useNotify } from "@/composables/useNotify";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
+import { formatDateTime } from "@/lib/dates";
 
 const route = useRoute();
 const router = useRouter();
@@ -330,16 +331,6 @@ const isEditable = computed(() => quote.value?.status === "Borrador");
 // como se guardaron en la línea (no el m2_per_box actual de la variante).
 function boxPrice(item) {
 	return Math.round(((Number(item.unit_price) * Number(item.quantity)) / item.boxes) * 100) / 100;
-}
-
-function formatDate(value) {
-	return new Date(value).toLocaleString("es-MX", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
 }
 
 function editQuote() {
