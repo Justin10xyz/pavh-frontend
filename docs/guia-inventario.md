@@ -120,7 +120,7 @@ El ícono de **reloj (Ver historial de stock)** muestra todos los movimientos de
 | **Fecha** | Cuándo ocurrió el movimiento. |
 | **Tipo** | **Entrada**, **Salida** o **Desactivado**. |
 | **Cantidad** | Cuánto se agregó (+) o se quitó (−). |
-| **Origen** | **Stock inicial**, **Ajuste manual**, **Seguimiento desactivado** o el **folio de la venta**. |
+| **Origen** | **Stock inicial**, **Ajuste manual**, **Seguimiento desactivado** o el **folio de la venta**. El folio es un enlace: al darle clic se abre el detalle de esa venta. |
 | **Stock resultante** | Cuánto quedó después del movimiento. |
 
 ---
@@ -148,3 +148,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-15 | **Nuevo producto (pisos)**: la lista de categorías ya solo muestra las de tipo Pisos, no las de Otros productos. |
 | 2026-10-15 | **Formularios**: títulos y descripciones distintos para pisos (*Nuevo piso* / *Editar piso*) y para otros productos (*Nuevo producto general* / *Editar producto general*), para que quede claro qué se está registrando. |
 | 2026-10-15 | **Editar piso / producto general**: el stock se puede cambiar, activar o desactivar directamente en el formulario, con confirmación antes de guardar. |
+| 2026-10-15 | **Historial de stock**: el folio de la venta en la columna Origen ahora lleva directo al detalle de la venta. |
