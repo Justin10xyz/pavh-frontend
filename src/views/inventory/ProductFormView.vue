@@ -422,23 +422,13 @@
 										</p>
 									</div>
 
-									<!-- Variante existente: stock de solo lectura, se ajusta desde
-									     Inventario (diálogo con historial), no desde este form. -->
-									<div v-if="row.variantId" class="space-y-1.5 sm:space-y-0">
-										<span class="text-xs font-medium text-text-muted block sm:sr-only">
-											Stock actual (cajas)
-										</span>
-										<p
-											class="h-10 flex items-center text-sm text-text tabular-nums"
-											title="Usa «Ajustar stock» en Inventario para modificarlo"
-										>
-											{{ row.stock_boxes === null ? "Sin control" : `${row.stock_boxes} cj` }}
-										</p>
-									</div>
-									<div v-else class="space-y-1.5 sm:space-y-0">
+									<!-- Mismo campo para colores nuevos (stock inicial) y existentes:
+									     en uno existente el cambio se aplica al guardar como ajuste
+									     con historial (ver applyStockChanges). Vacío = sin control. -->
+									<div class="space-y-1.5 sm:space-y-0">
 										<FieldLabel
 											:html-for="`stock_boxes-${row.id}`"
-											text="Stock inicial (cajas)"
+											:text="row.variantId ? 'Stock actual (cajas)' : 'Stock inicial (cajas)'"
 											class="sm:sr-only"
 										/>
 										<InputNumberCustom
@@ -452,6 +442,12 @@
 										/>
 										<p v-if="row.errors.stock_boxes" class="text-danger text-xs mt-1.5">
 											{{ row.errors.stock_boxes }}
+										</p>
+										<p
+											v-else-if="row.variantId && stockChangePayload(row.originalStock, row.stock_boxes)"
+											class="text-text-muted text-xs mt-1.5"
+										>
+											{{ describeStockChange(row.originalStock, row.stock_boxes, "cj") }}
 										</p>
 									</div>
 
@@ -547,6 +543,8 @@
 			</div>
 		</form>
 
+		<StockChangesConfirmDialog />
+
 		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
 			<template #container="{ message, acceptCallback, rejectCallback }">
 				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
@@ -588,6 +586,8 @@ import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { groupVariants } from "@/lib/groupVariants";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { confirmStockChanges, describeStockChange, stockChangePayload } from "@/lib/stockChange";
+import StockChangesConfirmDialog from "./components/StockChangesConfirmDialog.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -629,6 +629,8 @@ const errors = reactive({
 // Cada fila se convierte en su propia variante (POST/PUT /api/product-variants). `id` es
 // solo la key local para el v-for; `variantId` es el id real en backend (null si la fila
 // es nueva en esta sesión de edición) y decide POST vs. PUT al guardar.
+// `originalStock` es el stock con el que se cargó la variante: contra él se
+// calcula el ajuste al guardar.
 function createColorRow({
 	variantId = null,
 	color = "",
@@ -640,6 +642,7 @@ function createColorRow({
 		variantId,
 		color,
 		stock_boxes,
+		originalStock: stock_boxes,
 		minimum_stock,
 		errors: { color: "", stock_boxes: "", minimum_stock: "" },
 	};
@@ -851,9 +854,8 @@ const submitting = ref(false);
 const generalError = ref(null);
 
 // Cada variante toma la ficha técnica de su propio grupo. `stock_boxes` solo va al
-// crear (stock inicial): en una variante existente el stock se cambia con el diálogo
-// de ajuste, que deja historial — mandarlo en el PUT pisaría una venta ocurrida
-// mientras el form estaba abierto (el backend además lo ignora en el update).
+// crear (stock inicial): en una variante existente el backend lo ignora en el
+// update, y el cambio viaja aparte como ajuste (applyStockChanges).
 // Vacío viaja como null: la variante queda sin control de stock.
 function buildVariantPayload(productId, group, row) {
 	const { spec } = group;
@@ -888,8 +890,49 @@ function applyServerErrors(serverErrors) {
 	}
 }
 
+// Cambios de stock en variantes existentes, con lo que se muestra al confirmar.
+function pendingStockChanges() {
+	return variantGroups.value.flatMap((group) =>
+		group.colorRows
+			.filter((row) => row.variantId)
+			.map((row) => ({ group, row, payload: stockChangePayload(row.originalStock, row.stock_boxes) }))
+			.filter(({ payload }) => payload)
+			.map(({ group, row, payload }) => ({
+				row,
+				payload,
+				label: `${group.spec.size} · ${row.color}`,
+				description: describeStockChange(row.originalStock, row.stock_boxes, "cj"),
+			})),
+	);
+}
+
+// Corre después de guardar las variantes. Cada ajuste es independiente: los que
+// salen bien actualizan `originalStock` para que un reintento no los repita.
+// Devuelve los que fallaron (ej. "Stock insuficiente" si hubo una venta mientras
+// el form estaba abierto).
+async function applyStockChanges(changes) {
+	const results = await Promise.allSettled(
+		changes.map(({ row, payload }) =>
+			axios.patch(`/api/product-variants/${row.variantId}/stock`, payload),
+		),
+	);
+
+	return results.flatMap((result, index) => {
+		const { row, label } = changes[index];
+		if (result.status === "fulfilled") {
+			row.stock_boxes = result.value.data.data.stock_boxes;
+			row.originalStock = row.stock_boxes;
+			return [];
+		}
+		return [`${label} (${result.reason.response?.data?.message ?? "error inesperado"})`];
+	});
+}
+
 const handleSubmit = async () => {
 	if (!validateForm()) return;
+
+	const stockChanges = pendingStockChanges();
+	if (stockChanges.length && !(await confirmStockChanges(confirm, stockChanges))) return;
 
 	generalError.value = null;
 	submitting.value = true;
@@ -932,7 +975,15 @@ const handleSubmit = async () => {
 			),
 		);
 
+		const stockFailures = await applyStockChanges(stockChanges);
+
 		await inventory.fetchProducts();
+
+		if (stockFailures.length) {
+			generalError.value = `Se guardaron los cambios, pero no se pudo ajustar el stock de: ${stockFailures.join("; ")}.`;
+			return;
+		}
+
 		router.push({ name: "inventory", query: inventory.listQuery });
 	} catch (err) {
 		if (productSaved) {

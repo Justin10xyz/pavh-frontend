@@ -52,7 +52,7 @@ El stock mínimo de cada color se configura al editar el producto.
 
 ### Editar un producto
 
-El ícono de **lápiz** en la fila del producto abre el formulario de edición. Ahí se cambian los datos generales, las medidas, los precios, los colores y el stock mínimo.
+El ícono de **lápiz** en la fila del producto abre el formulario de edición. Ahí se cambian los datos generales, las medidas, los precios, los colores, el stock y el stock mínimo. El stock también se puede corregir desde ahí (ver [Desde el formulario del producto](#desde-el-formulario-del-producto)).
 
 ---
 
@@ -71,7 +71,7 @@ Arriba de la tabla hay herramientas para encontrar productos rápido:
 
 ## 4. Control de stock
 
-Los pisos y los demás productos funcionan igual. La diferencia es que en pisos el stock se cuenta en **cajas** y en otros productos en **unidades**.
+Los pisos y los demás productos funcionan igual. El stock se puede cambiar de dos formas: con los íconos de la tabla del inventario o desde el formulario de edición del producto. La diferencia es que en pisos el stock se cuenta en **cajas** y en otros productos en **unidades**.
 
 ### Activar el seguimiento de stock
 
@@ -96,6 +96,18 @@ Escribe la cantidad (mínimo 1) y da clic en **Aplicar**.
 ### Desactivar el seguimiento
 
 En la misma ventana de ajuste está el enlace **Desactivar seguimiento de stock**. Pide confirmación antes de hacer el cambio. El producto queda como **Sin control**, y el seguimiento se puede volver a activar cuando quieras.
+
+### Desde el formulario del producto
+
+Al editar un piso o un producto general, el campo **Stock actual** se puede modificar igual que el stock mínimo:
+
+- **Cambiar el número** (por ejemplo, de 10 a 8) registra la diferencia como un ajuste: *quitar 2*.
+- **Dejar el campo vacío** desactiva el seguimiento de stock.
+- **Escribir un número en un producto *Sin control*** activa el seguimiento con esa cantidad.
+
+Debajo del campo se ve el cambio que se hará (por ejemplo, *10 → 8 cj*). Al dar clic en **Guardar cambios** aparece un resumen de todos los cambios de stock para confirmarlos antes de guardar. Cada cambio queda en el historial igual que si se hiciera desde el inventario (*Ajuste manual*, *Stock inicial* o *Seguimiento desactivado*).
+
+> Si se registra una venta del mismo producto mientras el formulario está abierto, el ajuste se aplica sobre el stock real. Por ejemplo, si había 10, se vendió 1 y cambias el campo a 8, se quitan 2 y quedan 7. Para un conteo físico exacto, recarga el formulario antes de corregir el stock.
 
 ---
 
@@ -135,3 +147,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-15 | **Catálogo de pisos**: los productos y las medidas se abren y cierran con una animación suave en lugar de aparecer de golpe. |
 | 2026-10-15 | **Nuevo producto (pisos)**: la lista de categorías ya solo muestra las de tipo Pisos, no las de Otros productos. |
 | 2026-10-15 | **Formularios**: títulos y descripciones distintos para pisos (*Nuevo piso* / *Editar piso*) y para otros productos (*Nuevo producto general* / *Editar producto general*), para que quede claro qué se está registrando. |
+| 2026-10-15 | **Editar piso / producto general**: el stock se puede cambiar, activar o desactivar directamente en el formulario, con confirmación antes de guardar. |
