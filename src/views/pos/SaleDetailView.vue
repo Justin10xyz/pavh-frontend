@@ -1,6 +1,8 @@
 <template>
 	<div class="p-2 max-w-5xl">
-		<div v-if="sales.currentSaleLoading && !sale" class="text-text-muted text-sm">Cargando venta…</div>
+		<div v-if="sales.currentSaleLoading && !sale" class="text-text-muted text-sm">
+			Cargando venta…
+		</div>
 
 		<div v-else-if="sales.currentSaleError" class="space-y-4">
 			<p class="text-danger text-sm">{{ sales.currentSaleError }}</p>
@@ -30,7 +32,9 @@
 					</RouterLink>
 					<div>
 						<h1 class="font-serif text-xl text-primary">{{ sale.folio }}</h1>
-						<p class="text-sm text-text-muted mt-0.5">Registrada el {{ formatDateTime(sale.created_at) }}</p>
+						<p class="text-sm text-text-muted mt-0.5">
+							Registrada el {{ formatDateTime(sale.created_at) }}
+						</p>
 					</div>
 				</div>
 
@@ -70,7 +74,9 @@
 							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:bg-primary/50 disabled:cursor-not-allowed"
 						>
 							<i class="ti ti-download text-base" aria-hidden="true"></i>
-							<span class="hidden sm:inline">{{ pdfBusy ? 'Generando PDF…' : 'Descargar PDF' }}</span>
+							<span class="hidden sm:inline">{{
+								pdfBusy ? "Generando PDF…" : "Descargar PDF"
+							}}</span>
 						</button>
 					</div>
 					<p v-if="pdfError" class="text-danger text-xs">{{ pdfError }}</p>
@@ -80,7 +86,9 @@
 			<div class="space-y-4">
 				<!-- Datos generales -->
 				<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-					<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Datos generales</h2>
+					<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">
+						Datos generales
+					</h2>
 
 					<dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
 						<div class="space-y-1">
@@ -108,7 +116,9 @@
 						<!-- Solo si la venta vino de convertir una cotización (contraparte de
 						     "Convertida en venta" en QuoteDetailView) -->
 						<div v-if="sale.quote" class="space-y-1">
-							<dt class="text-xs font-medium text-text-muted">Convertida desde cotización</dt>
+							<dt class="text-xs font-medium text-text-muted">
+								Convertida desde cotización
+							</dt>
 							<dd>
 								<RouterLink
 									:to="{ name: 'quotes.show', params: { id: sale.quote.id } }"
@@ -124,7 +134,11 @@
 
 				<!-- Líneas -->
 				<div class="bg-surface border border-border rounded-md overflow-hidden">
-					<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4">Productos</h2>
+					<h2
+						class="text-xs font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4"
+					>
+						Productos
+					</h2>
 
 					<div class="overflow-x-auto">
 						<table class="items-table">
@@ -135,7 +149,9 @@
 									<th class="text-right">Cantidad</th>
 									<!-- Precio unitario se oculta por debajo de sm: el subtotal ya basta.
 									     normal-case: el uppercase del encabezado convertiría m² en M² -->
-									<th class="text-right hidden sm:table-cell">Precio unitario<span class="normal-case">/m²</span></th>
+									<th class="text-right hidden sm:table-cell">
+										Precio unitario<span class="normal-case">/m²</span>
+									</th>
 									<th class="text-right">Subtotal</th>
 								</tr>
 							</thead>
@@ -144,35 +160,53 @@
 									<!-- Línea de producto simple: sin color/medida, cantidad en unidades -->
 									<template v-if="item.simple_product_id">
 										<td>
-											<div class="font-medium text-text">{{ item.simple_product?.name ?? '—' }}</div>
+											<div class="font-medium text-text">
+												{{ item.simple_product?.name ?? "—" }}
+											</div>
 										</td>
-										<td class="text-right text-text">{{ formatQuantity(item.quantity) }} uds.</td>
-										<td class="text-right text-text hidden sm:table-cell">{{ formatCurrency(item.unit_price) }}</td>
+										<td class="text-right text-text">
+											{{ formatQuantity(item.quantity) }} uds.
+										</td>
+										<td class="text-right text-text hidden sm:table-cell">
+											{{ formatCurrency(item.unit_price) }}
+										</td>
 									</template>
 									<template v-else>
 										<td>
-											<div class="font-medium text-text">{{ item.product_variant?.product?.name ?? '—' }}</div>
+											<div class="font-medium text-text">
+												{{ item.product_variant?.product?.name ?? "—" }}
+											</div>
 											<div class="text-text-muted text-xs">
-												{{ item.product_variant?.color }} · {{ item.product_variant?.size }}
+												{{ item.product_variant?.color }} ·
+												{{ item.product_variant?.size }}
 											</div>
 										</td>
 										<td class="text-right text-text">
 											<!-- Sin boxes: línea previa al cambio a cajas cuya variante no
 											     tenía m2_per_box; se muestra tal cual se emitió, en m² -->
 											<template v-if="item.boxes">
-												{{ item.boxes }} {{ item.boxes === 1 ? 'caja' : 'cajas' }}
-												<div class="text-text-muted text-xs tabular-nums">{{ formatQuantity(item.quantity) }} m²</div>
+												{{ item.boxes }}
+												{{ item.boxes === 1 ? "caja" : "cajas" }}
+												<div class="text-text-muted text-xs tabular-nums">
+													{{ formatQuantity(item.quantity) }} m²
+												</div>
 											</template>
-											<template v-else>{{ formatQuantity(item.quantity) }} m²</template>
+											<template v-else
+												>{{ formatQuantity(item.quantity) }} m²</template
+											>
 										</td>
 										<td class="text-right text-text hidden sm:table-cell">
-											{{ formatCurrency(item.unit_price) }}/m²
-											<div v-if="item.boxes" class="text-text-muted text-xs tabular-nums">
+											<div v-if="item.boxes">
 												{{ formatCurrency(boxPrice(item)) }}/caja
 											</div>
+											<span class="text-text-muted text-xs tabular-nums">
+												{{ formatCurrency(item.unit_price) }}/m²
+											</span>
 										</td>
 									</template>
-									<td class="text-right text-text">{{ formatCurrency(item.line_total) }}</td>
+									<td class="text-right text-text">
+										{{ formatCurrency(item.line_total) }}
+									</td>
 								</tr>
 							</tbody>
 						</table>
@@ -198,49 +232,56 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useSalesStore } from '@/stores/sales'
-import { useDocumentPdf } from '@/composables/useDocumentPdf'
-import { formatCurrency } from '@/lib/formatCurrency'
-import { formatQuantity } from '@/lib/formatQuantity'
-import { formatDateTime } from '@/lib/dates'
+import { computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useSalesStore } from "@/stores/sales";
+import { useDocumentPdf } from "@/composables/useDocumentPdf";
+import { formatCurrency } from "@/lib/formatCurrency";
+import { formatQuantity } from "@/lib/formatQuantity";
+import { formatDateTime } from "@/lib/dates";
 
-const route = useRoute()
-const router = useRouter()
-const sales = useSalesStore()
+const route = useRoute();
+const router = useRouter();
+const sales = useSalesStore();
 
 // Evita mostrar por un instante una venta distinta si el store aún trae la
 // de una visita anterior.
 const sale = computed(() => {
-	const current = sales.currentSale
-	return current && String(current.id) === String(route.params.id) ? current : null
-})
+	const current = sales.currentSale;
+	return current && String(current.id) === String(route.params.id) ? current : null;
+});
 
-const { canShareFiles, pdfBusy, pdfError, downloadPdf, sharePdf, reset: resetPdf } = useDocumentPdf({
+const {
+	canShareFiles,
+	pdfBusy,
+	pdfError,
+	downloadPdf,
+	sharePdf,
+	reset: resetPdf,
+} = useDocumentPdf({
 	fetchPdf: sales.fetchSalePdf,
-	filePrefix: 'Venta',
+	filePrefix: "Venta",
 	id: () => route.params.id,
 	document: sale,
-})
+});
 
 watch(
 	() => route.params.id,
 	(id) => {
-		resetPdf()
-		if (id) sales.fetchSale(id)
+		resetPdf();
+		if (id) sales.fetchSale(id);
 	},
-	{ immediate: true }
-)
+	{ immediate: true },
+);
 
 // Lo que valió cada caja: precio por m² × m² que cubre una caja, ambos tal
 // como se guardaron en la línea (no el m2_per_box actual de la variante).
 function boxPrice(item) {
-	return Math.round(((Number(item.unit_price) * Number(item.quantity)) / item.boxes) * 100) / 100
+	return Math.round(((Number(item.unit_price) * Number(item.quantity)) / item.boxes) * 100) / 100;
 }
 
 function goBack() {
-	router.push({ name: 'pos.sales.index', query: sales.listQuery })
+	router.push({ name: "pos.sales.index", query: sales.listQuery });
 }
 </script>
 
