@@ -49,7 +49,7 @@
 					<InputNumberCustom
 						id="stock_adjust_quantity"
 						v-model="stockAdjustQuantity"
-						:min="1"
+						:min="minQuantity"
 						placeholder="0"
 						:max-fraction-digits="0"
 					/>
@@ -110,8 +110,13 @@ const stockAdjustSubmitting = ref(false)
 
 const isTracked = computed(() => props.stock !== null && props.stock !== undefined)
 
+// Activar seguimiento admite 0 ("empezar a trackear desde cero"); un ajuste
+// sobre stock ya controlado necesita al menos 1.
+const minQuantity = computed(() => (isTracked.value ? 1 : 0))
+
 const isStockAdjustValid = computed(
-	() => Number.isInteger(stockAdjustQuantity.value) && stockAdjustQuantity.value > 0
+	() =>
+		Number.isInteger(stockAdjustQuantity.value) && stockAdjustQuantity.value >= minQuantity.value
 )
 
 function reset() {
