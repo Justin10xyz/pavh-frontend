@@ -5,6 +5,8 @@
 			dataKey="id"
 			v-model:expandedRows="expandedRows"
 			class="data-table inventory-table"
+			:row-class="() => 'cursor-pointer'"
+			@row-click="onRowClick"
 		>
 			<Column header="Producto">
 				<template #body="{ data, rowTogglerCallback }">
@@ -273,6 +275,17 @@ const emit = defineEmits(["edit-product", "open-stock-dialog", "open-movements-d
 
 const expandedRows = ref({});
 const expandedGroups = ref({});
+
+// Clic en cualquier parte de la fila abre/cierra sus variantes. Los botones
+// (flecha, editar) ya tienen su propia acción, así que se ignoran aquí.
+function onRowClick({ originalEvent, data }) {
+	if (originalEvent.target.closest("button, a")) return;
+
+	const rows = { ...expandedRows.value };
+	if (rows[data.id]) delete rows[data.id];
+	else rows[data.id] = true;
+	expandedRows.value = rows;
+}
 
 function groupExpansionKey(productId, groupKey) {
 	return `${productId}::${groupKey}`;
