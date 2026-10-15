@@ -44,6 +44,18 @@
 					</button>
 				</div>
 
+				<!-- Acción secundaria (link, no botón primario): pide confirmación aparte. -->
+				<div v-if="isTracked" class="-mt-2 mb-4 text-right">
+					<button
+						type="button"
+						@click="confirmDeactivate"
+						:disabled="stockAdjustSubmitting"
+						class="text-xs text-text-muted hover:text-danger underline underline-offset-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+					>
+						Desactivar seguimiento de stock
+					</button>
+				</div>
+
 				<div class="space-y-1.5 mb-4">
 					<FieldLabel html-for="stock_adjust_quantity" :text="quantityLabel" required />
 					<InputNumberCustom
@@ -77,11 +89,41 @@
 			</div>
 		</template>
 	</Dialog>
+
+	<!-- `group` propio por instancia: en Inventario hay dos StockAdjustDialog montados
+	     a la vez (variantes y otros productos) y un ConfirmDialog sin grupo
+	     responde a cualquier confirm.require() de la página. -->
+	<ConfirmDialog :group="confirmGroup" :pt="{ mask: { class: 'bg-primary/50' } }">
+		<template #container="{ message, acceptCallback, rejectCallback }">
+			<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+				<h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
+				<p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+				<div class="flex items-center justify-end gap-3">
+					<button
+						type="button"
+						@click="rejectCallback"
+						class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+					>
+						Volver
+					</button>
+					<button
+						type="button"
+						@click="acceptCallback"
+						class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+					>
+						Desactivar
+					</button>
+				</div>
+			</div>
+		</template>
+	</ConfirmDialog>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, useId } from 'vue'
 import Dialog from 'primevue/dialog'
+import ConfirmDialog from 'primevue/confirmdialog'
+import { useConfirm } from 'primevue/useconfirm'
 import axios from '@/lib/axios'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
@@ -108,6 +150,9 @@ const stockAdjustQuantity = ref(null)
 const stockDialogError = ref(null)
 const stockAdjustSubmitting = ref(false)
 
+const confirm = useConfirm()
+const confirmGroup = `stock-deactivate-${useId()}`
+
 const isTracked = computed(() => props.stock !== null && props.stock !== undefined)
 
 // Activar seguimiento admite 0 ("empezar a trackear desde cero"); un ajuste
@@ -125,24 +170,44 @@ function reset() {
 	stockDialogError.value = null
 }
 
-async function submitStockAdjust() {
-	if (!isStockAdjustValid.value || !props.url) return
-
+// Ajuste y desactivación comparten endpoint y respuesta: el padre actualiza su
+// store con lo que devuelva el PATCH (stock nuevo, o null al desactivar).
+async function patchStock(payload, fallbackError) {
 	stockAdjustSubmitting.value = true
 	stockDialogError.value = null
 
 	try {
-		const { data } = await axios.patch(props.url, {
-			quantity: stockAdjustQuantity.value,
-			type: isTracked.value ? stockAdjustType.value : 'add',
-		})
+		const { data } = await axios.patch(props.url, payload)
 
 		emit('stock-updated', data.data)
 		visible.value = false
 	} catch (err) {
-		stockDialogError.value = err.response?.data?.message || 'No se pudo ajustar el stock. Intenta de nuevo.'
+		stockDialogError.value = err.response?.data?.message || fallbackError
 	} finally {
 		stockAdjustSubmitting.value = false
 	}
+}
+
+function submitStockAdjust() {
+	if (!isStockAdjustValid.value || !props.url) return
+
+	patchStock(
+		{
+			quantity: stockAdjustQuantity.value,
+			type: isTracked.value ? stockAdjustType.value : 'add',
+		},
+		'No se pudo ajustar el stock. Intenta de nuevo.'
+	)
+}
+
+function confirmDeactivate() {
+	confirm.require({
+		group: confirmGroup,
+		header: 'Desactivar seguimiento de stock',
+		message: `Esto quitará el seguimiento de stock de este producto (actualmente ${props.stock} ${props.stockUnit}). Podrás volver a activarlo después. ¿Continuar?`,
+		// Sin quantity: el backend retira todo el stock actual.
+		accept: () =>
+			patchStock({ type: 'deactivate' }, 'No se pudo desactivar el seguimiento. Intenta de nuevo.'),
+	})
 }
 </script>
