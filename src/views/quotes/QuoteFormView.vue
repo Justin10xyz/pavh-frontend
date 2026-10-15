@@ -575,25 +575,32 @@ function boxConversionError(row) {
 	return 'Esta variante no tiene m² por caja configurado; no se puede cotizar.'
 }
 
-function hasInsufficientStock(row) {
-	if (row.simpleProduct) {
-		const stock = simpleProductFor(row).stock_quantity
-		if (stock === undefined) return false
-		return (row.quantity || 0) > stock
-	}
+// null = el producto no lleva control de stock: nunca hay aviso. undefined (el
+// dato no vino en la respuesta) se trata igual porque no hay contra qué comparar.
+function isUntracked(stock) {
+	return stock === null || stock === undefined
+}
 
-	return (row.quantity || 0) > (row.variant.stock_boxes ?? 0)
+function lineStock(row) {
+	return row.simpleProduct ? simpleProductFor(row).stock_quantity : row.variant.stock_boxes
+}
+
+function hasInsufficientStock(row) {
+	const stock = lineStock(row)
+	if (isUntracked(stock)) return false
+	return (row.quantity || 0) > Number(stock)
 }
 
 // Es un aviso, no un error: la cotización se puede guardar igual (el stock se
 // valida hasta convertirla en venta).
 function stockWarning(row) {
+	const stock = lineStock(row)
+	if (isUntracked(stock)) return ''
+
 	if (row.simpleProduct) {
-		const stock = simpleProductFor(row).stock_quantity
 		return `Stock insuficiente: hay ${formatQuantity(stock)} uds. y se cotizan ${formatQuantity(row.quantity)}. Consultar disponibilidad sobre pedido.`
 	}
 
-	const stock = row.variant.stock_boxes ?? 0
 	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se cotizan ${row.quantity}. Consultar disponibilidad sobre pedido.`
 }
 

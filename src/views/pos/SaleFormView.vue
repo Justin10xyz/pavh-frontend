@@ -729,30 +729,39 @@ function boxConversionError(row) {
 // Solo UX: el guard real es hasSufficientStock() de ProductVariant/SimpleProduct
 // en el backend.
 function hasInsufficientStock(row) {
-	if (row.simpleProduct) {
-		const stock = simpleProductFor(row).stock_quantity
-		if (stock === undefined) return false
-		return (row.quantity || 0) > stock
-	}
+	const stock = lineStock(row)
+	if (stock === null) return false
+	return (row.quantity || 0) > stock
+}
 
-	return (row.quantity || 0) > variantStock(row)
+// null = el producto no lleva control de stock (nunca hay error); undefined (el
+// dato no vino) se trata igual porque no hay contra qué comparar.
+function toStock(value) {
+	return value === null || value === undefined ? null : Number(value)
+}
+
+function lineStock(row) {
+	return row.simpleProduct ? toStock(simpleProductFor(row).stock_quantity) : variantStock(row)
 }
 
 // Stock "en vivo" desde el store de Inventario: la variante de la línea es una
-// copia tomada al elegirla, y no se entera de un refetch (ver refreshStock).
+// copia tomada al elegirla, y no se entera de un refetch (ver refreshStock). Sin
+// `??` entre ambas: un null en el store es "sin control", no "dato faltante".
 function variantStock(row) {
-	return Number(findInventoryVariant(row.variant.id)?.stock_boxes ?? row.variant.stock_boxes ?? 0)
+	const live = findInventoryVariant(row.variant.id)
+	return toStock(live ? live.stock_boxes : row.variant.stock_boxes)
 }
 
 // Mismo texto base que el aviso de QuoteFormView, pero como error: el backend
 // rechaza la venta completa si alguna línea excede el stock.
 function stockError(row) {
+	const stock = lineStock(row)
+	if (stock === null) return ''
+
 	if (row.simpleProduct) {
-		const stock = simpleProductFor(row).stock_quantity
 		return `Stock insuficiente: hay ${formatQuantity(stock)} uds. y se requieren ${formatQuantity(row.quantity)}. La venta no podrá registrarse con esta cantidad.`
 	}
 
-	const stock = variantStock(row)
 	return `Stock insuficiente: hay ${stock} ${stock === 1 ? 'caja' : 'cajas'} y se requieren ${row.quantity}. La venta no podrá registrarse con esta cantidad.`
 }
 
@@ -825,7 +834,8 @@ function syncInventoryStock(items) {
 	for (const item of items) {
 		if (!item.product_variant_id) continue
 		const variant = findInventoryVariant(item.product_variant_id)
-		if (!variant) continue
+		// Sin control de stock: el backend no descuenta, aquí tampoco.
+		if (!variant || variant.stock_boxes === null) continue
 
 		variantsById.set(variant.id, variant)
 		const boxesNeeded = item.boxes
@@ -855,7 +865,7 @@ function syncSimpleProductsStock(items) {
 
 	for (const [productId, units] of unitsByProduct) {
 		const product = findSimpleProduct(productId)
-		if (!product) continue
+		if (!product || product.stock_quantity === null) continue
 		simpleProducts.updateSimpleProductStock(productId, { stock_quantity: Number(product.stock_quantity) - units })
 	}
 }
