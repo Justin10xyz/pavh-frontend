@@ -17,7 +17,7 @@
 				<!-- Por debajo de `sm` solo se muestran las iniciales; el nombre completo sigue en el menú. -->
 				<span
 					class="hidden sm:block max-w-48 truncate text-sm font-medium text-text-muted"
-					>{{ userName }}</span
+				>{{ userName }}</span
 				>
 				<div
 					class="h-8 w-8 rounded-full bg-primary text-white text-xs font-semibold flex items-center justify-center"

@@ -103,10 +103,10 @@
 									</span>
 									<span class="flex items-center gap-2 whitespace-nowrap">
 										<span class="font-semibold text-primary tabular-nums"
-											>{{ formatCurrency(group.price_per_box) }}/caja</span
+										>{{ formatCurrency(group.price_per_box) }}/caja</span
 										>
 										<span class="font-semibold text-primary tabular-nums"
-											>{{ formatCurrency(group.price_per_m2) }}/m²</span
+										>{{ formatCurrency(group.price_per_m2) }}/m²</span
 										>
 									</span>
 									<span class="text-text-muted">
@@ -123,7 +123,7 @@
 										{{ lowStockLabel(group.variants) }}
 									</span>
 									<span class="text-text-muted"
-										>{{ group.variants.length }} colores</span
+									>{{ group.variants.length }} colores</span
 									>
 								</span>
 							</button>
@@ -158,7 +158,7 @@
 											<!-- Sin columna Código por debajo de md: va debajo del color -->
 											<span
 												class="block md:hidden text-text-muted font-mono text-xs"
-												>{{ variant.code }}</span
+											>{{ variant.code }}</span
 											>
 										</td>
 										<td

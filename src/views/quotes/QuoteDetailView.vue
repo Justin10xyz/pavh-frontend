@@ -224,7 +224,7 @@
 												</div>
 											</template>
 											<template v-else
-												>{{ formatQuantity(item.quantity) }} m²</template
+											>{{ formatQuantity(item.quantity) }} m²</template
 											>
 										</td>
 										<td class="text-right text-text hidden sm:table-cell">

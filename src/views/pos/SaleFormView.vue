@@ -252,7 +252,7 @@
 								</button>
 							</div>
 
-								<!-- danger, no amber como en Cotizaciones: aquí el backend sí rechaza la venta -->
+							<!-- danger, no amber como en Cotizaciones: aquí el backend sí rechaza la venta -->
 							<p
 								v-if="hasProduct(row) && hasInsufficientStock(row)"
 								class="mt-2 sm:mr-10 flex items-start gap-1.5 text-xs text-danger bg-danger/10 border border-danger/20 rounded-md px-3 py-2"
