@@ -11,7 +11,10 @@
 
 				<div class="text-sm text-text mb-4">
 					<span v-if="subtitle" class="text-text-muted">{{ subtitle }} · </span>
-					Stock actual: <span class="font-medium">{{ stock }} {{ stockUnit }}</span>
+					<template v-if="stock !== null && stock !== undefined">
+						Stock actual: <span class="font-medium">{{ stock }} {{ stockUnit }}</span>
+					</template>
+					<span v-else class="font-medium">Sin control de stock</span>
 				</div>
 
 				<div v-if="loading" class="text-text-muted text-sm py-6 text-center">Cargando historial…</div>
@@ -38,7 +41,16 @@
 							<tr v-for="movement in movements" :key="movement.id" class="border-t border-border">
 								<td class="py-2 px-3 text-text-muted whitespace-nowrap">{{ formatDateTime(movement.created_at) }}</td>
 								<td class="py-2 px-3">
+									<!-- 'deactivated' se guarda como 'subtract', pero no es una salida:
+									     se mira `source` antes que `type`. -->
 									<span
+										v-if="movement.source === 'deactivated'"
+										class="text-[10px] px-2 py-0.5 rounded border border-border text-text-muted"
+									>
+										Desactivado
+									</span>
+									<span
+										v-else
 										class="text-[10px] px-2 py-0.5 rounded"
 										:class="movement.type === 'add' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'"
 									>
@@ -46,13 +58,25 @@
 									</span>
 								</td>
 								<td class="py-2 px-3 text-right text-text whitespace-nowrap">
-									{{ movement.type === 'add' ? '+' : '−' }}{{ movement.quantity }} {{ stockUnit }}
+									<span v-if="movement.source === 'deactivated'" class="text-text-muted">—</span>
+									<template v-else>
+										{{ movement.type === 'add' ? '+' : '−' }}{{ movement.quantity }} {{ stockUnit }}
+									</template>
 								</td>
 								<td class="py-2 px-3 text-text">
 									<span v-if="movement.source === 'sale'" class="font-mono text-[11px]">{{ movement.sale_folio ?? 'Venta' }}</span>
+									<span v-else-if="movement.source === 'initial'">Stock inicial</span>
+									<span v-else-if="movement.source === 'deactivated'">Seguimiento desactivado</span>
 									<span v-else>Ajuste manual</span>
 								</td>
-								<td class="py-2 px-3 text-right text-text whitespace-nowrap">{{ movement.resulting_stock }} {{ stockUnit }}</td>
+								<td class="py-2 px-3 text-right text-text whitespace-nowrap">
+									<!-- `quantity` de una desactivación es el stock que había antes. -->
+									<span v-if="movement.source === 'deactivated'" class="text-text-muted">
+										Sin control (antes: {{ movement.quantity }} {{ stockUnit }})
+									</span>
+									<span v-else-if="movement.resulting_stock === null" class="text-text-muted">—</span>
+									<template v-else>{{ movement.resulting_stock }} {{ stockUnit }}</template>
+								</td>
 							</tr>
 						</tbody>
 					</table>
@@ -74,7 +98,7 @@ import { formatDateTime } from '@/lib/dates'
 const props = defineProps({
 	// Endpoint GET del historial (ej. `/api/product-variants/5/stock-movements`). Sin él no se muestra nada.
 	url: { type: String, default: null },
-	stock: { type: Number, default: 0 },
+	stock: { type: Number, default: null },
 	stockUnit: { type: String, default: '' },
 	// Contexto opcional antes del stock actual (ej. el color de la variante).
 	subtitle: { type: String, default: '' },

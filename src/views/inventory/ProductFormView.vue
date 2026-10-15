@@ -387,8 +387,8 @@
 								class="flex-1 grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
 							>
 								<span>Color<span class="text-danger ml-0.5">*</span></span>
-								<span>Stock (cajas)<span class="text-danger ml-0.5">*</span></span>
-								<span>Stock mínimo<span class="text-danger ml-0.5">*</span></span>
+								<span>Stock (cajas)</span>
+								<span>Stock mínimo</span>
 							</div>
 							<span class="w-8 shrink-0"></span>
 						</div>
@@ -429,16 +429,15 @@
 										</span>
 										<p
 											class="h-10 flex items-center text-sm text-text tabular-nums"
-											title="Se ajusta desde Inventario con «Ajustar stock»"
+											title="Usa «Ajustar stock» en Inventario para modificarlo"
 										>
-											{{ row.stock_boxes }} cj
+											{{ row.stock_boxes === null ? "Sin control" : `${row.stock_boxes} cj` }}
 										</p>
 									</div>
 									<div v-else class="space-y-1.5 sm:space-y-0">
 										<FieldLabel
 											:html-for="`stock_boxes-${row.id}`"
 											text="Stock inicial (cajas)"
-											required
 											class="sm:sr-only"
 										/>
 										<InputNumberCustom
@@ -446,7 +445,7 @@
 											v-model="row.stock_boxes"
 											:error="row.errors.stock_boxes"
 											:min="0"
-											placeholder="0"
+											placeholder="Sin control"
 											@input="row.errors.stock_boxes = ''"
 											:max-fraction-digits="0"
 										/>
@@ -459,7 +458,6 @@
 										<FieldLabel
 											:html-for="`minimum_stock-${row.id}`"
 											text="Stock mínimo"
-											required
 											class="sm:sr-only"
 										/>
 										<InputNumberCustom
@@ -807,7 +805,7 @@ const requiredVariantFields = [
 	"pieces_per_box",
 	"m2_per_box",
 ];
-const requiredColorRowFields = ["color", "stock_boxes", "minimum_stock"];
+const requiredColorRowFields = ["color"];
 
 const validateForm = () => {
 	let isValid = true;
@@ -849,7 +847,8 @@ const generalError = ref(null);
 // Cada variante toma la ficha técnica de su propio grupo. `stock_boxes` solo va al
 // crear (stock inicial): en una variante existente el stock se cambia con el diálogo
 // de ajuste, que deja historial — mandarlo en el PUT pisaría una venta ocurrida
-// mientras el form estaba abierto.
+// mientras el form estaba abierto (el backend además lo ignora en el update).
+// Vacío viaja como null: la variante queda sin control de stock.
 function buildVariantPayload(productId, group, row) {
 	const { spec } = group;
 	const payload = {

@@ -90,7 +90,9 @@
 								</span>
 								<!-- Cada bloque envuelve como unidad: en lg+ cabe todo en una
 								     línea; en tablet baja precio/specs a una segunda línea. -->
-								<span class="flex-1 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1">
+								<span
+									class="flex-1 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1"
+								>
 									<span class="flex items-center gap-2 whitespace-nowrap">
 										<span class="font-medium text-text">{{ group.size }}</span>
 										<span class="spec-badge">PEI {{ group.pei }}</span>
@@ -101,10 +103,10 @@
 									</span>
 									<span class="flex items-center gap-2 whitespace-nowrap">
 										<span class="font-semibold text-primary tabular-nums"
-										>{{ formatCurrency(group.price_per_box) }}/caja</span
+											>{{ formatCurrency(group.price_per_box) }}/caja</span
 										>
 										<span class="font-semibold text-primary tabular-nums"
-										>{{ formatCurrency(group.price_per_m2) }}/m²</span
+											>{{ formatCurrency(group.price_per_m2) }}/m²</span
 										>
 									</span>
 									<span class="text-text-muted">
@@ -114,10 +116,15 @@
 									</span>
 								</span>
 								<span class="shrink-0 flex items-center gap-2 whitespace-nowrap">
-									<span v-if="lowStockCount(group.variants) > 0" class="low-stock-badge">
+									<span
+										v-if="lowStockCount(group.variants) > 0"
+										class="low-stock-badge"
+									>
 										{{ lowStockLabel(group.variants) }}
 									</span>
-									<span class="text-text-muted">{{ group.variants.length }} colores</span>
+									<span class="text-text-muted"
+										>{{ group.variants.length }} colores</span
+									>
 								</span>
 							</button>
 						</div>
@@ -126,10 +133,18 @@
 							<table class="variants-table w-full text-xs border-t border-border">
 								<thead>
 									<tr class="text-text-muted uppercase text-xs">
-										<th class="text-left font-medium py-1.5 pl-3 sm:pl-8">Color</th>
-										<th class="hidden md:table-cell text-left font-medium py-1.5">Código</th>
-										<th class="text-right font-medium py-1.5">Stock</th>
-										<th class="text-center font-medium py-1.5 pr-3 sm:pr-6">Estado</th>
+										<th class="text-left font-medium py-1.5 pl-3 sm:pl-8">
+											Color
+										</th>
+										<th
+											class="hidden md:table-cell text-left font-medium py-1.5"
+										>
+											Código
+										</th>
+										<th class="text-left font-medium py-1.5">Stock</th>
+										<th class="text-left font-medium py-1.5 pr-3 sm:pr-6">
+											Estado
+										</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -141,26 +156,42 @@
 										<td class="py-1.5 pl-3 sm:pl-8 text-sm">
 											{{ variant.color }}
 											<!-- Sin columna Código por debajo de md: va debajo del color -->
-											<span class="block md:hidden text-text-muted font-mono text-xs">{{
-												variant.code
-											}}</span>
+											<span
+												class="block md:hidden text-text-muted font-mono text-xs"
+												>{{ variant.code }}</span
+											>
 										</td>
-										<td class="hidden md:table-cell py-1.5 text-text-muted font-mono text-xs">
+										<td
+											class="hidden md:table-cell py-1.5 text-text-muted font-mono text-xs"
+										>
 											{{ variant.code }}
 										</td>
 										<td
 											class="py-1.5 text-sm"
 											:class="
-												variant.low_stock
-													? 'text-danger font-medium'
-													: 'text-text'
+												!isTracked(variant)
+													? 'text-text-muted'
+													: variant.low_stock
+														? 'text-danger font-medium'
+														: 'text-text'
 											"
 										>
-											{{ variant.stock_boxes }} cj
+											{{
+												isTracked(variant)
+													? `${variant.stock_boxes} cj`
+													: "—"
+											}}
 										</td>
 										<td class="py-1.5 pr-3 sm:pr-6">
 											<div class="flex items-center justify-start gap-1.5">
 												<span
+													v-if="!isTracked(variant)"
+													class="text-xs px-2 py-0.5 rounded border border-border text-text-muted"
+												>
+													Sin control
+												</span>
+												<span
+													v-else
 													class="text-xs px-2 py-0.5 rounded"
 													:class="
 														variant.low_stock
@@ -177,16 +208,23 @@
 														type="button"
 														@click="emit('open-stock-dialog', variant)"
 														class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-														aria-label="Ajustar stock"
-														title="Ajustar stock"
+														:aria-label="stockActionLabel(variant)"
+														:title="stockActionLabel(variant)"
 													>
 														<i
-															class="ti ti-adjustments-horizontal text-base"
+															class="ti text-base"
+															:class="
+																isTracked(variant)
+																	? 'ti-adjustments-horizontal'
+																	: 'ti-circle-plus'
+															"
 														></i>
 													</button>
 													<button
 														type="button"
-														@click="emit('open-movements-dialog', variant)"
+														@click="
+															emit('open-movements-dialog', variant)
+														"
 														class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
 														aria-label="Ver historial de stock"
 														title="Ver historial de stock"
@@ -260,9 +298,18 @@ onMounted(() => {
 	}
 });
 
+// `stock_boxes === null` = variante sin control de stock: ni "Stock bajo" ni "OK".
+function isTracked(variant) {
+	return variant.stock_boxes !== null && variant.stock_boxes !== undefined;
+}
+
+function stockActionLabel(variant) {
+	return isTracked(variant) ? "Ajustar stock" : "Activar seguimiento de stock";
+}
+
 // Cuenta sobre las variantes visibles (ya filtradas), igual que la columna Variantes.
 function lowStockCount(variants = []) {
-	return variants.filter((v) => v.low_stock).length;
+	return variants.filter((v) => isTracked(v) && v.low_stock).length;
 }
 
 function lowStockLabel(variants) {

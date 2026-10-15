@@ -101,14 +101,36 @@
 						</p>
 					</div>
 
-					<div v-if="isEditMode" class="space-y-1.5">
+					<div v-if="!isEditMode" class="space-y-1.5">
+						<FieldLabel html-for="stock_quantity" text="Stock inicial (unidades)" />
+						<InputNumberCustom
+							id="stock_quantity"
+							v-model="form.stock_quantity"
+							:error="errors.stock_quantity"
+							:min="0"
+							:max-fraction-digits="0"
+							placeholder="Sin control"
+							@input="errors.stock_quantity = ''"
+						/>
+						<p v-if="errors.stock_quantity" class="text-danger text-[12px] mt-1.5">
+							{{ errors.stock_quantity }}
+						</p>
+					</div>
+
+					<div v-else class="space-y-1.5">
 						<FieldLabel html-for="stock_quantity" text="Stock actual" />
 						<div class="flex items-center gap-2">
 							<output
 								id="stock_quantity"
 								class="flex-1 flex items-center h-10 px-3 bg-bg border border-border rounded-md text-sm text-text"
 							>
-								{{ loadingProduct ? "—" : `${stockQuantity} unidades` }}
+								{{
+									loadingProduct
+										? "—"
+										: stockQuantity === null
+											? "Sin control de stock"
+											: `${stockQuantity} unidades`
+								}}
 							</output>
 							<button
 								type="button"
@@ -116,8 +138,11 @@
 								:disabled="loadingProduct || loadFailed"
 								class="inline-flex items-center gap-1.5 bg-surface border border-border hover:bg-bg disabled:opacity-60 disabled:cursor-not-allowed text-text font-medium text-sm h-10 px-3 rounded-md transition-colors select-none cursor-pointer"
 							>
-								<i class="ti ti-adjustments-horizontal text-sm"></i>
-								Ajustar stock
+								<i
+									class="ti text-sm"
+									:class="stockQuantity === null ? 'ti-circle-plus' : 'ti-adjustments-horizontal'"
+								></i>
+								{{ stockQuantity === null ? "Activar seguimiento" : "Ajustar stock" }}
 							</button>
 						</div>
 					</div>
@@ -211,6 +236,8 @@ const form = reactive({
 	name: "",
 	price: null,
 	description: "",
+	// Solo se envía al crear; vacío (null) = sin control de stock.
+	stock_quantity: null,
 });
 
 const errors = reactive({
@@ -218,9 +245,11 @@ const errors = reactive({
 	name: "",
 	price: "",
 	description: "",
+	stock_quantity: "",
 });
 
-// Solo lectura en el form: el stock se modifica únicamente vía PATCH /stock.
+// Solo lectura en edición: el stock se modifica únicamente vía PATCH /stock
+// (el update general lo ignora).
 const stockQuantity = ref(0);
 const stockDialogOpen = ref(false);
 
@@ -298,7 +327,10 @@ async function handleSubmit() {
 		if (isEditMode.value) {
 			await simpleProducts.updateSimpleProduct(route.params.id, payload);
 		} else {
-			await simpleProducts.createSimpleProduct(payload);
+			await simpleProducts.createSimpleProduct({
+				...payload,
+				stock_quantity: form.stock_quantity,
+			});
 		}
 
 		router.push({ name: "inventory", query: { seccion: "otros" } });
