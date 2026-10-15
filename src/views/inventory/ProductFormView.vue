@@ -6,8 +6,8 @@
 				<p class="text-sm text-text-muted mt-0.5">
 					{{
 						isEditMode
-							? "Actualiza los datos de la línea y sus variantes."
-							: "Captura la línea de producto junto con su primera variante."
+							? "Modifica los datos de la línea, sus medidas, precios y colores. El stock se ajusta desde Inventario."
+							: "Registra una línea de piso con sus medidas, precios y colores. Puedes agregar más medidas y colores después."
 					}}
 				</p>
 			</div>

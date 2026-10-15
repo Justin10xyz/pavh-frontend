@@ -6,8 +6,8 @@
 				<p class="text-sm text-text-muted mt-0.5">
 					{{
 						isEditMode
-							? "Actualiza los datos del producto."
-							: "Captura los datos del producto. El stock inicia en 0."
+							? "Modifica el nombre, la categoría, el precio o la descripción, y ajusta su stock."
+							: "Registra un producto que se vende por unidad, como pegamentos, boquillas o herramientas. Deja el stock vacío si no quieres llevar su control."
 					}}
 				</p>
 			</div>
