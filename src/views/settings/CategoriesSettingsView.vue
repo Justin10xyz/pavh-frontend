@@ -155,7 +155,7 @@ import { useConfirm } from "primevue/useconfirm";
 import axios from "@/lib/axios";
 import { useNotify } from "@/composables/useNotify";
 import { useCatalogsStore } from "@/stores/catalogs";
-import CategoryFormDialog from "./components/CategoryFormDialog.vue";
+import CategoryFormDialog from "@/components/widgets/dialogs/CategoryFormDialog.vue";
 import { productFormTypeShortLabel } from "@/lib/productFormTypes";
 
 const route = useRoute();
