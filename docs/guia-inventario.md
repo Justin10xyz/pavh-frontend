@@ -131,3 +131,4 @@ Mejoras que se van agregando al módulo:
 | Fecha | Cambio |
 | --- | --- |
 | 2026-10-15 | **Catálogo de pisos**: ahora un clic en cualquier parte de la fila del producto abre o cierra sus medidas, no solo la flecha. |
+| 2026-10-15 | **Catálogo de pisos**: los productos y las medidas se abren y cierran con una animación suave en lugar de aparecer de golpe. |
