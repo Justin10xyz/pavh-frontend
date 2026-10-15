@@ -70,10 +70,11 @@
 						<SelectCustom
 							id="category_id"
 							v-model="form.category_id"
-							:options="catalogs.categories"
+							:options="variantCategories"
 							:loading="catalogs.loading"
 							:error="errors.category_id"
 							placeholder="Selecciona una categoría"
+							empty-message="No hay categorías de tipo Pisos"
 							@change="errors.category_id = ''"
 						/>
 						<p v-if="errors.category_id" class="text-danger text-[12px] mt-1.5">
@@ -593,6 +594,11 @@ const router = useRouter();
 const confirm = useConfirm();
 const catalogs = useCatalogsStore();
 const inventory = useInventoryStore();
+
+// Las categorías de tipo 'simple' son de "Otros productos"; aquí solo las de pisos.
+const variantCategories = computed(() =>
+	catalogs.categories.filter((c) => c.product_form_type === "variant"),
+);
 
 const isEditMode = computed(() => !!route.params.id);
 const loadingProduct = ref(false);

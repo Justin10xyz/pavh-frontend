@@ -12,6 +12,7 @@ Arriba de la pantalla hay dos botones para cambiar de sección:
 - **Otros productos**: artículos que se venden por unidad, como pegamentos, boquillas o herramientas.
 
 El botón **Nuevo producto** (arriba a la derecha) registra un producto en la sección que tengas abierta.
+Al registrarlo, la lista de **Categoría** muestra solo las categorías de esa sección: en pisos, las de tipo *Pisos*; en otros productos, las de tipo *General*. El tipo de cada categoría se configura en **Configuración → Categorías**.
 
 ---
 
@@ -132,3 +133,4 @@ Mejoras que se van agregando al módulo:
 | --- | --- |
 | 2026-10-15 | **Catálogo de pisos**: ahora un clic en cualquier parte de la fila del producto abre o cierra sus medidas, no solo la flecha. |
 | 2026-10-15 | **Catálogo de pisos**: los productos y las medidas se abren y cierran con una animación suave en lugar de aparecer de golpe. |
+| 2026-10-15 | **Nuevo producto (pisos)**: la lista de categorías ya solo muestra las de tipo Pisos, no las de Otros productos. |
