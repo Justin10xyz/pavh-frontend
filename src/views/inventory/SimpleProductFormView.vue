@@ -83,7 +83,32 @@
 						</p>
 					</div>
 
+					<!-- Capturado a mano por ahora (opcional, único). Se refleja en
+					     mayúsculas al teclear; la normalización real es la del backend. -->
 					<div class="space-y-1.5">
+						<FieldLabel html-for="code" text="Código" />
+						<InputTextCustom
+							id="code"
+							v-model="form.code"
+							:error="errors.code"
+							class="font-mono"
+							maxlength="50"
+							autocomplete="off"
+							autocapitalize="characters"
+							spellcheck="false"
+							placeholder="Ej. PEG-GRIS-20KG"
+							:disabled="loadingProduct"
+							@input="onCodeInput"
+						/>
+						<p v-if="errors.code" class="text-danger text-[12px] mt-1.5">
+							{{ errors.code }}
+						</p>
+						<p v-else class="text-text-muted text-[12px] mt-1.5">
+							Opcional. Sin espacios; no se puede repetir.
+						</p>
+					</div>
+
+					<div class="space-y-1.5 sm:col-span-2">
 						<FieldLabel html-for="name" text="Nombre" required />
 						<InputTextCustom
 							id="name"
@@ -238,6 +263,7 @@ function onCategoryCreated(category) {
 
 const form = reactive({
 	category_id: "",
+	code: "",
 	name: "",
 	price: null,
 	description: "",
@@ -248,6 +274,7 @@ const form = reactive({
 
 const errors = reactive({
 	category_id: "",
+	code: "",
 	name: "",
 	price: "",
 	description: "",
@@ -276,6 +303,7 @@ async function loadProduct() {
 	try {
 		const product = await simpleProducts.fetchSimpleProduct(route.params.id);
 		form.category_id = product.category_id;
+		form.code = product.code ?? "";
 		form.name = product.name;
 		form.price = product.price;
 		form.description = product.description ?? "";
@@ -320,7 +348,26 @@ function validateForm() {
 		if (errors[field]) isValid = false;
 	}
 
+	if (/\s/.test(form.code.trim())) {
+		errors.code = "El código no puede llevar espacios";
+		isValid = false;
+	}
+
 	return isValid;
+}
+
+// Mismo criterio que el prefijo en CategoryFormDialog: se refleja en mayúsculas
+// al teclear, conservando la posición del cursor.
+function onCodeInput(event) {
+	errors.code = "";
+	const input = event.target;
+	const upper = input.value.toUpperCase();
+	if (upper !== input.value) {
+		const { selectionStart, selectionEnd } = input;
+		input.value = upper;
+		input.setSelectionRange(selectionStart, selectionEnd);
+	}
+	form.code = upper;
 }
 
 function applyServerErrors(serverErrors) {
@@ -329,6 +376,10 @@ function applyServerErrors(serverErrors) {
 			errors[field] = serverErrors[field][0];
 		}
 	}
+	// Los mensajes de validación del backend llegan en inglés (ver Pendientes en
+	// PROJECT.md). Espacios y largo ya se validan aquí, así que el que queda es
+	// el de código repetido.
+	if (serverErrors.code) errors.code = "Ya existe otro producto con este código.";
 }
 
 async function handleSubmit() {
@@ -350,6 +401,7 @@ async function handleSubmit() {
 
 	const payload = {
 		category_id: form.category_id,
+		code: form.code.trim() || null,
 		name: form.name.trim(),
 		price: form.price,
 		description: form.description.trim() || null,
