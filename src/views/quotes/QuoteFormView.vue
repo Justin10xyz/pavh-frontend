@@ -147,7 +147,7 @@
 												class="text-xs text-text-muted flex items-center gap-2 min-w-0"
 											>
 												<span class="truncate"
-													>{{ row.variant.color }} ·
+												>{{ row.variant.color }} ·
 													{{ row.variant.size }}</span
 												>
 												<button
@@ -281,7 +281,7 @@
 									<div class="space-y-1.5 sm:space-y-0">
 										<span
 											class="text-xs font-medium text-text-muted block sm:sr-only"
-											>Subtotal</span
+										>Subtotal</span
 										>
 										<p
 											class="sm:h-10 flex items-center sm:justify-end text-sm font-medium text-text tabular-nums"
@@ -499,10 +499,10 @@ async function loadQuote() {
 		...createEmptyLine(),
 		variant: item.product_variant
 			? {
-					...item.product_variant,
-					type: "variant",
-					lineName: item.product_variant.product?.name,
-				}
+				...item.product_variant,
+				type: "variant",
+				lineName: item.product_variant.product?.name,
+			}
 			: null,
 		simpleProduct: item.simple_product ? { ...item.simple_product, type: "simple" } : null,
 		// Variante: sus cajas (null en líneas previas al cambio a cajas sin

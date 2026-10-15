@@ -15,7 +15,7 @@
 		>
 			{{ option.label }}
 			<span v-if="option.count != null" class="tabular-nums text-text-muted"
-				>({{ option.count }})</span
+			>({{ option.count }})</span
 			>
 		</button>
 	</div>
