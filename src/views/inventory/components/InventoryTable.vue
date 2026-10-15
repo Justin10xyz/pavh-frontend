@@ -3,18 +3,20 @@
 		<DataTable
 			:value="products"
 			dataKey="id"
-			v-model:expandedRows="expandedRows"
+			:expandedRows="expandedRows"
 			class="data-table inventory-table"
+			:row-class="() => 'cursor-pointer'"
+			@row-click="onRowClick"
 		>
 			<Column header="Producto">
-				<template #body="{ data, rowTogglerCallback }">
+				<template #body="{ data }">
 					<div class="flex items-center gap-2">
 						<button
 							type="button"
 							class="toggle-btn cursor-pointer"
-							:class="{ 'is-open': expandedRows[data.id] }"
-							@click="rowTogglerCallback"
-							:aria-expanded="!!expandedRows[data.id]"
+							:class="{ 'is-open': openRows[data.id] }"
+							@click="toggleRow(data.id)"
+							:aria-expanded="!!openRows[data.id]"
 							:aria-label="`Variantes de ${data.name}`"
 						>
 							<svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
@@ -66,180 +68,201 @@
 			</Column>
 
 			<template #expansion="{ data }">
-				<div class="bg-bg px-2 sm:px-4 py-2 space-y-1.5">
-					<div
-						v-for="group in groupVariants(visibleVariantsByProduct.get(data.id) ?? [])"
-						:key="group.key"
-						class="border border-border rounded-md overflow-hidden bg-surface"
-					>
-						<div class="group-header">
-							<button
-								type="button"
-								class="group-header-toggle cursor-pointer"
-								@click="toggleGroup(data.id, group.key)"
-								title="Clic para ver stock por color"
-								:aria-expanded="isGroupExpanded(data.id, group.key)"
+				<!-- `appear`: la fila de expansión se monta al abrir, así que la
+				     animación de entrada corre al aparecer. -->
+				<Transition
+					appear
+					name="collapse"
+					@enter="onCollapseEnter"
+					@after-enter="clearCollapseHeight"
+					@leave="onCollapseLeave"
+					@after-leave="onRowCollapsed(data.id)"
+				>
+					<div v-if="openRows[data.id]">
+						<div class="bg-bg px-2 sm:px-4 py-2 space-y-1.5">
+							<div
+								v-for="group in groupVariants(visibleVariantsByProduct.get(data.id) ?? [])"
+								:key="group.key"
+								class="border border-border rounded-md overflow-hidden bg-surface"
 							>
-								<span
-									class="toggle-btn"
-									:class="{ 'is-open': isGroupExpanded(data.id, group.key) }"
-								>
-									<svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
-										<path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
-									</svg>
-								</span>
-								<!-- Cada bloque envuelve como unidad: en lg+ cabe todo en una
+								<div class="group-header">
+									<button
+										type="button"
+										class="group-header-toggle cursor-pointer"
+										@click="toggleGroup(data.id, group.key)"
+										title="Clic para ver stock por color"
+										:aria-expanded="isGroupExpanded(data.id, group.key)"
+									>
+										<span
+											class="toggle-btn"
+											:class="{ 'is-open': isGroupExpanded(data.id, group.key) }"
+										>
+											<svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
+												<path d="M0 0 L8 4 L0 8 Z" fill="currentColor" />
+											</svg>
+										</span>
+										<!-- Cada bloque envuelve como unidad: en lg+ cabe todo en una
 								     línea; en tablet baja precio/specs a una segunda línea. -->
-								<span
-									class="flex-1 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1"
-								>
-									<span class="flex items-center gap-2 whitespace-nowrap">
-										<span class="font-medium text-text">{{ group.size }}</span>
-										<span class="spec-badge">PEI {{ group.pei }}</span>
-										<span class="spec-badge">ETT {{ group.ett }}</span>
-										<span v-if="group.commission_category" class="spec-badge">{{
-											group.commission_category.code
-										}}</span>
-									</span>
-									<span class="flex items-center gap-2 whitespace-nowrap">
-										<span class="font-semibold text-primary tabular-nums"
-										>{{ formatCurrency(group.price_per_box) }}/caja</span
+										<span
+											class="flex-1 min-w-0 flex flex-wrap items-center gap-x-3 gap-y-1"
 										>
-										<span class="font-semibold text-primary tabular-nums"
-										>{{ formatCurrency(group.price_per_m2) }}/m²</span
-										>
-									</span>
-									<span class="text-text-muted">
-										{{ group.pieces_per_box }} pzas/caja ·
-										{{ Number(group.m2_per_box).toFixed(2) }} m²/caja ·
-										{{ group.kilos_per_box }} kg/caja
-									</span>
-								</span>
-								<span class="shrink-0 flex items-center gap-2 whitespace-nowrap">
-									<span
-										v-if="lowStockCount(group.variants) > 0"
-										class="low-stock-badge"
-									>
-										{{ lowStockLabel(group.variants) }}
-									</span>
-									<span class="text-text-muted"
-									>{{ group.variants.length }} colores</span
-									>
-								</span>
-							</button>
-						</div>
-
-						<div v-if="isGroupExpanded(data.id, group.key)" class="overflow-x-auto">
-							<table class="variants-table w-full text-xs border-t border-border">
-								<thead>
-									<tr class="text-text-muted uppercase text-xs">
-										<th class="text-left font-medium py-1.5 pl-3 sm:pl-8">
-											Color
-										</th>
-										<th
-											class="hidden md:table-cell text-left font-medium py-1.5"
-										>
-											Código
-										</th>
-										<th class="text-left font-medium py-1.5">Stock</th>
-										<th class="text-left font-medium py-1.5 pr-3 sm:pr-6">
-											Estado
-										</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr
-										v-for="variant in group.variants"
-										:key="variant.id"
-										class="border-t border-border hover:bg-bg/60 transition-colors"
-									>
-										<td class="py-1.5 pl-3 sm:pl-8 text-sm">
-											{{ variant.color }}
-											<!-- Sin columna Código por debajo de md: va debajo del color -->
+											<span class="flex items-center gap-2 whitespace-nowrap">
+												<span class="font-medium text-text">{{ group.size }}</span>
+												<span class="spec-badge">PEI {{ group.pei }}</span>
+												<span class="spec-badge">ETT {{ group.ett }}</span>
+												<span v-if="group.commission_category" class="spec-badge">{{
+													group.commission_category.code
+												}}</span>
+											</span>
+											<span class="flex items-center gap-2 whitespace-nowrap">
+												<span class="font-semibold text-primary tabular-nums"
+												>{{ formatCurrency(group.price_per_box) }}/caja</span
+												>
+												<span class="font-semibold text-primary tabular-nums"
+												>{{ formatCurrency(group.price_per_m2) }}/m²</span
+												>
+											</span>
+											<span class="text-text-muted">
+												{{ group.pieces_per_box }} pzas/caja ·
+												{{ Number(group.m2_per_box).toFixed(2) }} m²/caja ·
+												{{ group.kilos_per_box }} kg/caja
+											</span>
+										</span>
+										<span class="shrink-0 flex items-center gap-2 whitespace-nowrap">
 											<span
-												class="block md:hidden text-text-muted font-mono text-xs"
-											>{{ variant.code }}</span
+												v-if="lowStockCount(group.variants) > 0"
+												class="low-stock-badge"
 											>
-										</td>
-										<td
-											class="hidden md:table-cell py-1.5 text-text-muted font-mono text-xs"
-										>
-											{{ variant.code }}
-										</td>
-										<td
-											class="py-1.5 text-sm"
-											:class="
-												!isTracked(variant)
-													? 'text-text-muted'
-													: variant.low_stock
-														? 'text-danger font-medium'
-														: 'text-text'
-											"
-										>
-											{{
-												isTracked(variant)
-													? `${variant.stock_boxes} cj`
-													: "—"
-											}}
-										</td>
-										<td class="py-1.5 pr-3 sm:pr-6">
-											<div class="flex items-center justify-start gap-1.5">
-												<span
-													v-if="!isTracked(variant)"
-													class="text-xs px-2 py-0.5 rounded border border-border text-text-muted"
-												>
-													Sin control
-												</span>
-												<span
-													v-else
-													class="text-xs px-2 py-0.5 rounded"
-													:class="
-														variant.low_stock
-															? 'bg-danger/10 text-danger'
-															: 'bg-success/10 text-success'
-													"
-												>
-													{{ variant.low_stock ? "Stock bajo" : "OK" }}
-												</span>
-												<div
-													class="flex items-center justify-end gap-1.5 ml-auto"
-												>
-													<button
-														type="button"
-														@click="emit('open-stock-dialog', variant)"
-														class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-														:aria-label="stockActionLabel(variant)"
-														:title="stockActionLabel(variant)"
+												{{ lowStockLabel(group.variants) }}
+											</span>
+											<span class="text-text-muted"
+											>{{ group.variants.length }} colores</span
+											>
+										</span>
+									</button>
+								</div>
+
+								<Transition
+									name="collapse"
+									@enter="onCollapseEnter"
+									@after-enter="clearCollapseHeight"
+									@leave="onCollapseLeave"
+									@after-leave="clearCollapseHeight"
+								>
+									<div v-if="isGroupExpanded(data.id, group.key)" class="overflow-x-auto">
+										<table class="variants-table w-full text-xs border-t border-border">
+											<thead>
+												<tr class="text-text-muted uppercase text-xs">
+													<th class="text-left font-medium py-1.5 pl-3 sm:pl-8">
+														Color
+													</th>
+													<th
+														class="hidden md:table-cell text-left font-medium py-1.5"
 													>
-														<i
-															class="ti text-base"
-															:class="
-																isTracked(variant)
-																	? 'ti-adjustments-horizontal'
-																	: 'ti-circle-plus'
-															"
-														></i>
-													</button>
-													<button
-														type="button"
-														@click="
-															emit('open-movements-dialog', variant)
+														Código
+													</th>
+													<th class="text-left font-medium py-1.5">Stock</th>
+													<th class="text-left font-medium py-1.5 pr-3 sm:pr-6">
+														Estado
+													</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr
+													v-for="variant in group.variants"
+													:key="variant.id"
+													class="border-t border-border hover:bg-bg/60 transition-colors"
+												>
+													<td class="py-1.5 pl-3 sm:pl-8 text-sm">
+														{{ variant.color }}
+														<!-- Sin columna Código por debajo de md: va debajo del color -->
+														<span
+															class="block md:hidden text-text-muted font-mono text-xs"
+														>{{ variant.code }}</span
+														>
+													</td>
+													<td
+														class="hidden md:table-cell py-1.5 text-text-muted font-mono text-xs"
+													>
+														{{ variant.code }}
+													</td>
+													<td
+														class="py-1.5 text-sm"
+														:class="
+															!isTracked(variant)
+																? 'text-text-muted'
+																: variant.low_stock
+																	? 'text-danger font-medium'
+																	: 'text-text'
 														"
-														class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-														aria-label="Ver historial de stock"
-														title="Ver historial de stock"
 													>
-														<i class="ti ti-history text-base"></i>
-													</button>
-												</div>
-											</div>
-										</td>
-									</tr>
-								</tbody>
-							</table>
+														{{
+															isTracked(variant)
+																? `${variant.stock_boxes} cj`
+																: "—"
+														}}
+													</td>
+													<td class="py-1.5 pr-3 sm:pr-6">
+														<div class="flex items-center justify-start gap-1.5">
+															<span
+																v-if="!isTracked(variant)"
+																class="text-xs px-2 py-0.5 rounded border border-border text-text-muted"
+															>
+																Sin control
+															</span>
+															<span
+																v-else
+																class="text-xs px-2 py-0.5 rounded"
+																:class="
+																	variant.low_stock
+																		? 'bg-danger/10 text-danger'
+																		: 'bg-success/10 text-success'
+																"
+															>
+																{{ variant.low_stock ? "Stock bajo" : "OK" }}
+															</span>
+															<div
+																class="flex items-center justify-end gap-1.5 ml-auto"
+															>
+																<button
+																	type="button"
+																	@click="emit('open-stock-dialog', variant)"
+																	class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+																	:aria-label="stockActionLabel(variant)"
+																	:title="stockActionLabel(variant)"
+																>
+																	<i
+																		class="ti text-base"
+																		:class="
+																			isTracked(variant)
+																				? 'ti-adjustments-horizontal'
+																				: 'ti-circle-plus'
+																		"
+																	></i>
+																</button>
+																<button
+																	type="button"
+																	@click="
+																		emit('open-movements-dialog', variant)
+																	"
+																	class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+																	aria-label="Ver historial de stock"
+																	title="Ver historial de stock"
+																>
+																	<i class="ti ti-history text-base"></i>
+																</button>
+															</div>
+														</div>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</Transition>
+							</div>
 						</div>
 					</div>
-				</div>
+				</Transition>
 			</template>
 		</DataTable>
 	</div>
@@ -271,8 +294,54 @@ const props = defineProps({
 
 const emit = defineEmits(["edit-product", "open-stock-dialog", "open-movements-dialog"]);
 
+// `expandedRows` = filas que PrimeVue tiene montadas; `openRows` = filas que el
+// usuario dejó abiertas. Al cerrar, la fila sigue montada hasta que termina la
+// animación de salida y entonces se quita de `expandedRows`.
 const expandedRows = ref({});
+const openRows = ref({});
 const expandedGroups = ref({});
+
+// Clic en cualquier parte de la fila abre/cierra sus variantes. Los botones
+// (flecha, editar) ya tienen su propia acción, así que se ignoran aquí.
+function onRowClick({ originalEvent, data }) {
+	if (originalEvent.target.closest("button, a")) return;
+	toggleRow(data.id);
+}
+
+function toggleRow(productId) {
+	if (openRows.value[productId]) {
+		openRows.value[productId] = false;
+	} else {
+		expandedRows.value = { ...expandedRows.value, [productId]: true };
+		openRows.value[productId] = true;
+	}
+}
+
+function onRowCollapsed(productId) {
+	// Si se volvió a abrir durante la salida, la fila se queda montada.
+	if (openRows.value[productId]) return;
+	const rows = { ...expandedRows.value };
+	delete rows[productId];
+	expandedRows.value = rows;
+}
+
+// Abrir/cerrar con altura animada: se anima de 0 a la altura real del
+// contenido (y al revés), y al terminar se suelta para que vuelva a ser auto.
+function onCollapseEnter(el) {
+	el.style.height = "0px";
+	void el.offsetHeight;
+	el.style.height = `${el.scrollHeight}px`;
+}
+
+function onCollapseLeave(el) {
+	el.style.height = `${el.scrollHeight}px`;
+	void el.offsetHeight;
+	el.style.height = "0px";
+}
+
+function clearCollapseHeight(el) {
+	el.style.height = "";
+}
 
 function groupExpansionKey(productId, groupKey) {
 	return `${productId}::${groupKey}`;
@@ -292,6 +361,7 @@ onMounted(() => {
 
 	for (const product of props.products) {
 		expandedRows.value[product.id] = true;
+		openRows.value[product.id] = true;
 		for (const group of groupVariants(props.visibleVariantsByProduct.get(product.id) ?? [])) {
 			expandedGroups.value[groupExpansionKey(product.id, group.key)] = true;
 		}
@@ -318,6 +388,24 @@ function lowStockLabel(variants) {
 </script>
 
 <style scoped>
+.collapse-enter-active,
+.collapse-leave-active {
+	overflow: hidden;
+	transition:
+		height 200ms ease,
+		opacity 200ms ease;
+}
+.collapse-enter-from,
+.collapse-leave-to {
+	opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+	.collapse-enter-active,
+	.collapse-leave-active {
+		transition: none;
+	}
+}
+
 .toggle-btn {
 	display: flex;
 	align-items: center;
