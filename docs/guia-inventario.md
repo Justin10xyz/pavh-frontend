@@ -14,6 +14,8 @@ Arriba de la pantalla hay dos botones para cambiar de sección:
 El botón **Nuevo producto** (arriba a la derecha) registra un producto en la sección que tengas abierta. Desde Catálogo de pisos abre el formulario **Nuevo piso**; desde Otros productos, el formulario **Nuevo producto general**.
 Al registrarlo, la lista de **Categoría** muestra solo las categorías de esa sección: en pisos, las de tipo *Pisos*; en otros productos, las de tipo *General*. El tipo de cada categoría se configura en **Configuración → Categorías**.
 
+Si la categoría que necesitas todavía no existe, da clic en el botón **+** junto a la lista de **Categoría**. Se abre la ventana **Nueva categoría** sin salir del formulario, así no pierdes lo que ya capturaste. El tipo de la categoría queda fijo según el formulario (*Pisos* o *General*) y, al guardarla, queda seleccionada en el producto. Para editar categorías o ver todas las que existen, ve a **Configuración → Categorías**.
+
 ---
 
 ## 2. Catálogo de pisos
@@ -149,3 +151,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-15 | **Formularios**: títulos y descripciones distintos para pisos (*Nuevo piso* / *Editar piso*) y para otros productos (*Nuevo producto general* / *Editar producto general*), para que quede claro qué se está registrando. |
 | 2026-10-15 | **Editar piso / producto general**: el stock se puede cambiar, activar o desactivar directamente en el formulario, con confirmación antes de guardar. |
 | 2026-10-15 | **Historial de stock**: el folio de la venta en la columna Origen ahora lleva directo al detalle de la venta. |
+| 2026-10-15 | **Nuevo piso / producto general**: botón **+** junto a la lista de categorías para crear una categoría nueva sin salir del formulario; queda seleccionada al guardarla. |

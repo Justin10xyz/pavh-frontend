@@ -67,16 +67,32 @@
 
 					<div class="space-y-1.5">
 						<FieldLabel html-for="category_id" text="Categoría" required />
-						<SelectCustom
-							id="category_id"
-							v-model="form.category_id"
-							:options="variantCategories"
-							:loading="catalogs.loading"
-							:error="errors.category_id"
-							placeholder="Selecciona una categoría"
-							empty-message="No hay categorías de tipo Pisos"
-							@change="errors.category_id = ''"
-						/>
+						<!-- Crear la categoría aquí evita salir del formulario y perder lo
+						     capturado. Solo con el catálogo cargado (ver CategoriesSettingsView). -->
+						<div class="flex gap-2">
+							<div class="flex-1 min-w-0">
+								<SelectCustom
+									id="category_id"
+									v-model="form.category_id"
+									:options="variantCategories"
+									:loading="catalogs.loading"
+									:error="errors.category_id"
+									placeholder="Selecciona una categoría"
+									empty-message="No hay categorías de tipo Pisos"
+									@change="errors.category_id = ''"
+								/>
+							</div>
+							<button
+								type="button"
+								class="shrink-0 inline-flex items-center justify-center h-10 w-10 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text rounded-md transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+								aria-label="Nueva categoría"
+								title="Nueva categoría"
+								:disabled="!catalogs.initialized"
+								@click="categoryDialogVisible = true"
+							>
+								<i class="ti ti-plus text-base" aria-hidden="true"></i>
+							</button>
+						</div>
 						<p v-if="errors.category_id" class="text-danger text-[12px] mt-1.5">
 							{{ errors.category_id }}
 						</p>
@@ -545,6 +561,12 @@
 
 		<StockChangesConfirmDialog />
 
+		<CategoryFormDialog
+			v-model:visible="categoryDialogVisible"
+			fixed-product-form-type="variant"
+			@saved="onCategoryCreated"
+		/>
+
 		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
 			<template #container="{ message, acceptCallback, rejectCallback }">
 				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
@@ -588,6 +610,7 @@ import { groupVariants } from "@/lib/groupVariants";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { confirmStockChanges, describeStockChange, stockChangePayload } from "@/lib/stockChange";
 import StockChangesConfirmDialog from "./components/StockChangesConfirmDialog.vue";
+import CategoryFormDialog from "@/views/settings/components/CategoryFormDialog.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -599,6 +622,14 @@ const inventory = useInventoryStore();
 const variantCategories = computed(() =>
 	catalogs.categories.filter((c) => c.product_form_type === "variant"),
 );
+
+const categoryDialogVisible = ref(false);
+
+// La categoría recién creada queda seleccionada: es para lo que se abrió el diálogo.
+function onCategoryCreated(category) {
+	form.category_id = category.id;
+	errors.category_id = "";
+}
 
 const isEditMode = computed(() => !!route.params.id);
 const loadingProduct = ref(false);
