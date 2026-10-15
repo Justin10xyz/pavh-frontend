@@ -63,8 +63,8 @@
 					</p>
 				</div>
 
-				<!-- Abierto desde un formulario de producto solo se puede crear; editar
-				     y revisar el resto de las categorías queda en Configuración. Es texto y
+				<!-- Abierto desde un formulario de producto solo se puede crear; editar,
+				     eliminar y revisar el resto de las categorías queda en Configuración. Es texto y
 				     no enlace para no sacar al usuario del formulario que está llenando. -->
 				<p
 					v-if="fixedProductFormType"
@@ -72,7 +72,7 @@
 				>
 					<i class="ti ti-info-circle text-sm shrink-0" aria-hidden="true"></i>
 					<span>
-						Para editar las categorías o ver todas las que existen, ve a
+						Para editar o eliminar categorías, o ver todas las que existen, ve a
 						<span class="font-medium text-text">Configuración → Categorías</span>.
 					</span>
 				</p>

@@ -27,6 +27,11 @@
 			</button>
 		</div>
 
+		<p v-if="deleteError" class="text-danger text-sm mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2" role="alert">
+			<i class="ti ti-alert-triangle text-sm shrink-0" aria-hidden="true"></i>
+			{{ deleteError }}
+		</p>
+
 		<div v-if="catalogs.loading" class="text-text-muted text-sm">Cargando categorías…</div>
 		<div v-else-if="catalogs.error" class="text-danger text-sm">{{ catalogs.error }}</div>
 
@@ -72,15 +77,27 @@
 
 					<Column header="" body-class="w-px">
 						<template #body="{ data }">
-							<button
-								type="button"
-								class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-								:aria-label="`Editar categoría ${data.name}`"
-								:title="`Editar categoría ${data.name}`"
-								@click="openEdit(data)"
-							>
-								<i class="ti ti-pencil text-base" aria-hidden="true"></i>
-							</button>
+							<div class="flex items-center gap-1">
+								<button
+									type="button"
+									class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+									:aria-label="`Editar categoría ${data.name}`"
+									:title="`Editar categoría ${data.name}`"
+									@click="openEdit(data)"
+								>
+									<i class="ti ti-pencil text-base" aria-hidden="true"></i>
+								</button>
+								<button
+									type="button"
+									class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-danger transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+									:disabled="busyId === data.id"
+									:aria-label="`Eliminar categoría ${data.name}`"
+									:title="`Eliminar categoría ${data.name}`"
+									@click="requestDelete(data)"
+								>
+									<i class="ti ti-trash text-base" aria-hidden="true"></i>
+								</button>
+							</div>
 						</template>
 					</Column>
 				</DataTable>
@@ -88,6 +105,43 @@
 		</template>
 
 		<CategoryFormDialog v-model:visible="dialogVisible" :category="selectedCategory" />
+
+		<!-- Con `blocked` (la categoría tiene productos) solo se informa el motivo:
+		     no hay nada que confirmar. -->
+		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
+			<template #container="{ message, acceptCallback, rejectCallback }">
+				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+					<h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
+					<p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+					<div class="flex items-center justify-end gap-3">
+						<button
+							v-if="message.blocked"
+							type="button"
+							@click="rejectCallback"
+							class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+						>
+							Entendido
+						</button>
+						<template v-else>
+							<button
+								type="button"
+								@click="rejectCallback"
+								class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+							>
+								Cancelar
+							</button>
+							<button
+								type="button"
+								@click="acceptCallback"
+								class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+							>
+								Eliminar
+							</button>
+						</template>
+					</div>
+				</div>
+			</template>
+		</ConfirmDialog>
 	</div>
 </template>
 
@@ -96,12 +150,18 @@ import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
+import ConfirmDialog from "primevue/confirmdialog";
+import { useConfirm } from "primevue/useconfirm";
+import axios from "@/lib/axios";
+import { useNotify } from "@/composables/useNotify";
 import { useCatalogsStore } from "@/stores/catalogs";
 import CategoryFormDialog from "./components/CategoryFormDialog.vue";
 import { productFormTypeShortLabel } from "@/lib/productFormTypes";
 
 const route = useRoute();
 const catalogs = useCatalogsStore();
+const confirm = useConfirm();
+const notify = useNotify();
 
 onMounted(() => {
 	if (!catalogs.initialized) catalogs.fetchCatalogs();
@@ -126,6 +186,71 @@ function openEdit(category) {
 function onRowClick({ originalEvent, data }) {
 	if (originalEvent.target.closest("a, button")) return;
 	openEdit(data);
+}
+
+// id de la categoría en proceso (pidiendo resumen o borrando), para
+// deshabilitar su botón y no abrir dos diálogos.
+const busyId = ref(null);
+const deleteError = ref(null);
+
+// Mismo flujo que useCustomerDelete, pero aquí el resumen sí decide: con
+// productos activos el backend no deja borrar, así que se muestra el motivo en
+// vez de pedir una confirmación que fallaría. Si el resumen falla se confirma
+// igual; el DELETE vuelve a validar y su 422 llega a `deleteError`.
+async function requestDelete(category) {
+	if (busyId.value) return;
+
+	busyId.value = category.id;
+	deleteError.value = null;
+
+	let summary = null;
+	try {
+		const { data } = await axios.get(`/api/categories/${category.id}/delete-summary`);
+		summary = data.data;
+	} catch (err) {
+		console.error(err);
+	} finally {
+		busyId.value = null;
+	}
+
+	if (summary?.blocked_message) {
+		confirm.require({
+			header: "No se puede eliminar",
+			message: summary.blocked_message,
+			blocked: true,
+		});
+		return;
+	}
+
+	confirm.require({
+		header: "Eliminar categoría",
+		message: `¿Seguro que quieres eliminar la categoría "${category.name}"? Esta acción no se puede deshacer.`,
+		accept: () => deleteCategory(category),
+	});
+}
+
+async function deleteCategory(category) {
+	busyId.value = category.id;
+
+	try {
+		await axios.delete(`/api/categories/${category.id}`);
+		catalogs.removeCategory(category.id);
+		notify.success("Categoría eliminada", category.name);
+	} catch (err) {
+		console.error(err);
+		if (err.response?.status === 404) {
+			// Ya la había eliminado alguien más: se quita igual de la lista.
+			catalogs.removeCategory(category.id);
+			deleteError.value = "La categoría ya no existe.";
+		} else {
+			deleteError.value =
+				err.response?.status === 422
+					? err.response.data.message
+					: "No se pudo eliminar la categoría. Intenta de nuevo.";
+		}
+	} finally {
+		busyId.value = null;
+	}
 }
 </script>
 
