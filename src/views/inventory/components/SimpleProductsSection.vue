@@ -59,7 +59,10 @@
 
 					<Column header="Stock">
 						<template #body="{ data }">
-							<span class="text-text tabular-nums">{{ data.stock_quantity }} uds.</span>
+							<span v-if="isTracked(data)" class="text-text tabular-nums"
+							>{{ data.stock_quantity }} uds.</span
+							>
+							<span v-else class="text-text-muted">Sin control</span>
 						</template>
 					</Column>
 
@@ -69,11 +72,14 @@
 								<button
 									type="button"
 									class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-									aria-label="Ajustar stock"
-									title="Ajustar stock"
+									:aria-label="stockActionLabel(data)"
+									:title="stockActionLabel(data)"
 									@click="openStockDialog(data)"
 								>
-									<i class="ti ti-adjustments-horizontal text-base"></i>
+									<i
+										class="ti text-base"
+										:class="isTracked(data) ? 'ti-adjustments-horizontal' : 'ti-circle-plus'"
+									></i>
 								</button>
 								<button
 									type="button"
@@ -155,6 +161,15 @@ function categoryName(product) {
 
 function editProduct(id) {
 	router.push({ name: "inventory.simpleProducts.edit", params: { id } });
+}
+
+// `stock_quantity === null` = producto sin control de stock.
+function isTracked(product) {
+	return product.stock_quantity !== null && product.stock_quantity !== undefined;
+}
+
+function stockActionLabel(product) {
+	return isTracked(product) ? "Ajustar stock" : "Activar seguimiento de stock";
 }
 
 const stockDialogOpen = ref(false);

@@ -11,7 +11,10 @@
 
 				<div class="text-sm text-text mb-4">
 					<span v-if="subtitle" class="text-text-muted">{{ subtitle }} · </span>
-					Stock actual: <span class="font-medium">{{ stock }} {{ stockUnit }}</span>
+					<template v-if="stock !== null && stock !== undefined">
+						Stock actual: <span class="font-medium">{{ stock }} {{ stockUnit }}</span>
+					</template>
+					<span v-else class="font-medium">Sin control de stock</span>
 				</div>
 
 				<div v-if="loading" class="text-text-muted text-sm py-6 text-center">Cargando historial…</div>
@@ -50,6 +53,7 @@
 								</td>
 								<td class="py-2 px-3 text-text">
 									<span v-if="movement.source === 'sale'" class="font-mono text-[11px]">{{ movement.sale_folio ?? 'Venta' }}</span>
+									<span v-else-if="movement.source === 'initial'">Stock inicial</span>
 									<span v-else>Ajuste manual</span>
 								</td>
 								<td class="py-2 px-3 text-right text-text whitespace-nowrap">{{ movement.resulting_stock }} {{ stockUnit }}</td>
@@ -74,7 +78,7 @@ import { formatDateTime } from '@/lib/dates'
 const props = defineProps({
 	// Endpoint GET del historial (ej. `/api/product-variants/5/stock-movements`). Sin él no se muestra nada.
 	url: { type: String, default: null },
-	stock: { type: Number, default: 0 },
+	stock: { type: Number, default: null },
 	stockUnit: { type: String, default: '' },
 	// Contexto opcional antes del stock actual (ej. el color de la variante).
 	subtitle: { type: String, default: '' },

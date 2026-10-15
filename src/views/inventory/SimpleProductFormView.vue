@@ -138,8 +138,11 @@
 								:disabled="loadingProduct || loadFailed"
 								class="inline-flex items-center gap-1.5 bg-surface border border-border hover:bg-bg disabled:opacity-60 disabled:cursor-not-allowed text-text font-medium text-sm h-10 px-3 rounded-md transition-colors select-none cursor-pointer"
 							>
-								<i class="ti ti-adjustments-horizontal text-sm"></i>
-								Ajustar stock
+								<i
+									class="ti text-sm"
+									:class="stockQuantity === null ? 'ti-circle-plus' : 'ti-adjustments-horizontal'"
+								></i>
+								{{ stockQuantity === null ? "Activar seguimiento" : "Ajustar stock" }}
 							</button>
 						</div>
 					</div>

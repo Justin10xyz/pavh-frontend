@@ -3,7 +3,9 @@
 		<template #container="{ closeCallback }">
 			<div v-if="url" class="bg-surface border border-border rounded-md p-4 sm:p-5 w-95 max-w-[90vw]">
 				<div class="flex items-center justify-between mb-4">
-					<h3 class="font-serif text-base text-primary">Ajustar stock</h3>
+					<h3 class="font-serif text-base text-primary">
+						{{ isTracked ? 'Ajustar stock' : 'Activar seguimiento de stock' }}
+					</h3>
 					<button type="button" @click="closeCallback" class="text-text-muted hover:text-text transition-colors" aria-label="Cerrar">
 						<i class="ti ti-x text-base"></i>
 					</button>
@@ -11,10 +13,19 @@
 
 				<div class="text-sm text-text mb-4">
 					<span v-if="subtitle" class="text-text-muted">{{ subtitle }} · </span>
-					Stock actual: <span class="font-medium">{{ stock }} {{ stockUnit }}</span>
+					<template v-if="isTracked">
+						Stock actual: <span class="font-medium">{{ stock }} {{ stockUnit }}</span>
+					</template>
+					<template v-else>
+						<span class="font-medium">Sin control de stock</span>
+						<span class="block text-xs text-text-muted mt-1">
+							La cantidad que ingreses será el stock inicial; a partir de ahí se podrá agregar o quitar.
+						</span>
+					</template>
 				</div>
 
-				<div class="flex gap-2 mb-4">
+				<!-- Sin tracking solo se permite `add`: el backend rechaza `subtract` (422). -->
+				<div v-if="isTracked" class="flex gap-2 mb-4">
 					<button
 						type="button"
 						@click="stockAdjustType = 'add'"
@@ -81,7 +92,8 @@ import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 const props = defineProps({
 	// Endpoint PATCH de stock (ej. `/api/product-variants/5/stock`). Sin él no se muestra nada.
 	url: { type: String, default: null },
-	stock: { type: Number, default: 0 },
+	// null = el producto no lleva control de stock (solo admite `add`).
+	stock: { type: Number, default: null },
 	stockUnit: { type: String, default: '' },
 	quantityLabel: { type: String, default: 'Cantidad' },
 	// Contexto opcional antes del stock actual (ej. el color de la variante).
@@ -95,6 +107,8 @@ const stockAdjustType = ref('add')
 const stockAdjustQuantity = ref(null)
 const stockDialogError = ref(null)
 const stockAdjustSubmitting = ref(false)
+
+const isTracked = computed(() => props.stock !== null && props.stock !== undefined)
 
 const isStockAdjustValid = computed(
 	() => Number.isInteger(stockAdjustQuantity.value) && stockAdjustQuantity.value > 0
@@ -115,7 +129,7 @@ async function submitStockAdjust() {
 	try {
 		const { data } = await axios.patch(props.url, {
 			quantity: stockAdjustQuantity.value,
-			type: stockAdjustType.value,
+			type: isTracked.value ? stockAdjustType.value : 'add',
 		})
 
 		emit('stock-updated', data.data)
