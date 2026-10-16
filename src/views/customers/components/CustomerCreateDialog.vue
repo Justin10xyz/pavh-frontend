@@ -60,6 +60,47 @@
                         />
                         <p v-if="errors.email" class="text-danger text-xs mt-1.5">{{ errors.email }}</p>
                     </div>
+
+                    <div class="space-y-1.5">
+                        <FieldLabel html-for="new_customer_address" text="Domicilio" />
+                        <InputTextCustom
+                            id="new_customer_address"
+                            v-model="form.address"
+                            :error="errors.address"
+                            autocomplete="off"
+                            placeholder="Ej. Av. Constitución 1234"
+                            @input="errors.address = ''"
+                        />
+                        <p v-if="errors.address" class="text-danger text-xs mt-1.5">{{ errors.address }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <FieldLabel html-for="new_customer_neighborhood" text="Colonia" />
+                            <InputTextCustom
+                                id="new_customer_neighborhood"
+                                v-model="form.neighborhood"
+                                :error="errors.neighborhood"
+                                autocomplete="off"
+                                placeholder="Ej. Centro"
+                                @input="errors.neighborhood = ''"
+                            />
+                            <p v-if="errors.neighborhood" class="text-danger text-xs mt-1.5">{{ errors.neighborhood }}</p>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <FieldLabel html-for="new_customer_city" text="Ciudad" />
+                            <InputTextCustom
+                                id="new_customer_city"
+                                v-model="form.city"
+                                :error="errors.city"
+                                autocomplete="off"
+                                placeholder="Ej. Monterrey"
+                                @input="errors.city = ''"
+                            />
+                            <p v-if="errors.city" class="text-danger text-xs mt-1.5">{{ errors.city }}</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-end gap-3">
@@ -104,8 +145,8 @@ const props = defineProps({
 
 const customers = useCustomersStore()
 
-const form = reactive({ name: '', phone: '', email: '' })
-const errors = reactive({ name: '', phone: '', email: '' })
+const form = reactive({ name: '', phone: '', email: '', address: '', neighborhood: '', city: '' })
+const errors = reactive({ name: '', phone: '', email: '', address: '', neighborhood: '', city: '' })
 const submitting = ref(false)
 const generalError = ref(null)
 // El `id` cae directo al <input> de InputTextCustom.
@@ -118,9 +159,15 @@ function reset() {
     form.name = ''
     form.phone = ''
     form.email = ''
+    form.address = ''
+    form.neighborhood = ''
+    form.city = ''
     errors.name = ''
     errors.phone = ''
     errors.email = ''
+    errors.address = ''
+    errors.neighborhood = ''
+    errors.city = ''
     generalError.value = null
 }
 
@@ -136,6 +183,9 @@ async function handleSubmit() {
             name: form.name.trim(),
             phone: form.phone.trim() || null,
             email: form.email.trim() || null,
+            address: form.address.trim() || null,
+            neighborhood: form.neighborhood.trim() || null,
+            city: form.city.trim() || null,
         })
 
         emit('created', customer)
