@@ -382,8 +382,15 @@ import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 import { useNotify } from '@/composables/useNotify'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatQuantity } from '@/lib/formatQuantity'
-import { boxesForSquareMeters, squareMetersForBoxes } from '@/lib/boxes'
-import { pieceVariantIds, variantStockUnit } from '@/lib/unitTypes'
+import { pieceVariantIds } from '@/lib/unitTypes'
+import * as documentLines from '@/lib/documentLines'
+import {
+    applyRequestedM2,
+    findLineForProduct,
+    hasProduct,
+    lineItemPayload,
+    serializeLines,
+} from '@/lib/documentLines'
 
 const route = useRoute()
 const router = useRouter()
@@ -553,19 +560,9 @@ function findInventoryVariantWithLine(variantId) {
     return null
 }
 
-// Una línea lleva `variant` O `simpleProduct`, nunca ambos — refleja el arco
-// exclusivo product_variant_id / simple_product_id del backend.
+// En venta cada línea lleva además su precio, capturable (ver selectProductForRow).
 function createEmptyLine() {
-    return {
-        id: crypto.randomUUID(),
-        variant: null,
-        simpleProduct: null,
-        // Unidad física de stock: cajas completas (variante) o unidades (simple).
-        // `requestedM2` es solo ayuda de captura para variantes; no se envía.
-        quantity: null,
-        requestedM2: null,
-        unit_price: null,
-    }
+    return documentLines.createEmptyLine({ unit_price: null })
 }
 
 const lines = ref([createEmptyLine()])
@@ -577,9 +574,7 @@ const lines = ref([createEmptyLine()])
 function serializeForm() {
     return JSON.stringify({
         customer_id: form.customer_id || null,
-        lines: lines.value
-            .filter((l) => l.variant || l.simpleProduct)
-            .map((l) => [l.variant?.id ?? null, l.simpleProduct?.id ?? null, l.quantity ?? null, l.unit_price ?? null]),
+        lines: serializeLines(lines.value, { withPrice: true }),
     })
 }
 
@@ -655,13 +650,10 @@ async function focusLineQuantity(row, { merged = false } = {}) {
 
 // Misma fusión que QuoteFormView: si el producto (variante o simple) ya está en
 // otra línea se suma la cantidad ahí (conservando el precio que ya se haya
-// capturado en esa línea) en vez de duplicar la fila. Los ids son de tablas
-// distintas, por eso se compara solo contra el campo del mismo tipo.
+// capturado en esa línea) en vez de duplicar la fila.
 function selectProductForRow(row, option) {
     const isSimple = option.type === 'simple'
-    const target = lines.value.find((l) =>
-        isSimple ? l.simpleProduct?.id === option.id : l.variant?.id === option.id,
-    )
+    const target = findLineForProduct(lines.value, option)
 
     if (target) {
         target.quantity = (Number(target.quantity) || 0) + 1
@@ -709,58 +701,30 @@ function isPieceLine(row) {
     return !!row.variant && pieceVariantIdSet.value.has(row.variant.id)
 }
 
-// Sufijo de la cantidad de una línea de variante: piezas o cajas.
+// Las reglas de cada línea viven en lib/documentLines.js; aquí solo se les pasa
+// lo que depende de los stores (si es por pieza, el producto simple y el stock "en vivo").
 function lineUnit(row) {
-    return variantStockUnit(isPieceLine(row) ? 'pieza' : null).short
+    return documentLines.lineUnit(isPieceLine(row))
 }
 
-// La cantidad de una línea de variante por caja son sus cajas (row.quantity);
-// estos son los m² que cubren, sobre los que se cobra el precio por m². Null en
-// variantes por pieza (no derivan m²).
 function coveredM2(row) {
-    if (isPieceLine(row)) return null
-    return squareMetersForBoxes(row.quantity || 0, row.variant?.m2_per_box)
+    return documentLines.coveredM2(row, isPieceLine(row))
 }
 
-// Solo UX: las cajas se pueden bajar a mano por debajo de lo requerido, y se avisa.
 function coversRequested(row) {
-    if (!(row.requestedM2 > 0)) return true
-    const covered = coveredM2(row)
-    return covered === null || covered >= row.requestedM2
+    return documentLines.coversRequested(row, isPieceLine(row))
 }
 
-// Los m² requeridos sugieren las cajas (hacia arriba); borrarlos no toca las
-// cajas ya capturadas.
-function applyRequestedM2(row, value) {
-    row.requestedM2 = value
-    const boxes = value > 0 ? boxesForSquareMeters(value, row.variant?.m2_per_box) : null
-    if (boxes) row.quantity = boxes
-}
-
-// Sin m2_per_box no se sabe qué cubren las cajas: el backend rechaza la línea
-// (nunca asume 1:1). Se avisa desde que se elige, no hasta guardar. No aplica a
-// variantes por pieza, que no derivan m².
 function boxConversionError(row) {
-    if (!row.variant || isPieceLine(row) || Number(row.variant.m2_per_box) > 0) return ''
-    return 'Esta variante no tiene m² por caja configurado; no se puede vender.'
+    return documentLines.boxConversionError(row, isPieceLine(row), 'vender')
 }
 
-// Solo UX: el guard real es hasSufficientStock() de ProductVariant/SimpleProduct
-// en el backend.
 function hasInsufficientStock(row) {
-    const stock = lineStock(row)
-    if (stock === null) return false
-    return (row.quantity || 0) > stock
-}
-
-// null = el producto no lleva control de stock (nunca hay error); undefined (el
-// dato no vino) se trata igual porque no hay contra qué comparar.
-function toStock(value) {
-    return value === null || value === undefined ? null : Number(value)
+    return documentLines.exceedsStock(row, lineStock(row))
 }
 
 function lineStock(row) {
-    return row.simpleProduct ? toStock(simpleProductFor(row).stock_quantity) : variantStock(row)
+    return row.simpleProduct ? documentLines.toStock(simpleProductFor(row).stock_quantity) : variantStock(row)
 }
 
 // Stock "en vivo" desde el store de Inventario: la variante de la línea es una
@@ -768,29 +732,21 @@ function lineStock(row) {
 // `??` entre ambas: un null en el store es "sin control", no "dato faltante".
 function variantStock(row) {
     const live = findInventoryVariant(row.variant.id)
-    return toStock(live ? live.stock_boxes : row.variant.stock_boxes)
+    return documentLines.toStock(live ? live.stock_boxes : row.variant.stock_boxes)
 }
 
 // Mismo texto base que el aviso de QuoteFormView, pero como error: el backend
 // rechaza la venta completa si alguna línea excede el stock.
 function stockError(row) {
-    const stock = lineStock(row)
-    if (stock === null) return ''
-
-    if (row.simpleProduct) {
-        return `Stock insuficiente: hay ${formatQuantity(stock)} uds. y se requieren ${formatQuantity(row.quantity)}. La venta no podrá registrarse con esta cantidad.`
-    }
-
-    const unit = isPieceLine(row) ? (stock === 1 ? 'pieza' : 'piezas') : stock === 1 ? 'caja' : 'cajas'
-    return `Stock insuficiente: hay ${stock} ${unit} y se requieren ${row.quantity}. La venta no podrá registrarse con esta cantidad.`
+    return documentLines.stockShortageMessage(row, lineStock(row), isPieceLine(row), {
+        verb: 'requieren',
+        consequence: 'La venta no podrá registrarse con esta cantidad.',
+    })
 }
 
-// Precio de lista por m² (variante por caja), por pieza (variante por pieza,
-// price_per_box) o por unidad (simple), el mismo con el que se precarga
-// unit_price al elegir el producto.
+// El mismo con el que se precarga unit_price al elegir el producto.
 function listPrice(row) {
-    if (!row.variant) return Number(simpleProductFor(row).price) || 0
-    return Number(isPieceLine(row) ? row.variant.price_per_box : row.variant.price_per_m2) || 0
+    return documentLines.listPrice(row, isPieceLine(row), row.simpleProduct ? simpleProductFor(row) : null)
 }
 
 // Comparado en centavos para no marcar diferencias de punto flotante.
@@ -799,21 +755,13 @@ function priceDiffersFromList(row) {
     return Math.round(row.unit_price * 100) !== Math.round(listPrice(row) * 100)
 }
 
-// Precio de una caja completa al precio por m² de la línea (lo que vale cada
-// caja que se entrega). Null en productos simples, variantes por pieza o sin m2_per_box.
+// En venta el precio se captura: la caja y el subtotal salen de unit_price.
 function boxPrice(row) {
-    if (!row.variant || isPieceLine(row)) return null
-    const m2PerBox = squareMetersForBoxes(1, row.variant.m2_per_box)
-    if (m2PerBox === null) return null
-    return Math.round(m2PerBox * (Number(row.unit_price) || 0) * 100) / 100
+    return documentLines.boxPrice(row, isPieceLine(row), row.unit_price)
 }
 
 function lineSubtotal(row) {
-    if (!(row.variant || row.simpleProduct) || !row.quantity || !row.unit_price) return 0
-    // Variante por caja: precio por m² sobre los m² que cubren las cajas. Por
-    // pieza (y simple): cantidad × precio, igual que SaleController@store.
-    if (row.variant && !isPieceLine(row)) return (coveredM2(row) ?? 0) * row.unit_price
-    return row.quantity * row.unit_price
+    return documentLines.lineSubtotal(row, isPieceLine(row), row.unit_price)
 }
 
 const subtotal = computed(() => lines.value.reduce((sum, row) => sum + lineSubtotal(row), 0))
@@ -828,14 +776,9 @@ const generalError = ref(null)
 // (mismo criterio que QuoteFormView).
 const submitAttempted = ref(false)
 
-function hasProduct(row) {
-    return !!(row.variant || row.simpleProduct)
-}
-
 function quantityError(row) {
-    if (!submitAttempted.value || !hasProduct(row) || row.quantity > 0) return ''
-    if (!row.variant) return 'Captura la cantidad.'
-    return isPieceLine(row) ? 'Captura las piezas.' : 'Captura las cajas.'
+    if (!submitAttempted.value) return ''
+    return documentLines.missingQuantityMessage(row, isPieceLine(row))
 }
 
 // StoreSaleRequest exige unit_price >= 0.01; sin esto el 422 llegaba como un
@@ -959,13 +902,7 @@ const handleSubmit = async () => {
         const payload = {
             customer_id: form.customer_id || null,
             ...(quoteId.value ? { quote_id: Number(quoteId.value) } : {}),
-            items: validLines.map((l) => ({
-                // Variante: cajas (los m² los deriva el backend). Simple: unidades.
-                ...(l.simpleProduct
-                    ? { simple_product_id: l.simpleProduct.id, quantity: l.quantity }
-                    : { product_variant_id: l.variant.id, boxes: l.quantity }),
-                unit_price: l.unit_price,
-            })),
+            items: validLines.map((l) => ({ ...lineItemPayload(l), unit_price: l.unit_price })),
         }
 
         const sale = await sales.createSale(payload)

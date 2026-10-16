@@ -441,8 +441,16 @@ import TextareaCustom from "@/components/widgets/TextareaCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
-import { boxesForSquareMeters, squareMetersForBoxes } from "@/lib/boxes";
-import { pieceVariantIds, variantStockUnit } from "@/lib/unitTypes";
+import { pieceVariantIds } from "@/lib/unitTypes";
+import * as documentLines from "@/lib/documentLines";
+import {
+    applyRequestedM2,
+    createEmptyLine,
+    findLineForProduct,
+    hasProduct,
+    lineItemPayload,
+    serializeLines,
+} from "@/lib/documentLines";
 import { useNotify } from "@/composables/useNotify";
 
 const route = useRoute();
@@ -522,20 +530,6 @@ const form = reactive({
     notes: "",
 });
 
-// Una línea lleva `variant` O `simpleProduct`, nunca ambos — refleja el arco
-// exclusivo product_variant_id / simple_product_id del backend.
-// `quantity` va en la unidad física de stock: cajas completas (variante) o
-// unidades (simple). `requestedM2` es solo ayuda de captura para variantes.
-function createEmptyLine() {
-    return {
-        id: crypto.randomUUID(),
-        variant: null,
-        simpleProduct: null,
-        quantity: null,
-        requestedM2: null,
-    };
-}
-
 const lines = ref([createEmptyLine()]);
 
 // Cambios sin guardar: se compara contra una foto del form tomada al iniciar
@@ -545,9 +539,7 @@ function serializeForm() {
     return JSON.stringify({
         customer_id: form.customer_id || null,
         notes: form.notes || null,
-        lines: lines.value
-            .filter((l) => l.variant || l.simpleProduct)
-            .map((l) => [l.variant?.id ?? null, l.simpleProduct?.id ?? null, l.quantity ?? null]),
+        lines: serializeLines(lines.value),
     });
 }
 
@@ -620,13 +612,9 @@ async function focusLineQuantity(row, { merged = false } = {}) {
 // Si el producto (variante o simple) ya existe en otra línea del form, se suma
 // la cantidad nueva a esa línea existente en vez de duplicar la fila (ver
 // AGENT.md — listas repetibles no deben permitir estado duplicado inconsistente).
-// Los ids de variante y de producto simple son de tablas distintas, por eso se
-// compara solo contra el campo del mismo tipo.
 function selectProductForRow(row, option) {
     const isSimple = option.type === "simple";
-    const target = lines.value.find((l) =>
-        isSimple ? l.simpleProduct?.id === option.id : l.variant?.id === option.id,
-    );
+    const target = findLineForProduct(lines.value, option);
 
     if (target) {
         target.quantity = (Number(target.quantity) || 0) + 1;
@@ -674,88 +662,51 @@ function isPieceLine(row) {
     return !!row.variant && pieceVariantIdSet.value.has(row.variant.id);
 }
 
-// Sufijo de la cantidad de una línea de variante: piezas o cajas.
+// Las reglas de cada línea viven en lib/documentLines.js; aquí solo se les pasa
+// lo que depende de los stores (si es por pieza, el producto simple "en vivo").
 function lineUnit(row) {
-    return variantStockUnit(isPieceLine(row) ? "pieza" : null).short;
+    return documentLines.lineUnit(isPieceLine(row));
 }
 
-// La cantidad de una línea de variante por caja son sus cajas (row.quantity);
-// estos son los m² que cubren, sobre los que se cobra el precio por m². Null en
-// variantes por pieza (no derivan m²).
 function coveredM2(row) {
-    if (isPieceLine(row)) return null;
-    return squareMetersForBoxes(row.quantity || 0, row.variant?.m2_per_box);
+    return documentLines.coveredM2(row, isPieceLine(row));
 }
 
-// Solo UX: las cajas se pueden bajar a mano por debajo de lo requerido, y se avisa.
 function coversRequested(row) {
-    if (!(row.requestedM2 > 0)) return true;
-    const covered = coveredM2(row);
-    return covered === null || covered >= row.requestedM2;
+    return documentLines.coversRequested(row, isPieceLine(row));
 }
 
-// Los m² requeridos sugieren las cajas (hacia arriba); borrarlos no toca las
-// cajas ya capturadas.
-function applyRequestedM2(row, value) {
-    row.requestedM2 = value;
-    const boxes = value > 0 ? boxesForSquareMeters(value, row.variant?.m2_per_box) : null;
-    if (boxes) row.quantity = boxes;
-}
-
-// Sin m2_per_box no se sabe qué cubren las cajas: el backend rechaza la línea
-// (nunca asume 1:1). Se avisa desde que se elige, no hasta guardar. No aplica a
-// variantes por pieza, que no derivan m².
 function boxConversionError(row) {
-    if (!row.variant || isPieceLine(row) || Number(row.variant.m2_per_box) > 0) return "";
-    return "Esta variante no tiene m² por caja configurado; no se puede cotizar.";
-}
-
-// null = el producto no lleva control de stock: nunca hay aviso. undefined (el
-// dato no vino en la respuesta) se trata igual porque no hay contra qué comparar.
-function isUntracked(stock) {
-    return stock === null || stock === undefined;
+    return documentLines.boxConversionError(row, isPieceLine(row), "cotizar");
 }
 
 function lineStock(row) {
-    return row.simpleProduct ? simpleProductFor(row).stock_quantity : row.variant.stock_boxes;
+    return documentLines.toStock(row.simpleProduct ? simpleProductFor(row).stock_quantity : row.variant.stock_boxes);
 }
 
 function hasInsufficientStock(row) {
-    const stock = lineStock(row);
-    if (isUntracked(stock)) return false;
-    return (row.quantity || 0) > Number(stock);
+    return documentLines.exceedsStock(row, lineStock(row));
 }
 
 // Es un aviso, no un error: la cotización se puede guardar igual (el stock se
 // valida hasta convertirla en venta).
 function stockWarning(row) {
-    const stock = lineStock(row);
-    if (isUntracked(stock)) return "";
-
-    if (row.simpleProduct) {
-        return `Stock insuficiente: hay ${formatQuantity(stock)} uds. y se cotizan ${formatQuantity(row.quantity)}. Consultar disponibilidad sobre pedido.`;
-    }
-
-    const unit = isPieceLine(row) ? (stock === 1 ? "pieza" : "piezas") : stock === 1 ? "caja" : "cajas";
-    return `Stock insuficiente: hay ${stock} ${unit} y se cotizan ${row.quantity}. Consultar disponibilidad sobre pedido.`;
+    return documentLines.stockShortageMessage(row, lineStock(row), isPieceLine(row), {
+        verb: "cotizan",
+        consequence: "Consultar disponibilidad sobre pedido.",
+    });
 }
 
-// Precio de una caja completa al precio por m² de la línea (lo que vale cada
-// caja que se entrega). Null en productos simples, variantes por pieza o sin m2_per_box.
+// En cotización el precio no se edita: todo se calcula al precio de lista.
 function boxPrice(row) {
-    if (!row.variant || isPieceLine(row)) return null;
-    const m2PerBox = squareMetersForBoxes(1, row.variant.m2_per_box);
-    if (m2PerBox === null) return null;
-    return Math.round(m2PerBox * (Number(row.variant.price_per_m2) || 0) * 100) / 100;
+    return documentLines.boxPrice(row, isPieceLine(row), row.variant?.price_per_m2);
 }
 
 function lineSubtotal(row) {
-    if (!row.quantity) return 0;
-    if (row.simpleProduct) return row.quantity * simpleProductFor(row).price;
-    // Mismo cálculo que QuoteController@syncItems: piezas × precio por pieza.
-    if (isPieceLine(row)) return row.quantity * row.variant.price_per_box;
-    if (row.variant) return (coveredM2(row) ?? 0) * row.variant.price_per_m2;
-    return 0;
+    if (!documentLines.hasProduct(row)) return 0;
+    const isPiece = isPieceLine(row);
+    const simpleProduct = row.simpleProduct ? simpleProductFor(row) : null;
+    return documentLines.lineSubtotal(row, isPiece, documentLines.listPrice(row, isPiece, simpleProduct));
 }
 
 const subtotal = computed(() => lines.value.reduce((sum, row) => sum + lineSubtotal(row), 0));
@@ -772,14 +723,9 @@ const loadError = ref(null);
 // cada línea se evalúa en vivo y desaparece en cuanto se captura un valor válido.
 const submitAttempted = ref(false);
 
-function hasProduct(row) {
-    return !!(row.variant || row.simpleProduct);
-}
-
 function quantityError(row) {
-    if (!submitAttempted.value || !hasProduct(row) || row.quantity > 0) return "";
-    if (!row.variant) return "Captura la cantidad.";
-    return isPieceLine(row) ? "Captura las piezas." : "Captura las cajas.";
+    if (!submitAttempted.value) return "";
+    return documentLines.missingQuantityMessage(row, isPieceLine(row));
 }
 
 const handleSubmit = async () => {
@@ -812,11 +758,7 @@ const handleSubmit = async () => {
         const payload = {
             customer_id: form.customer_id || null,
             notes: form.notes || null,
-            items: validLines.map((l) =>
-                l.simpleProduct
-                    ? { simple_product_id: l.simpleProduct.id, quantity: l.quantity }
-                    : { product_variant_id: l.variant.id, boxes: l.quantity },
-            ),
+            items: validLines.map(lineItemPayload),
         };
 
         if (isEdit.value) {
