@@ -69,6 +69,49 @@
                         </div>
                         <p v-if="errors.email" class="text-danger text-xs mt-1.5">{{ errors.email }}</p>
                     </div>
+
+                    <div class="space-y-1.5 sm:col-span-2">
+                        <FieldLabel html-for="address" text="Domicilio" />
+                        <div class="relative">
+                            <i class="ti ti-map-pin absolute left-3 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none" aria-hidden="true"></i>
+                            <InputTextCustom
+                                id="address"
+                                v-model="form.address"
+                                :error="errors.address"
+                                autocomplete="off"
+                                placeholder="Ej. Av. Constitución 1234"
+                                class="pl-9"
+                                @input="errors.address = ''"
+                            />
+                        </div>
+                        <p v-if="errors.address" class="text-danger text-xs mt-1.5">{{ errors.address }}</p>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <FieldLabel html-for="neighborhood" text="Colonia" />
+                        <InputTextCustom
+                            id="neighborhood"
+                            v-model="form.neighborhood"
+                            :error="errors.neighborhood"
+                            autocomplete="off"
+                            placeholder="Ej. Centro"
+                            @input="errors.neighborhood = ''"
+                        />
+                        <p v-if="errors.neighborhood" class="text-danger text-xs mt-1.5">{{ errors.neighborhood }}</p>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <FieldLabel html-for="city" text="Ciudad" />
+                        <InputTextCustom
+                            id="city"
+                            v-model="form.city"
+                            :error="errors.city"
+                            autocomplete="off"
+                            placeholder="Ej. Monterrey"
+                            @input="errors.city = ''"
+                        />
+                        <p v-if="errors.city" class="text-danger text-xs mt-1.5">{{ errors.city }}</p>
+                    </div>
                 </div>
             </div>
 
@@ -152,12 +195,18 @@ const form = reactive({
     name: '',
     phone: '',
     email: '',
+    address: '',
+    neighborhood: '',
+    city: '',
 })
 
 const errors = reactive({
     name: '',
     phone: '',
     email: '',
+    address: '',
+    neighborhood: '',
+    city: '',
 })
 
 const submitting = ref(false)
@@ -171,7 +220,14 @@ const loadError = ref(null)
 // (creación) o al terminar de cargar el cliente (edición). Se comparan los
 // valores ya recortados, igual que el payload que se envía.
 function serializeForm() {
-    return JSON.stringify([form.name.trim(), form.phone.trim(), form.email.trim()])
+    return JSON.stringify([
+        form.name.trim(),
+        form.phone.trim(),
+        form.email.trim(),
+        form.address.trim(),
+        form.neighborhood.trim(),
+        form.city.trim(),
+    ])
 }
 
 const savedSnapshot = ref(serializeForm())
@@ -222,6 +278,9 @@ async function loadCustomer() {
     form.name = customer.name
     form.phone = customer.phone ?? ''
     form.email = customer.email ?? ''
+    form.address = customer.address ?? ''
+    form.neighborhood = customer.neighborhood ?? ''
+    form.city = customer.city ?? ''
     savedSnapshot.value = serializeForm()
 }
 
@@ -250,6 +309,9 @@ async function handleSubmit() {
         name: form.name.trim(),
         phone: form.phone.trim() || null,
         email: form.email.trim() || null,
+        address: form.address.trim() || null,
+        neighborhood: form.neighborhood.trim() || null,
+        city: form.city.trim() || null,
     }
 
     try {

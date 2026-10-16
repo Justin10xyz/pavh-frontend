@@ -93,6 +93,27 @@
                             </dd>
                             <dd v-else class="text-text-muted">Sin correo</dd>
                         </div>
+
+                        <!-- Dirección: solo los campos capturados; si no hay ninguno,
+                             un solo "Sin dirección" en vez de tres vacíos. -->
+                        <template v-if="hasAddress">
+                            <div v-if="customer.address" class="space-y-1 sm:col-span-2">
+                                <dt class="text-xs font-medium text-text-muted">Domicilio</dt>
+                                <dd class="text-text break-words">{{ customer.address }}</dd>
+                            </div>
+                            <div v-if="customer.neighborhood" class="space-y-1">
+                                <dt class="text-xs font-medium text-text-muted">Colonia</dt>
+                                <dd class="text-text break-words">{{ customer.neighborhood }}</dd>
+                            </div>
+                            <div v-if="customer.city" class="space-y-1">
+                                <dt class="text-xs font-medium text-text-muted">Ciudad</dt>
+                                <dd class="text-text break-words">{{ customer.city }}</dd>
+                            </div>
+                        </template>
+                        <div v-else class="space-y-1 sm:col-span-2">
+                            <dt class="text-xs font-medium text-text-muted">Dirección</dt>
+                            <dd class="text-text-muted">Sin dirección</dd>
+                        </div>
                     </dl>
                 </div>
 
@@ -264,6 +285,10 @@ const customer = computed(() => {
     const current = customers.currentCustomer
     return current && String(current.id) === String(route.params.id) ? current : null
 })
+
+const hasAddress = computed(() =>
+    !!(customer.value?.address || customer.value?.neighborhood || customer.value?.city)
+)
 
 // customers.deleteCustomer() solo quita la fila del listado: limpiar el
 // detalle del cliente borrado le toca a esta vista.
