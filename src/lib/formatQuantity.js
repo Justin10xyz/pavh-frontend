@@ -4,5 +4,5 @@ const quantityFormatter = new Intl.NumberFormat('es-MX', { maximumFractionDigits
 // números o los strings decimales que serializa Laravel; un valor vacío o no
 // numérico se muestra como 0, igual que formatCurrency.
 export function formatQuantity(value) {
-	return quantityFormatter.format(Number(value) || 0)
+    return quantityFormatter.format(Number(value) || 0)
 }

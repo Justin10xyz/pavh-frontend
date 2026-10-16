@@ -1,8 +1,8 @@
 <template>
-	<component :is="currentLayout">
-		<RouterView />
-	</component>
-	<AppToast />
+    <component :is="currentLayout">
+        <RouterView />
+    </component>
+    <AppToast />
 </template>
 
 <script setup>
@@ -15,13 +15,13 @@ import AppToast from '@/components/layout/AppToast.vue'
 const route = useRoute()
 
 const layouts = {
-	AppLayout,
-	AuthLayout,
+    AppLayout,
+    AuthLayout,
 }
 
 const currentLayout = computed(() => {
-	const layoutName = route.meta.layout || 'AppLayout'
-	return layouts[layoutName] || AppLayout
+    const layoutName = route.meta.layout || 'AppLayout'
+    return layouts[layoutName] || AppLayout
 })
 </script>
 
