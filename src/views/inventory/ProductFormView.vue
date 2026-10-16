@@ -135,12 +135,17 @@
                             v-model="form.unit_type_id"
                             :options="catalogs.unitTypes"
                             :loading="catalogs.loading"
+                            :disabled="hasSavedVariants"
                             :error="errors.unit_type_id"
                             placeholder="Selecciona una unidad"
                             @change="errors.unit_type_id = ''"
                         />
                         <p v-if="errors.unit_type_id" class="text-danger text-[12px] mt-1.5">
                             {{ errors.unit_type_id }}
+                        </p>
+                        <!-- Mismo bloqueo que el backend (Product::unitTypeChangeBlockedMessage). -->
+                        <p v-else-if="hasSavedVariants" class="text-xs text-text-muted mt-1.5">
+                            No se puede cambiar si el producto ya tiene variantes registradas.
                         </p>
                     </div>
 
@@ -298,9 +303,9 @@
                     </div>
                 </div>
 
-                <!-- Grupo 2 — Datos por caja. En pisos por pieza solo queda piezas por
-				     caja: m², kilos y cajas por tarima son logística de caja que no aplica. -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                <!-- Grupo 2 — Datos por caja. No aplica a pisos por pieza: piezas, m²,
+				     kilos y cajas por tarima son empaque/logística de caja. -->
+                <div v-if="!soldByPiece" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                     <div class="space-y-1.5">
                         <FieldLabel :html-for="`pieces_per_box-${group.id}`" text="Piezas por caja" required />
                         <InputNumberCustom
@@ -320,7 +325,7 @@
                         </p>
                     </div>
 
-                    <div v-if="!soldByPiece" class="space-y-1.5">
+                    <div class="space-y-1.5">
                         <FieldLabel :html-for="`kilos_per_box-${group.id}`" text="Kilos por caja" />
                         <InputNumberCustom
                             :id="`kilos_per_box-${group.id}`"
@@ -339,7 +344,7 @@
                         </p>
                     </div>
 
-                    <div v-if="!soldByPiece" class="space-y-1.5">
+                    <div class="space-y-1.5">
                         <FieldLabel :html-for="`m2_per_box-${group.id}`" text="m² por caja" required />
                         <InputNumberCustom
                             :id="`m2_per_box-${group.id}`"
@@ -355,7 +360,7 @@
                         </p>
                     </div>
 
-                    <div v-if="!soldByPiece" class="space-y-1.5">
+                    <div class="space-y-1.5">
                         <FieldLabel :html-for="`boxes_per_pallet-${group.id}`" text="Cajas por tarima" />
                         <InputNumberCustom
                             :id="`boxes_per_pallet-${group.id}`"
@@ -704,6 +709,7 @@ const pieceExcludedVariantFields = [
     "m2_per_box",
     "kilos_per_box",
     "boxes_per_pallet",
+    "pieces_per_box",
 ];
 
 const errors = reactive({
@@ -775,6 +781,12 @@ function createVariantGroup({ spec = {}, colorRows = [createColorRow()] } = {}) 
 }
 
 const variantGroups = ref([createVariantGroup()]);
+
+// Solo en edición hay filas con `variantId`. Con variantes guardadas la Unidad
+// no se puede cambiar (el backend lo rechaza), así que el selector se bloquea.
+const hasSavedVariants = computed(() =>
+    variantGroups.value.some((group) => group.colorRows.some((row) => row.variantId)),
+);
 
 function addVariantGroup() {
     variantGroups.value.push(createVariantGroup());
@@ -984,12 +996,17 @@ function buildVariantPayload(productId, group, row) {
 
 // Solo mapea a `errors` los campos del producto — es lo único validado antes
 // de que exista un `productId`, momento en el que aplican los 422.
-function applyServerErrors(serverErrors) {
+// Devuelve si aplicó alguno. Los guards del backend (ej. el bloqueo de cambio
+// de unidad) responden 422 solo con `message`, sin `errors`.
+function applyServerErrors(serverErrors = {}) {
+    let applied = false;
     for (const field of Object.keys(serverErrors)) {
         if (field in errors) {
             errors[field] = serverErrors[field][0];
+            applied = true;
         }
     }
+    return applied;
 }
 
 // Cambios de stock en variantes existentes, con lo que se muestra al confirmar.
@@ -1094,7 +1111,11 @@ const handleSubmit = async () => {
                 ? "El producto se actualizó correctamente, pero ocurrió un error al guardar una o más variantes. Revísalo desde el inventario."
                 : "El producto se creó correctamente, pero ocurrió un error al guardar una o más variantes. Revísalo desde el inventario.";
         } else if (err.response?.status === 422) {
-            applyServerErrors(err.response.data.errors);
+            // Mismo criterio que CategoryFormDialog/SupplierFormDialog: sin error
+            // de campo aplicable, el mensaje va como error general.
+            if (!applyServerErrors(err.response.data.errors ?? {})) {
+                generalError.value = err.response.data.message || "No se pudo guardar el producto.";
+            }
         } else {
             generalError.value =
                 err.response?.data?.message || "No se pudo guardar el producto. Intenta de nuevo.";
