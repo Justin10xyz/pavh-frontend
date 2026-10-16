@@ -376,10 +376,6 @@ function applyServerErrors(serverErrors) {
 			errors[field] = serverErrors[field][0];
 		}
 	}
-	// Los mensajes de validación del backend llegan en inglés (ver Pendientes en
-	// PROJECT.md). Espacios y largo ya se validan aquí, así que el que queda es
-	// el de código repetido.
-	if (serverErrors.code) errors.code = "Ya existe otro producto con este código.";
 }
 
 async function handleSubmit() {
