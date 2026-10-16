@@ -10,14 +10,14 @@ import { useToast } from 'primevue/usetoast'
 const LIFE_MS = 4000
 
 export function useNotify() {
-	const toast = useToast()
+    const toast = useToast()
 
-	return {
-		success(summary, detail) {
-			toast.add({ severity: 'success', summary, detail, life: LIFE_MS })
-		},
-		info(summary, detail) {
-			toast.add({ severity: 'info', summary, detail, life: LIFE_MS })
-		},
-	}
+    return {
+        success(summary, detail) {
+            toast.add({ severity: 'success', summary, detail, life: LIFE_MS })
+        },
+        info(summary, detail) {
+            toast.add({ severity: 'info', summary, detail, life: LIFE_MS })
+        },
+    }
 }

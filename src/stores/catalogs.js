@@ -3,70 +3,91 @@ import { ref } from 'vue'
 import axios from '@/lib/axios'
 
 export const useCatalogsStore = defineStore('catalogs', () => {
-	const suppliers = ref([])
-	const categories = ref([])
-	const unitTypes = ref([])
-	const commissionCategories = ref([])
-	const loading = ref(false)
-	const error = ref(null)
-	const initialized = ref(false)
+    const suppliers = ref([])
+    const categories = ref([])
+    const unitTypes = ref([])
+    const commissionCategories = ref([])
+    const loading = ref(false)
+    const error = ref(null)
+    const initialized = ref(false)
 
-	async function fetchCatalogs() {
-		if (initialized.value) return
+    async function fetchCatalogs() {
+        if (initialized.value) return
 
-		loading.value = true
-		error.value = null
+        loading.value = true
+        error.value = null
 
-		try {
-			const [suppliersRes, categoriesRes, unitTypesRes, commissionCategoriesRes] = await Promise.all([
-				axios.get('/api/suppliers'),
-				axios.get('/api/categories'),
-				axios.get('/api/unit-types'),
-				axios.get('/api/commission-categories'),
-			])
+        try {
+            const [suppliersRes, categoriesRes, unitTypesRes, commissionCategoriesRes] = await Promise.all([
+                axios.get('/api/suppliers'),
+                axios.get('/api/categories'),
+                axios.get('/api/unit-types'),
+                axios.get('/api/commission-categories'),
+            ])
 
-			suppliers.value = suppliersRes.data.data
-			categories.value = categoriesRes.data.data
-			unitTypes.value = unitTypesRes.data.data
-			commissionCategories.value = commissionCategoriesRes.data.data
-			initialized.value = true
-		} catch (err) {
-			error.value = 'No se pudieron cargar los catálogos.'
-			console.error(err)
-		} finally {
-			loading.value = false
-		}
-	}
+            suppliers.value = suppliersRes.data.data
+            categories.value = categoriesRes.data.data
+            unitTypes.value = unitTypesRes.data.data
+            commissionCategories.value = commissionCategoriesRes.data.data
+            initialized.value = true
+        } catch (err) {
+            error.value = 'No se pudieron cargar los catálogos.'
+            console.error(err)
+        } finally {
+            loading.value = false
+        }
+    }
 
-	// Mutación puntual: agrega la categoría recién creada sin refetch completo.
-	// El backend lista categorías por id, así que la nueva va al final.
-	function addCategory(category) {
-		categories.value.push(category)
-	}
+    // Mutación puntual: agrega el proveedor recién creado sin refetch completo.
+    // El backend lista proveedores por id, así que el nuevo va al final.
+    function addSupplier(supplier) {
+        suppliers.value.push(supplier)
+    }
 
-	// Mutación puntual: reemplaza en su lugar los datos de la categoría editada,
-	// así los selects que ya la muestran se actualizan sin refetch.
-	function updateCategory(id, payload) {
-		const category = categories.value.find((c) => c.id === id)
-		if (category) Object.assign(category, payload)
-	}
+    // Mutación puntual: reemplaza en su lugar los datos del proveedor editado,
+    // así los selects que ya lo muestran se actualizan sin refetch.
+    function updateSupplier(id, payload) {
+        const supplier = suppliers.value.find((s) => s.id === id)
+        if (supplier) Object.assign(supplier, payload)
+    }
 
-	// Mutación puntual: quita la categoría eliminada (soft delete en el backend).
-	function removeCategory(id) {
-		categories.value = categories.value.filter((c) => c.id !== id)
-	}
+    // Mutación puntual: quita el proveedor eliminado (soft delete en el backend).
+    function removeSupplier(id) {
+        suppliers.value = suppliers.value.filter((s) => s.id !== id)
+    }
 
-	return {
-		suppliers,
-		categories,
-		unitTypes,
-		commissionCategories,
-		loading,
-		error,
-		initialized,
-		fetchCatalogs,
-		addCategory,
-		updateCategory,
-		removeCategory,
-	}
+    // Mutación puntual: agrega la categoría recién creada sin refetch completo.
+    // El backend lista categorías por id, así que la nueva va al final.
+    function addCategory(category) {
+        categories.value.push(category)
+    }
+
+    // Mutación puntual: reemplaza en su lugar los datos de la categoría editada,
+    // así los selects que ya la muestran se actualizan sin refetch.
+    function updateCategory(id, payload) {
+        const category = categories.value.find((c) => c.id === id)
+        if (category) Object.assign(category, payload)
+    }
+
+    // Mutación puntual: quita la categoría eliminada (soft delete en el backend).
+    function removeCategory(id) {
+        categories.value = categories.value.filter((c) => c.id !== id)
+    }
+
+    return {
+        suppliers,
+        categories,
+        unitTypes,
+        commissionCategories,
+        loading,
+        error,
+        initialized,
+        fetchCatalogs,
+        addSupplier,
+        updateSupplier,
+        removeSupplier,
+        addCategory,
+        updateCategory,
+        removeCategory,
+    }
 })

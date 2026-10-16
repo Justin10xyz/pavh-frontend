@@ -11,20 +11,20 @@ const AUTH_URLS = ['/sanctum/csrf-cookie', '/api/login', '/api/logout', '/api/us
 // para volver a la misma pantalla. Se registra desde main.js, no en axios.js,
 // para no crear un import circular axios → router → store → axios.
 export function setupSessionExpiry(router) {
-	api.interceptors.response.use(
-		(response) => response,
-		(error) => {
-			const status = error.response?.status
-			const auth = useAuthStore()
+    api.interceptors.response.use(
+        (response) => response,
+        (error) => {
+            const status = error.response?.status
+            const auth = useAuthStore()
 
-			// `isAuthenticated` evita redirigir varias veces cuando una vista
-			// dispara varias peticiones en paralelo y todas responden 401.
-			if ((status === 401 || status === 419) && auth.isAuthenticated && !AUTH_URLS.includes(error.config?.url)) {
-				auth.expireSession()
-				router.replace({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })
-			}
+            // `isAuthenticated` evita redirigir varias veces cuando una vista
+            // dispara varias peticiones en paralelo y todas responden 401.
+            if ((status === 401 || status === 419) && auth.isAuthenticated && !AUTH_URLS.includes(error.config?.url)) {
+                auth.expireSession()
+                router.replace({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })
+            }
 
-			return Promise.reject(error)
-		},
-	)
+            return Promise.reject(error)
+        },
+    )
 }

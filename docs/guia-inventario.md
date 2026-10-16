@@ -25,6 +25,23 @@ En **Configuración → Categorías**, da clic en el ícono de **bote de basura*
 
 Una categoría eliminada deja de aparecer en las listas, pero las ventas y cotizaciones anteriores no cambian. Después puedes crear otra con el mismo nombre y prefijo.
 
+### Proveedores
+
+Cada piso tiene un **proveedor** (por ejemplo, Interceramic). Los productos de *Otros productos* no llevan proveedor.
+
+Si el proveedor que necesitas todavía no existe, da clic en el botón **+** junto a la lista de **Proveedor** en el formulario del piso. Se abre la ventana **Nuevo proveedor** sin salir del formulario y, al guardarlo, queda seleccionado en el piso.
+
+Para ver todos los proveedores, cambiarles el nombre o eliminarlos, ve a **Configuración → Proveedores**. No puede haber dos proveedores con el mismo nombre.
+
+### Eliminar un proveedor
+
+En **Configuración → Proveedores**, da clic en el ícono de **bote de basura** del proveedor:
+
+- Si el proveedor **no tiene productos**, se pide confirmación antes de eliminarlo.
+- Si **tiene productos**, no se puede eliminar. La ventana dice cuántos tiene; primero hay que editar esos pisos y cambiarles el proveedor.
+
+Un proveedor eliminado deja de aparecer en las listas, pero las ventas y cotizaciones anteriores no cambian. Después puedes crear otro con el mismo nombre.
+
 ---
 
 ## 2. Catálogo de pisos
@@ -34,8 +51,8 @@ Una categoría eliminada deja de aparecer en las listas, pero las ventas y cotiz
 Cada piso se muestra en tres niveles:
 
 1. **Producto (línea)**: el nombre del piso, con su categoría, proveedor y unidad de venta.
-2. **Medida**: cada tamaño del producto, con sus datos técnicos (PEI, ETT, categoría de comisión), su precio por caja y por m², y cuántas piezas, m² y kilos trae cada caja.
-3. **Color**: cada color de esa medida, con su código, su stock en cajas y su estado.
+2. **Medida**: cada tamaño del producto, con sus datos técnicos (PEI, ETT, [código de comisión](#códigos-de-comisión)), su precio por caja y por m², y cuántas piezas, m² y kilos trae cada caja. En los pisos que se venden por pieza solo se muestra el precio por pieza (ver [Pisos que se venden por pieza](#pisos-que-se-venden-por-pieza)).
+3. **Color**: cada color de esa medida, con su código, su stock en cajas (o en piezas) y su estado.
 
 ### Abrir y cerrar productos y medidas
 
@@ -61,9 +78,57 @@ El stock mínimo de cada color se configura al editar el producto.
 | **Stock bajo** (rojo) | El stock llegó al mínimo o está por debajo. |
 | **Sin control** (gris) | Este color no lleva control de existencias. |
 
+### Códigos de comisión
+
+Cada medida puede llevar un **código de comisión**, que indica cuánta comisión le deja al vendedor y, por lo tanto, cuánto descuento se le puede dar al cliente. En el catálogo aparece junto al PEI y el ETT como un **punto de color con su código**; al pasar el cursor encima se ve su nombre.
+
+| Código | Color | Comisión para el vendedor |
+| --- | --- | --- |
+| **Vo** | Verde oscuro | La más alta |
+| **Vc** | Verde claro | Alta |
+| **A** | Amarillo | Media |
+| **N** | Naranja | Baja |
+| **R** | Rojo | La más baja |
+
+El código se elige al crear o editar el piso, en la lista **Categoría de comisión** de cada medida (ordenada de la comisión más alta a la más baja). Es opcional: una medida sin código no muestra nada.
+
+El mismo punto de color aparece en cada producto que agregas a una **cotización** o a una **venta**, junto al color y la medida, para saber cuánto descuento se puede dar antes de ajustar el precio. Como es un código de colores, el cliente no ve cuánto gana el vendedor aunque vea la pantalla.
+
 ### Editar un producto
 
 El ícono de **lápiz** en la fila del producto abre el formulario de edición. Ahí se cambian los datos generales, las medidas, los precios, los colores, el stock y el stock mínimo. El stock también se puede corregir desde ahí (ver [Desde el formulario del producto](#desde-el-formulario-del-producto)).
+
+Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), el motivo aparece en un aviso rojo arriba del formulario.
+
+### Pisos que se venden por pieza
+
+Algunos pisos, como mosaicos o decorados, no se venden por caja ni por m², sino **por pieza**. Para registrarlos, en el formulario del piso elige **pieza** en la lista **Unidad**. El formulario cambia:
+
+- El precio se captura como **Precio por pieza**.
+- Desaparecen los datos que solo aplican a cajas: **PEI**, **ETT**, **Precio por m²**, **Piezas por caja**, **m² por caja**, **Kilos por caja** y **Cajas por tarima**.
+- El stock de cada color se cuenta en **piezas**.
+
+En el catálogo, estos pisos muestran su precio como **"$85.50/pieza"** y su stock como **"12 pzas"**. Las ventanas de ajuste e historial de stock también hablan de piezas.
+
+En **cotizaciones y ventas** se captura directamente cuántas piezas lleva el cliente: no aparece el campo de **m² requeridos** y el total es piezas × precio por pieza. Al vender, se descuentan esas piezas del stock.
+
+> La **Unidad** de un piso no se puede cambiar una vez que tiene colores registrados: la lista aparece deshabilitada con un aviso. Si un piso se registró con la unidad equivocada, hay que crearlo de nuevo con la unidad correcta.
+
+### Capturar un piso con el teclado
+
+El formulario del piso se puede llenar completo sin usar el mouse:
+
+- Al abrir **Nuevo piso**, el cursor ya está en **Proveedor**: se puede empezar a capturar de inmediato.
+- **Enter** avanza al siguiente campo, igual que **Tab** pero sin detenerse en los botones. **Shift + Tab** regresa al anterior. Enter ya no intenta guardar el piso a medio capturar.
+- En las listas (Proveedor, Categoría, Unidad, PEI…), escribir la primera letra abre la lista y salta a la opción que empieza con ella; las **flechas** recorren la lista y **Enter** elige. Con la lista cerrada, Enter pasa al siguiente campo.
+- Al pasar a un campo con Enter, su contenido queda seleccionado: lo que escribas lo reemplaza.
+- En los colores, **Enter** en **Stock mínimo** de la última fila agrega un color nuevo y deja el cursor en él, como en una hoja de cálculo. Si esa fila todavía no tiene color, Enter pasa al siguiente campo sin agregar filas vacías.
+- Al presionar **+ Agregar color**, el cursor pasa directo al campo **Color** de la fila nueva. Con **+ Agregar medida**, pasa a la **Medida** nueva.
+- Al quitar un color o una medida, el cursor se queda en el color o la medida de al lado, para seguir capturando.
+- Para guardar sin buscar el botón: **Ctrl + S** o **Ctrl + Enter** desde cualquier campo (en Mac, **⌘ + S** o **⌘ + Enter**). El atajo aparece como recordatorio junto al botón **Guardar**.
+- Si al guardar falta algún dato, el cursor salta al primer campo marcado en rojo.
+- Con **Tab** también se llega a los botones (**+**, **Quitar medida**, la **X** de cada color, **+ Agregar color**…). El botón donde está el cursor se marca con un contorno dorado y se presiona con **Enter** o **Espacio**.
+- En las ventanas de confirmación el cursor ya está en un botón. Al **confirmar cambios de stock**, Enter guarda; al **eliminar un color**, Enter cancela (para no borrar por accidente) y hay que pasar con Tab a **Eliminar**. **Esc** cierra la ventana sin hacer nada.
 
 ---
 
@@ -82,7 +147,7 @@ Arriba de la tabla hay herramientas para encontrar productos rápido:
 
 ## 4. Control de stock
 
-Los pisos y los demás productos funcionan igual. El stock se puede cambiar de dos formas: con los íconos de la tabla del inventario o desde el formulario de edición del producto. La diferencia es que en pisos el stock se cuenta en **cajas** y en otros productos en **unidades**.
+Los pisos y los demás productos funcionan igual. El stock se puede cambiar de dos formas: con los íconos de la tabla del inventario o desde el formulario de edición del producto. La diferencia es que en pisos el stock se cuenta en **cajas** (o en **piezas**, si el piso se vende por pieza) y en otros productos en **unidades**.
 
 ### Activar el seguimiento de stock
 
@@ -156,6 +221,15 @@ A diferencia de los pisos, el código de estos productos **se captura a mano** e
 
 El código también sirve para buscar el producto en el inventario, en cotizaciones y en ventas.
 
+### Capturar un producto con el teclado
+
+Funciona igual que en los pisos (ver [Capturar un piso con el teclado](#capturar-un-piso-con-el-teclado)):
+
+- Al abrir **Nuevo producto general**, el cursor ya está en **Categoría**.
+- **Enter** avanza al siguiente campo. En **Descripción**, Enter hace un salto de línea, como en cualquier texto.
+- **Ctrl + S** o **Ctrl + Enter** guardan desde cualquier campo.
+- Si falta un dato o el código ya existe, el cursor salta al campo que hay que corregir.
+
 ---
 
 ## Registro de cambios
@@ -173,3 +247,19 @@ Mejoras que se van agregando al módulo:
 | 2026-10-15 | **Nuevo piso / producto general**: botón **+** junto a la lista de categorías para crear una categoría nueva sin salir del formulario; queda seleccionada al guardarla. |
 | 2026-10-15 | **Configuración → Categorías**: ahora se pueden eliminar categorías que no tengan productos. |
 | 2026-10-15 | **Otros productos**: nuevo campo **Código** (opcional, capturado a mano) en el formulario, columna Código en la tabla y búsqueda por código en inventario, cotizaciones y ventas. |
+| 2026-10-16 | **Configuración → Proveedores**: nueva pantalla para agregar, editar y eliminar proveedores. Solo se pueden eliminar los que no tengan productos. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: botón **+** junto a la lista de proveedores para crear uno nuevo sin salir del formulario; queda seleccionado al guardarlo. |
+| 2026-10-16 | **Categorías y proveedores**: al guardar un nombre que ya existe, el aviso ahora dice claramente *"Ya existe una categoría con ese nombre."* o *"Ya existe un proveedor con ese nombre."* |
+| 2026-10-16 | **Pisos por pieza**: los pisos con unidad **pieza** (mosaicos, decorados) se registran solo con precio por pieza, sin PEI, ETT ni datos de caja, y su stock se cuenta en piezas. |
+| 2026-10-16 | **Catálogo de pisos**: los pisos por pieza muestran su precio como *"/pieza"* y su stock en *"pzas"*, también en las ventanas de ajuste e historial de stock. |
+| 2026-10-16 | **Cotizaciones y ventas**: los pisos por pieza se cotizan y venden capturando el número de piezas, sin m² requeridos; el detalle y el PDF los muestran en piezas. |
+| 2026-10-16 | **Editar piso**: la **Unidad** ya no se puede cambiar si el piso tiene colores registrados. |
+| 2026-10-16 | **Editar piso**: cuando un cambio no se puede guardar, ahora se muestra el motivo en lugar de no pasar nada. |
+| 2026-10-16 | **Códigos de comisión**: cinco códigos (Vo, Vc, A, N, R) del que más comisión deja al que menos. El catálogo los muestra con un punto de color junto al código, y la lista del formulario dice el nombre de cada uno (*"Vo · Verde oscuro"*). |
+| 2026-10-16 | **Cotizaciones y ventas**: cada piso agregado muestra su código de comisión (punto de color y código) junto al color y la medida. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: captura con teclado más fluida. El cursor empieza en Proveedor, pasa solo al color o medida nuevos al agregarlos, no se pierde al quitarlos, y salta al primer campo con error al intentar guardar. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: **Enter** avanza al siguiente campo en lugar de intentar guardar, y en el último color agrega uno nuevo. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: atajo **Ctrl + S** (o **Ctrl + Enter**) para guardar desde cualquier campo. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: los botones muestran un contorno dorado cuando el cursor está en ellos, y las ventanas de confirmación ya se pueden contestar con Enter o Esc. |
+| 2026-10-16 | **Nuevo / Editar producto general**: la misma captura con teclado que en los pisos (cursor inicial en Categoría, Enter para avanzar, Ctrl + S para guardar y salto al campo con error). |
+| 2026-10-16 | **Nuevo piso / Editar piso**: si al guardar el sistema rechaza un dato, el cursor salta a ese campo. |
