@@ -1,12 +1,12 @@
 <template>
-	<InputNumber
-		v-model="numberModel"
-		:input-id="id"
-		:invalid="!!error"
-		locale="es-MX"
-		:pt="pt"
-		@input="numberModel = $event.value"
-	/>
+    <InputNumber
+        v-model="numberModel"
+        :input-id="id"
+        :invalid="!!error"
+        locale="es-MX"
+        :pt="pt"
+        @input="numberModel = $event.value"
+    />
 </template>
 
 <script setup>
@@ -24,25 +24,25 @@ const model = defineModel({ type: [Number, String], default: null })
 // actualiza mientras se escribe (ej. para que los totales de venta se recalculen al
 // momento). El clamp a `min`/`max` sigue aplicándose en blur.
 const numberModel = computed({
-	get: () => (model.value === null || model.value === '' ? null : Number(model.value)),
-	set: (value) => (model.value = value),
+    get: () => (model.value === null || model.value === '' ? null : Number(model.value)),
+    set: (value) => (model.value = value),
 })
 
 const props = defineProps({
-	// Se pasa como `inputId` para que el <label for> apunte al <input> interno.
-	id: { type: String, default: undefined },
-	error: { type: [String, Boolean], default: '' },
+    // Se pasa como `inputId` para que el <label for> apunte al <input> interno.
+    id: { type: String, default: undefined },
+    error: { type: [String, Boolean], default: '' },
 })
 
 const pt = computed(() => ({
-	root: { class: 'block w-full' },
-	pcInputText: {
-		root: {
-			class: [
-				'w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-10 rounded-md disabled:opacity-60 disabled:cursor-not-allowed',
-				props.error ? 'border-danger focus:border-danger' : 'border-border focus:border-accent',
-			],
-		},
-	},
+    root: { class: 'block w-full' },
+    pcInputText: {
+        root: {
+            class: [
+                'w-full bg-surface border text-sm text-text placeholder-text-muted focus:outline-none transition-colors px-3 h-10 rounded-md disabled:opacity-60 disabled:cursor-not-allowed',
+                props.error ? 'border-danger focus:border-danger' : 'border-border focus:border-accent',
+            ],
+        },
+    },
 }))
 </script>
