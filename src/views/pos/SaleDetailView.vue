@@ -184,7 +184,11 @@
                                         <td class="text-right text-text">
                                             <!-- Sin boxes: línea previa al cambio a cajas cuya variante no
 											     tenía m2_per_box; se muestra tal cual se emitió, en m² -->
-                                            <template v-if="item.boxes">
+                                            <!-- Variante por pieza: boxes son las piezas, sin m² (como un simple) -->
+                                            <template v-if="isPieceLine(item)">
+                                                {{ item.boxes }} pzas
+                                            </template>
+                                            <template v-else-if="item.boxes">
                                                 {{ item.boxes }}
                                                 {{ item.boxes === 1 ? "caja" : "cajas" }}
                                                 <div class="text-text-muted text-xs tabular-nums">
@@ -196,12 +200,18 @@
                                             >
                                         </td>
                                         <td class="text-right text-text hidden sm:table-cell">
-                                            <div v-if="item.boxes">
-                                                {{ formatCurrency(boxPrice(item)) }}/caja
-                                            </div>
-                                            <span class="text-text-muted text-xs tabular-nums">
-                                                {{ formatCurrency(item.unit_price) }}/m²
-                                            </span>
+                                            <!-- Variante por pieza: el precio unitario ya es por pieza -->
+                                            <template v-if="isPieceLine(item)">
+                                                {{ formatCurrency(item.unit_price) }}
+                                            </template>
+                                            <template v-else>
+                                                <div v-if="item.boxes">
+                                                    {{ formatCurrency(boxPrice(item)) }}/caja
+                                                </div>
+                                                <span class="text-text-muted text-xs tabular-nums">
+                                                    {{ formatCurrency(item.unit_price) }}/m²
+                                                </span>
+                                            </template>
                                         </td>
                                     </template>
                                     <td class="text-right text-text">
@@ -238,6 +248,7 @@ import { useSalesStore } from "@/stores/sales";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
+import { isSoldByPiece } from "@/lib/unitTypes";
 import { formatDateTime } from "@/lib/dates";
 
 const route = useRoute();
@@ -273,6 +284,11 @@ watch(
     },
     { immediate: true },
 );
+
+// Pisos por pieza: la unidad viene con la variante (product_variant.product.unit_type).
+function isPieceLine(item) {
+    return isSoldByPiece(item.product_variant?.product?.unit_type);
+}
 
 // Lo que valió cada caja: precio por m² × m² que cubre una caja, ambos tal
 // como se guardaron en la línea (no el m2_per_box actual de la variante).

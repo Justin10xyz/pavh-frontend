@@ -69,8 +69,8 @@
         v-model:visible="stockDialogOpen"
         :url="stockDialogVariant ? `/api/product-variants/${stockDialogVariant.id}/stock` : null"
         :stock="stockDialogVariant?.stock_boxes"
-        stock-unit="cj"
-        quantity-label="Cantidad (cajas)"
+        :stock-unit="stockDialogUnit.short"
+        :quantity-label="`Cantidad (${stockDialogUnit.label})`"
         :subtitle="stockDialogVariant?.color"
         @stock-updated="onVariantStockUpdated"
     />
@@ -79,7 +79,7 @@
         v-model:visible="movementsDialogOpen"
         :url="movementsDialogVariant ? `/api/product-variants/${movementsDialogVariant.id}/stock-movements` : null"
         :stock="movementsDialogVariant?.stock_boxes"
-        stock-unit="cj"
+        :stock-unit="movementsDialogUnit.short"
         :subtitle="movementsDialogVariant?.color"
     />
 </template>
@@ -88,6 +88,7 @@
 import { onMounted, ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useInventoryStore } from "@/stores/inventory";
+import { variantStockUnit } from "@/lib/unitTypes";
 
 import InventoryFilters from "./components/InventoryFilters.vue";
 import InventoryTable from "./components/InventoryTable.vue";
@@ -129,9 +130,12 @@ function editProduct(productId) {
 
 const stockDialogOpen = ref(false);
 const stockDialogVariant = ref(null);
+// Cajas o piezas según la unidad de venta del producto de la variante.
+const stockDialogUnit = ref(variantStockUnit(null));
 
-function openStockDialog(variant) {
+function openStockDialog(variant, product) {
     stockDialogVariant.value = variant;
+    stockDialogUnit.value = variantStockUnit(product.unit_type);
     stockDialogOpen.value = true;
 }
 
@@ -144,9 +148,11 @@ function onVariantStockUpdated(updatedVariant) {
 
 const movementsDialogOpen = ref(false);
 const movementsDialogVariant = ref(null);
+const movementsDialogUnit = ref(variantStockUnit(null));
 
-function openMovementsDialog(variant) {
+function openMovementsDialog(variant, product) {
     movementsDialogVariant.value = variant;
+    movementsDialogUnit.value = variantStockUnit(product.unit_type);
     movementsDialogOpen.value = true;
 }
 
