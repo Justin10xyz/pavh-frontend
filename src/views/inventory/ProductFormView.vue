@@ -79,6 +79,14 @@
 
             <!-- Acciones -->
             <div class="flex items-center justify-end gap-3">
+                <!-- Pista del atajo (useSaveShortcut). Solo desde sm: en pantallas
+				     táctiles no hay teclado físico que la aproveche. -->
+                <p class="hidden sm:block text-xs text-text-muted mr-auto" aria-hidden="true">
+                    <kbd class="font-sans border border-border rounded px-1 py-0.5">{{ modifierLabel }}</kbd>
+                    +
+                    <kbd class="font-sans border border-border rounded px-1 py-0.5">S</kbd>
+                    para guardar
+                </p>
                 <button
                     type="button"
                     @click="handleCancel"
@@ -88,6 +96,7 @@
                 </button>
                 <button
                     type="submit"
+                    :aria-keyshortcuts="ariaKeyshortcuts"
                     :disabled="submitting || loadingProduct"
                     class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
                 >
@@ -141,6 +150,7 @@ import { useCatalogsStore } from "@/stores/catalogs";
 import { useInventoryStore } from "@/stores/inventory";
 import { confirmStockChanges } from "@/lib/stockChange";
 import { advanceOnEnter, advanceSelectOnEnter } from "@/lib/formKeyboard";
+import { useSaveShortcut } from "@/composables/useSaveShortcut";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import {
     buildVariantPayload,
@@ -341,6 +351,8 @@ const validateForm = () => {
 
 const submitting = ref(false);
 const generalError = ref(null);
+
+const { modifierLabel, ariaKeyshortcuts } = useSaveShortcut(formRef, () => !submitting.value && !loadingProduct.value);
 
 // Solo mapea a `errors` los campos del producto — es lo único validado antes
 // de que exista un `productId`, momento en el que aplican los 422.

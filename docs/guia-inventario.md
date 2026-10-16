@@ -125,6 +125,7 @@ El formulario del piso se puede llenar completo sin usar el mouse:
 - En los colores, **Enter** en **Stock mínimo** de la última fila agrega un color nuevo y deja el cursor en él, como en una hoja de cálculo. Si esa fila todavía no tiene color, Enter pasa al siguiente campo sin agregar filas vacías.
 - Al presionar **+ Agregar color**, el cursor pasa directo al campo **Color** de la fila nueva. Con **+ Agregar medida**, pasa a la **Medida** nueva.
 - Al quitar un color o una medida, el cursor se queda en el color o la medida de al lado, para seguir capturando.
+- Para guardar sin buscar el botón: **Ctrl + S** o **Ctrl + Enter** desde cualquier campo (en Mac, **⌘ + S** o **⌘ + Enter**). El atajo aparece como recordatorio junto al botón **Guardar**.
 - Si al guardar falta algún dato, el cursor salta al primer campo marcado en rojo.
 
 ---
@@ -247,3 +248,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Cotizaciones y ventas**: cada piso agregado muestra su código de comisión (punto de color y código) junto al color y la medida. |
 | 2026-10-16 | **Nuevo piso / Editar piso**: captura con teclado más fluida. El cursor empieza en Proveedor, pasa solo al color o medida nuevos al agregarlos, no se pierde al quitarlos, y salta al primer campo con error al intentar guardar. |
 | 2026-10-16 | **Nuevo piso / Editar piso**: **Enter** avanza al siguiente campo en lugar de intentar guardar, y en el último color agrega uno nuevo. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: atajo **Ctrl + S** (o **Ctrl + Enter**) para guardar desde cualquier campo. |
