@@ -173,10 +173,11 @@
                                         </p>
                                     </div>
 
-                                    <!-- m² que pide el cliente (opcional, solo variantes): sugieren las
-									     cajas con ceil. No se envían al backend: la cantidad real son las
-									     cajas, que se pueden ajustar después (ej. una de más por merma). -->
-                                    <div v-if="row.variant" class="space-y-1.5 sm:space-y-0">
+                                    <!-- m² que pide el cliente (opcional, solo variantes por caja): sugieren
+									     las cajas con ceil. No se envían al backend: la cantidad real son las
+									     cajas, que se pueden ajustar después (ej. una de más por merma). Las
+									     variantes por pieza no tienen m²: se captura la cantidad directa. -->
+                                    <div v-if="row.variant && !isPieceLine(row)" class="space-y-1.5 sm:space-y-0">
                                         <FieldLabel
                                             :html-for="`requested-${row.id}`"
                                             text="m² requeridos"
@@ -202,7 +203,7 @@
                                     <div class="space-y-1.5 sm:space-y-0">
                                         <FieldLabel
                                             :html-for="`quantity-${row.id}`"
-                                            :text="row.variant ? 'Cajas' : 'Cantidad (unidades)'"
+                                            :text="row.variant ? (isPieceLine(row) ? 'Piezas' : 'Cajas') : 'Cantidad (unidades)'"
                                             required
                                             class="sm:sr-only"
                                         />
@@ -211,8 +212,8 @@
                                             :id="`quantity-${row.id}`"
                                             v-model="row.quantity"
                                             :min="1"
-                                            placeholder="0 cj"
-                                            suffix=" cj"
+                                            :placeholder="`0 ${lineUnit(row)}`"
+                                            :suffix="` ${lineUnit(row)}`"
                                             :max-fraction-digits="0"
                                             :error="quantityError(row)"
                                         />
@@ -257,7 +258,7 @@
                                         >
                                             {{
                                                 row.variant
-                                                    ? "Precio unitario (m²)"
+                                                    ? `Precio unitario (${isPieceLine(row) ? "pieza" : "m²"})`
                                                     : "Precio unitario"
                                             }}
                                         </span>
@@ -271,9 +272,11 @@
                                             class="flex items-center text-xs text-text-muted tabular-nums"
                                         >
                                             {{
-                                                row.variant
-                                                    ? `${formatCurrency(row.variant.price_per_m2)}/m²`
-                                                    : formatCurrency(simpleProductFor(row).price)
+                                                !row.variant
+                                                    ? formatCurrency(simpleProductFor(row).price)
+                                                    : isPieceLine(row)
+                                                        ? `${formatCurrency(row.variant.price_per_box)}/pieza`
+                                                        : `${formatCurrency(row.variant.price_per_m2)}/m²`
                                             }}
                                         </p>
                                     </div>
@@ -439,6 +442,7 @@ import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
 import { boxesForSquareMeters, squareMetersForBoxes } from "@/lib/boxes";
+import { pieceVariantIds, variantStockUnit } from "@/lib/unitTypes";
 import { useNotify } from "@/composables/useNotify";
 
 const route = useRoute();
@@ -640,7 +644,7 @@ function selectProductForRow(row, option) {
     // requeridos solo aplican a variantes; con otra variante (otro m² por caja)
     // se recalculan las cajas.
     row.quantity = row.quantity > 0 ? row.quantity : 1;
-    if (isSimple) row.requestedM2 = null;
+    if (isSimple || isPieceLine(row)) row.requestedM2 = null;
     else if (row.requestedM2 > 0) applyRequestedM2(row, row.requestedM2);
 
     focusLineQuantity(row);
@@ -660,9 +664,26 @@ function simpleProductCategoryName(row) {
     return catalogs.categories.find((c) => c.id === categoryId)?.name ?? "";
 }
 
-// La cantidad de una línea de variante son sus cajas (row.quantity); estos son
-// los m² que cubren, sobre los que se cobra el precio por m².
+// Variantes de pisos por pieza (unit_type "pieza"): la cantidad son piezas, que
+// se mandan tal cual como `boxes`, al precio por pieza (price_per_box), sin m².
+// Se resuelve contra Inventario (cargado al montar); mientras carga, la línea se
+// trata como por caja.
+const pieceVariantIdSet = computed(() => pieceVariantIds(inventory.products));
+
+function isPieceLine(row) {
+    return !!row.variant && pieceVariantIdSet.value.has(row.variant.id);
+}
+
+// Sufijo de la cantidad de una línea de variante: piezas o cajas.
+function lineUnit(row) {
+    return variantStockUnit(isPieceLine(row) ? "pieza" : null).short;
+}
+
+// La cantidad de una línea de variante por caja son sus cajas (row.quantity);
+// estos son los m² que cubren, sobre los que se cobra el precio por m². Null en
+// variantes por pieza (no derivan m²).
 function coveredM2(row) {
+    if (isPieceLine(row)) return null;
     return squareMetersForBoxes(row.quantity || 0, row.variant?.m2_per_box);
 }
 
@@ -682,9 +703,10 @@ function applyRequestedM2(row, value) {
 }
 
 // Sin m2_per_box no se sabe qué cubren las cajas: el backend rechaza la línea
-// (nunca asume 1:1). Se avisa desde que se elige, no hasta guardar.
+// (nunca asume 1:1). Se avisa desde que se elige, no hasta guardar. No aplica a
+// variantes por pieza, que no derivan m².
 function boxConversionError(row) {
-    if (!row.variant || Number(row.variant.m2_per_box) > 0) return "";
+    if (!row.variant || isPieceLine(row) || Number(row.variant.m2_per_box) > 0) return "";
     return "Esta variante no tiene m² por caja configurado; no se puede cotizar.";
 }
 
@@ -714,13 +736,14 @@ function stockWarning(row) {
         return `Stock insuficiente: hay ${formatQuantity(stock)} uds. y se cotizan ${formatQuantity(row.quantity)}. Consultar disponibilidad sobre pedido.`;
     }
 
-    return `Stock insuficiente: hay ${stock} ${stock === 1 ? "caja" : "cajas"} y se cotizan ${row.quantity}. Consultar disponibilidad sobre pedido.`;
+    const unit = isPieceLine(row) ? (stock === 1 ? "pieza" : "piezas") : stock === 1 ? "caja" : "cajas";
+    return `Stock insuficiente: hay ${stock} ${unit} y se cotizan ${row.quantity}. Consultar disponibilidad sobre pedido.`;
 }
 
 // Precio de una caja completa al precio por m² de la línea (lo que vale cada
-// caja que se entrega). Null en productos simples o sin m2_per_box.
+// caja que se entrega). Null en productos simples, variantes por pieza o sin m2_per_box.
 function boxPrice(row) {
-    if (!row.variant) return null;
+    if (!row.variant || isPieceLine(row)) return null;
     const m2PerBox = squareMetersForBoxes(1, row.variant.m2_per_box);
     if (m2PerBox === null) return null;
     return Math.round(m2PerBox * (Number(row.variant.price_per_m2) || 0) * 100) / 100;
@@ -729,6 +752,8 @@ function boxPrice(row) {
 function lineSubtotal(row) {
     if (!row.quantity) return 0;
     if (row.simpleProduct) return row.quantity * simpleProductFor(row).price;
+    // Mismo cálculo que QuoteController@syncItems: piezas × precio por pieza.
+    if (isPieceLine(row)) return row.quantity * row.variant.price_per_box;
     if (row.variant) return (coveredM2(row) ?? 0) * row.variant.price_per_m2;
     return 0;
 }
@@ -753,7 +778,8 @@ function hasProduct(row) {
 
 function quantityError(row) {
     if (!submitAttempted.value || !hasProduct(row) || row.quantity > 0) return "";
-    return row.variant ? "Captura las cajas." : "Captura la cantidad.";
+    if (!row.variant) return "Captura la cantidad.";
+    return isPieceLine(row) ? "Captura las piezas." : "Captura las cajas.";
 }
 
 const handleSubmit = async () => {
