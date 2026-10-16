@@ -113,54 +113,15 @@
                 </div>
             </div>
 
-            <!-- Barra fija al fondo: con varias líneas, total y acciones quedan a la
-			     vista sin bajar hasta el final del form (relevante en tablet de
-			     mostrador). El error de registro va aquí, junto a las acciones.
-			     z-[1]: encima de las filas, pero debajo del dropdown del buscador (z-10). -->
-            <div class="sticky bottom-0 z-[1] space-y-3 bg-surface border border-border rounded-md px-4 py-3">
-                <p v-if="generalError" role="alert" class="text-danger text-sm flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2">
-                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    {{ generalError }}
-                </p>
-
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <p class="text-sm text-text-muted" aria-live="polite">
-                        {{ productCount }} {{ productCount === 1 ? 'producto' : 'productos' }}
-                        <span aria-hidden="true">·</span>
-                        Total <span class="font-semibold text-primary tabular-nums">{{ formatCurrency(total) }}</span>
-                    </p>
-
-                    <div class="flex items-center gap-3">
-                        <!-- Conversión: volver a la cotización (pasa por la confirmación de
-						     salida si hay cambios). Venta directa: limpiar para empezar otra. -->
-                        <RouterLink
-                            v-if="quoteId"
-                            :to="{ name: 'quotes.show', params: { id: quoteId } }"
-                            class="inline-flex items-center bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none"
-                        >
-                            Cancelar
-                        </RouterLink>
-                        <button
-                            v-else
-                            type="button"
-                            :disabled="!isDirty"
-                            @click="requestClear"
-                            class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
-                        >
-                            Limpiar
-                        </button>
-                        <button
-                            type="submit"
-                            :disabled="submitting"
-                            class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
-                        >
-                            {{ submitting ? 'Registrando…' : 'Registrar venta' }}
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <SaleSummaryBar
+                :error="generalError"
+                :product-count="productCount"
+                :total="total"
+                :quote-id="quoteId"
+                :can-clear="isDirty"
+                :submitting="submitting"
+                @clear="requestClear"
+            />
         </form>
 
         <ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
@@ -210,6 +171,14 @@ import { formatCurrency } from '@/lib/formatCurrency'
 import { useLineProducts } from '@/composables/useLineProducts'
 import * as documentLines from '@/lib/documentLines'
 import { hasProduct, lineItemPayload, serializeLines } from '@/lib/documentLines'
+import {
+    findVariant,
+    missingProductsMessage,
+    resolveConversionLines,
+    simpleProductStockAfterSale,
+    variantStockAfterSale,
+} from '@/lib/saleForm'
+import SaleSummaryBar from './components/SaleSummaryBar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -220,7 +189,7 @@ const simpleProducts = useSimpleProductsStore()
 const catalogs = useCatalogsStore()
 const notify = useNotify()
 const confirm = useConfirm()
-const { isPieceLine, findSimpleProduct, simpleProductFor } = useLineProducts()
+const { isPieceLine, simpleProductFor } = useLineProducts()
 
 // Precio de lista, stock y categoría de las líneas simples salen de estos
 // stores (cacheados vía `initialized`); ProductAutocomplete también los carga,
@@ -274,7 +243,7 @@ async function loadConversion() {
             return
         }
 
-        let resolved = resolveConversionLines(items)
+        let resolved = resolveConversionLinesFromCache(items)
 
         // Respaldo: los productos dados de baja ya los rechaza el backend con 422.
         // Esto cubre uno que existe en BD pero no en el caché (ej. creado después
@@ -285,13 +254,12 @@ async function loadConversion() {
         if (resolved.missingSimpleProductIds.length > 0 && !simpleProductsAreFresh) refetches.push(simpleProducts.fetchSimpleProducts())
         if (refetches.length > 0) {
             await Promise.all(refetches)
-            resolved = resolveConversionLines(items)
+            resolved = resolveConversionLinesFromCache(items)
         }
 
         const { loadedLines, missingVariantIds, missingSimpleProductIds } = resolved
 
-        // Si aun así falta, se bloquea. Solo aquí el mensaje se arma en el
-        // frontend, con el id porque /convert no trae más datos.
+        // Si aun así falta, se bloquea.
         if (missingVariantIds.length > 0 || missingSimpleProductIds.length > 0) {
             conversionError.value = missingProductsMessage(missingVariantIds, missingSimpleProductIds)
             return
@@ -314,66 +282,12 @@ async function loadConversion() {
     }
 }
 
-function resolveConversionLines(items) {
-    const loadedLines = []
-    const missingVariantIds = []
-    const missingSimpleProductIds = []
-
-    for (const item of items) {
-        const line = {
-            ...createEmptyLine(),
-            // Variante: las cajas cotizadas (null en líneas previas al cambio a
-            // cajas sin m2_per_box; se piden al registrar). Simple: unidades.
-            quantity: item.product_variant_id ? item.boxes : Number(item.quantity),
-            unit_price: Number(item.unit_price),
-        }
-
-        if (item.simple_product_id) {
-            const simpleProduct = findSimpleProduct(item.simple_product_id)
-            if (!simpleProduct) {
-                missingSimpleProductIds.push(item.simple_product_id)
-                continue
-            }
-            line.simpleProduct = { ...simpleProduct, type: 'simple' }
-        } else {
-            const variant = findInventoryVariantWithLine(item.product_variant_id)
-            if (!variant) {
-                missingVariantIds.push(item.product_variant_id)
-                continue
-            }
-            line.variant = { ...variant, type: 'variant' }
-        }
-
-        loadedLines.push(line)
-    }
-
-    return { loadedLines, missingVariantIds, missingSimpleProductIds }
-}
-
-function missingProductsMessage(variantIds, simpleProductIds) {
-    const parts = []
-
-    if (variantIds.length > 0) {
-        const ids = variantIds.map((id) => `#${id}`).join(', ')
-        parts.push(variantIds.length === 1 ? `la variante ${ids}` : `las variantes ${ids}`)
-    }
-    if (simpleProductIds.length > 0) {
-        const ids = simpleProductIds.map((id) => `#${id}`).join(', ')
-        parts.push(simpleProductIds.length === 1 ? `el producto ${ids}` : `los productos ${ids}`)
-    }
-
-    const plural = variantIds.length + simpleProductIds.length > 1
-    const subject = parts.join(' y ')
-
-    return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} de esta cotización ya no ${plural ? 'están disponibles' : 'está disponible'} en inventario. No se puede convertir a venta.`
-}
-
-function findInventoryVariantWithLine(variantId) {
-    for (const product of inventory.products) {
-        const variant = product.variants?.find((v) => v.id === variantId)
-        if (variant) return { ...variant, lineName: product.name }
-    }
-    return null
+function resolveConversionLinesFromCache(items) {
+    return resolveConversionLines(items, {
+        products: inventory.products,
+        simpleProducts: simpleProducts.simpleProducts,
+        createLine: createEmptyLine,
+    })
 }
 
 // En venta cada línea lleva además su precio, capturable (ver setListPrice).
@@ -511,61 +425,23 @@ function priceError(row) {
     return 'Captura el precio.'
 }
 
-// SaleResource no regresa el stock restante: se recalcula localmente con el
-// mismo criterio que SaleController@store (las cajas de cada línea, sumadas por
-// variante) y la misma regla de low_stock que ProductVariantResource. Si el
-// inventario no está cargado no hay nada que sincronizar.
-function syncInventoryStock(items) {
-    if (!inventory.initialized) return
-
-    const boxesNeededByVariant = new Map()
-    const variantsById = new Map()
-
-    for (const item of items) {
-        if (!item.product_variant_id) continue
-        const variant = findInventoryVariant(item.product_variant_id)
-        // Sin control de stock: el backend no descuenta, aquí tampoco.
-        if (!variant || variant.stock_boxes === null) continue
-
-        variantsById.set(variant.id, variant)
-        const boxesNeeded = item.boxes
-        boxesNeededByVariant.set(variant.id, (boxesNeededByVariant.get(variant.id) ?? 0) + boxesNeeded)
+// Mutación puntual in-place (sin refetch, ver AGENT.md). Si un store no está
+// cargado no hay nada que sincronizar.
+function syncStock(items) {
+    if (inventory.initialized) {
+        for (const { variantId, ...stock } of variantStockAfterSale(items, inventory.products)) {
+            inventory.updateVariantStock(variantId, stock)
+        }
     }
-
-    for (const [variantId, boxesNeeded] of boxesNeededByVariant) {
-        const variant = variantsById.get(variantId)
-        const stockBoxes = Number(variant.stock_boxes) - boxesNeeded
-        const lowStock = variant.minimum_stock !== null && stockBoxes <= variant.minimum_stock
-
-        inventory.updateVariantStock(variantId, { stock_boxes: stockBoxes, low_stock: lowStock })
-    }
-}
-
-// Mismo criterio para productos simples, sin conversión de unidad: `quantity`
-// ya es la unidad física (SaleController@store descuenta igual, agregando por
-// producto). Sin store cargado no hay nada que sincronizar.
-function syncSimpleProductsStock(items) {
-    if (!simpleProducts.initialized) return
-
-    const unitsByProduct = new Map()
-    for (const item of items) {
-        if (!item.simple_product_id) continue
-        unitsByProduct.set(item.simple_product_id, (unitsByProduct.get(item.simple_product_id) ?? 0) + item.quantity)
-    }
-
-    for (const [productId, units] of unitsByProduct) {
-        const product = findSimpleProduct(productId)
-        if (!product || product.stock_quantity === null) continue
-        simpleProducts.updateSimpleProductStock(productId, { stock_quantity: Number(product.stock_quantity) - units })
+    if (simpleProducts.initialized) {
+        for (const { productId, ...stock } of simpleProductStockAfterSale(items, simpleProducts.simpleProducts)) {
+            simpleProducts.updateSimpleProductStock(productId, stock)
+        }
     }
 }
 
 function findInventoryVariant(variantId) {
-    for (const product of inventory.products) {
-        const variant = product.variants?.find((v) => v.id === variantId)
-        if (variant) return variant
-    }
-    return null
+    return findVariant(inventory.products, variantId)?.variant ?? null
 }
 
 // Refetch puntual, una sola vez por intento fallido (nunca en loop). Solo los
@@ -628,8 +504,7 @@ const handleSubmit = async () => {
         }
 
         const sale = await sales.createSale(payload)
-        syncInventoryStock(payload.items)
-        syncSimpleProductsStock(payload.items)
+        syncStock(payload.items)
 
         // El listado de cotizaciones cacheado no se refetchea: el status se
         // actualiza in-place.
