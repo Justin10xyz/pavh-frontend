@@ -869,7 +869,9 @@ function populateFormFromProduct(product) {
             spec: {
                 size: group.size,
                 pei: group.pei,
-                ett: group.ett,
+                // El backend lo manda como entero; el input de ETT es de texto
+                // (igual que al capturarlo en un producto nuevo).
+                ett: group.ett === null ? "" : String(group.ett),
                 kilos_per_box: group.kilos_per_box,
                 boxes_per_pallet: group.boxes_per_pallet,
                 commission_category_id: group.commission_category?.id ?? "",
