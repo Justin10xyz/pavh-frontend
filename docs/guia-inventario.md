@@ -127,6 +127,8 @@ El formulario del piso se puede llenar completo sin usar el mouse:
 - Al quitar un color o una medida, el cursor se queda en el color o la medida de al lado, para seguir capturando.
 - Para guardar sin buscar el botón: **Ctrl + S** o **Ctrl + Enter** desde cualquier campo (en Mac, **⌘ + S** o **⌘ + Enter**). El atajo aparece como recordatorio junto al botón **Guardar**.
 - Si al guardar falta algún dato, el cursor salta al primer campo marcado en rojo.
+- Con **Tab** también se llega a los botones (**+**, **Quitar medida**, la **X** de cada color, **+ Agregar color**…). El botón donde está el cursor se marca con un contorno dorado y se presiona con **Enter** o **Espacio**.
+- En las ventanas de confirmación el cursor ya está en un botón. Al **confirmar cambios de stock**, Enter guarda; al **eliminar un color**, Enter cancela (para no borrar por accidente) y hay que pasar con Tab a **Eliminar**. **Esc** cierra la ventana sin hacer nada.
 
 ---
 
@@ -249,3 +251,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Nuevo piso / Editar piso**: captura con teclado más fluida. El cursor empieza en Proveedor, pasa solo al color o medida nuevos al agregarlos, no se pierde al quitarlos, y salta al primer campo con error al intentar guardar. |
 | 2026-10-16 | **Nuevo piso / Editar piso**: **Enter** avanza al siguiente campo en lugar de intentar guardar, y en el último color agrega uno nuevo. |
 | 2026-10-16 | **Nuevo piso / Editar piso**: atajo **Ctrl + S** (o **Ctrl + Enter**) para guardar desde cualquier campo. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: los botones muestran un contorno dorado cuando el cursor está en ellos, y las ventanas de confirmación ya se pueden contestar con Enter o Esc. |

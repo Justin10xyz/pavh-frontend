@@ -111,7 +111,7 @@
                         type="button"
                         @click="emit('remove', row)"
                         :disabled="rows.length === 1 || deletingRowId === row.id"
-                        class="w-8 h-10 shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        class="w-8 h-10 shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         :aria-label="row.color ? `Eliminar color ${row.color}` : 'Eliminar color'"
                         title="Eliminar color"
                     >
@@ -137,7 +137,7 @@
         <button
             type="button"
             @click="addRow"
-            class="mt-3 w-full border border-dashed border-border rounded-md py-2 text-sm text-text-muted hover:text-text hover:border-accent transition-colors select-none cursor-pointer"
+            class="mt-3 w-full border border-dashed border-border rounded-md py-2 text-sm text-text-muted hover:text-text hover:border-accent transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
         >
             + Agregar color
         </button>

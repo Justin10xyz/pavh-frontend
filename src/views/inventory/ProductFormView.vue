@@ -14,7 +14,7 @@
             <button
                 type="button"
                 @click="handleCancel"
-                class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+                class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-1.5 shrink-0 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
             >
                 <i class="ti ti-arrow-left text-sm"></i>
                 Volver
@@ -72,7 +72,7 @@
             <button
                 type="button"
                 @click="addVariantGroup"
-                class="w-full border border-dashed border-border rounded-md py-3 text-sm text-text-muted hover:text-text hover:border-accent bg-surface transition-colors select-none cursor-pointer"
+                class="w-full border border-dashed border-border rounded-md py-3 text-sm text-text-muted hover:text-text hover:border-accent bg-surface transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
             >
                 + Agregar medida
             </button>
@@ -90,7 +90,7 @@
                 <button
                     type="button"
                     @click="handleCancel"
-                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     Cancelar
                 </button>
@@ -98,7 +98,7 @@
                     type="submit"
                     :aria-keyshortcuts="ariaKeyshortcuts"
                     :disabled="submitting || loadingProduct"
-                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                 >
                     {{
                         submitting
@@ -119,17 +119,20 @@
                     <h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
                     <p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
                     <div class="flex items-center justify-end gap-3">
+                        <!-- Foco inicial en Cancelar (ver StockChangesConfirmDialog): en una
+						     acción que no se puede deshacer, Enter no debe eliminar. -->
                         <button
                             type="button"
+                            autofocus
                             @click="rejectCallback"
-                            class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                            class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         >
                             Cancelar
                         </button>
                         <button
                             type="button"
                             @click="acceptCallback"
-                            class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                            class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                         >
                             Eliminar
                         </button>
@@ -398,7 +401,15 @@ const handleSubmit = async () => {
     }
 
     const stockChanges = pendingStockChanges(variantGroups.value, stockUnit.value.short);
-    if (stockChanges.length && !(await confirmStockChanges(confirm, stockChanges))) return;
+    if (stockChanges.length) {
+        // Al regresar sin guardar, el foco vuelve a donde estaba (el diálogo lo tomó).
+        const returnFocus = document.activeElement;
+        if (!(await confirmStockChanges(confirm, stockChanges))) {
+            await nextTick();
+            returnFocus?.focus();
+            return;
+        }
+    }
 
     generalError.value = null;
     submitting.value = true;
