@@ -92,6 +92,8 @@ Cada medida puede llevar un **código de comisión**, que indica cuánta comisi�
 
 El código se elige al crear o editar el piso, en la lista **Categoría de comisión** de cada medida (ordenada de la comisión más alta a la más baja). Es opcional: una medida sin código no muestra nada.
 
+El mismo punto de color aparece en cada producto que agregas a una **cotización** o a una **venta**, junto al color y la medida, para saber cuánto descuento se puede dar antes de ajustar el precio. Como es un código de colores, el cliente no ve cuánto gana el vendedor aunque vea la pantalla.
+
 ### Editar un producto
 
 El ícono de **lápiz** en la fila del producto abre el formulario de edición. Ahí se cambian los datos generales, las medidas, los precios, los colores, el stock y el stock mínimo. El stock también se puede corregir desde ahí (ver [Desde el formulario del producto](#desde-el-formulario-del-producto)).
@@ -229,3 +231,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Editar piso**: la **Unidad** ya no se puede cambiar si el piso tiene colores registrados. |
 | 2026-10-16 | **Editar piso**: cuando un cambio no se puede guardar, ahora se muestra el motivo en lugar de no pasar nada. |
 | 2026-10-16 | **Códigos de comisión**: cinco códigos (Vo, Vc, A, N, R) del que más comisión deja al que menos. El catálogo los muestra con un punto de color junto al código, y la lista del formulario dice el nombre de cada uno (*"Vo · Verde oscuro"*). |
+| 2026-10-16 | **Cotizaciones y ventas**: cada piso agregado muestra su código de comisión (punto de color y código) junto al color y la medida. |

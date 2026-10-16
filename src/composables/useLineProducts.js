@@ -5,9 +5,9 @@ import { useCatalogsStore } from "@/stores/catalogs";
 import { pieceVariantIds } from "@/lib/unitTypes";
 
 // Datos de las líneas de un documento (cotización o venta) que dependen de los
-// stores: si la variante se vende por pieza y el producto simple "en vivo". Lo
-// usan QuoteFormView, SaleFormView y DocumentLinesTable; las reglas puras de
-// cada línea están en lib/documentLines.js.
+// stores: si la variante se vende por pieza, su código de comisión y el producto
+// simple "en vivo". Lo usan QuoteFormView, SaleFormView y DocumentLinesTable; las
+// reglas puras de cada línea están en lib/documentLines.js.
 export function useLineProducts() {
     const inventory = useInventoryStore();
     const simpleProducts = useSimpleProductsStore();
@@ -21,6 +21,19 @@ export function useLineProducts() {
 
     function isPieceLine(line) {
         return !!line.variant && pieceVariantIdSet.value.has(line.variant.id);
+    }
+
+    const inventoryVariantsById = computed(
+        () => new Map(inventory.products.flatMap((product) => (product.variants ?? []).map((v) => [v.id, v]))),
+    );
+
+    // Código de comisión de una línea de variante (null en simples o sin código).
+    // Se lee de Inventario porque la variante de una cotización cargada para
+    // editar no lo trae; si no está ahí, se usa el de la línea.
+    function commissionCategoryFor(line) {
+        if (!line.variant) return null;
+        const live = inventoryVariantsById.value.get(line.variant.id);
+        return (live ?? line.variant).commission_category ?? null;
     }
 
     function findSimpleProduct(simpleProductId) {
@@ -38,5 +51,5 @@ export function useLineProducts() {
         return catalogs.categories.find((c) => c.id === categoryId)?.name ?? "";
     }
 
-    return { isPieceLine, findSimpleProduct, simpleProductFor, simpleProductCategoryName };
+    return { isPieceLine, commissionCategoryFor, findSimpleProduct, simpleProductFor, simpleProductCategoryName };
 }

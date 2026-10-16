@@ -84,6 +84,12 @@
                                     <span class="truncate"
                                     >{{ row.variant.color }} · {{ row.variant.size }}</span
                                     >
+                                    <!-- Lo que le deja al vendedor: orienta cuánto descuento se puede dar -->
+                                    <CommissionBadge
+                                        v-if="commissionCategoryFor(row)"
+                                        :category="commissionCategoryFor(row)"
+                                        class="shrink-0"
+                                    />
                                     <button
                                         type="button"
                                         @click="changeLine(row)"
@@ -232,6 +238,7 @@ import { nextTick, ref } from "vue";
 import ProductAutocomplete from "@/components/widgets/autocompletes/ProductAutocomplete.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
+import CommissionBadge from "@/components/widgets/badges/CommissionBadge.vue";
 import { useLineProducts } from "@/composables/useLineProducts";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
@@ -262,7 +269,7 @@ const props = defineProps({
 // precargar su precio de lista en venta.
 const emit = defineEmits(["select"]);
 
-const { isPieceLine, simpleProductFor, simpleProductCategoryName } = useLineProducts();
+const { isPieceLine, commissionCategoryFor, simpleProductFor, simpleProductCategoryName } = useLineProducts();
 
 function newLine() {
     return createEmptyLine(props.emptyLineFields);
