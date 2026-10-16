@@ -51,6 +51,11 @@ export const useCatalogsStore = defineStore('catalogs', () => {
 		if (category) Object.assign(category, payload)
 	}
 
+	// Mutación puntual: quita la categoría eliminada (soft delete en el backend).
+	function removeCategory(id) {
+		categories.value = categories.value.filter((c) => c.id !== id)
+	}
+
 	return {
 		suppliers,
 		categories,
@@ -62,5 +67,6 @@ export const useCatalogsStore = defineStore('catalogs', () => {
 		fetchCatalogs,
 		addCategory,
 		updateCategory,
+		removeCategory,
 	}
 })

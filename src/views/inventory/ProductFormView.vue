@@ -610,7 +610,7 @@ import { groupVariants } from "@/lib/groupVariants";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { confirmStockChanges, describeStockChange, stockChangePayload } from "@/lib/stockChange";
 import StockChangesConfirmDialog from "./components/StockChangesConfirmDialog.vue";
-import CategoryFormDialog from "@/views/settings/components/CategoryFormDialog.vue";
+import CategoryFormDialog from "@/components/widgets/dialogs/CategoryFormDialog.vue";
 
 const route = useRoute();
 const router = useRouter();

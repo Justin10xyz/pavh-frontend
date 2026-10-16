@@ -14,7 +14,16 @@ Arriba de la pantalla hay dos botones para cambiar de sección:
 El botón **Nuevo producto** (arriba a la derecha) registra un producto en la sección que tengas abierta. Desde Catálogo de pisos abre el formulario **Nuevo piso**; desde Otros productos, el formulario **Nuevo producto general**.
 Al registrarlo, la lista de **Categoría** muestra solo las categorías de esa sección: en pisos, las de tipo *Pisos*; en otros productos, las de tipo *General*. El tipo de cada categoría se configura en **Configuración → Categorías**.
 
-Si la categoría que necesitas todavía no existe, da clic en el botón **+** junto a la lista de **Categoría**. Se abre la ventana **Nueva categoría** sin salir del formulario, así no pierdes lo que ya capturaste. El tipo de la categoría queda fijo según el formulario (*Pisos* o *General*) y, al guardarla, queda seleccionada en el producto. Para editar categorías o ver todas las que existen, ve a **Configuración → Categorías**.
+Si la categoría que necesitas todavía no existe, da clic en el botón **+** junto a la lista de **Categoría**. Se abre la ventana **Nueva categoría** sin salir del formulario, así no pierdes lo que ya capturaste. El tipo de la categoría queda fijo según el formulario (*Pisos* o *General*) y, al guardarla, queda seleccionada en el producto. Para editar o eliminar categorías, o ver todas las que existen, ve a **Configuración → Categorías**.
+
+### Eliminar una categoría
+
+En **Configuración → Categorías**, da clic en el ícono de **bote de basura** de la categoría:
+
+- Si la categoría **no tiene productos**, se pide confirmación antes de eliminarla.
+- Si **tiene productos**, no se puede eliminar. La ventana dice cuántos tiene; primero hay que editar esos productos y moverlos a otra categoría.
+
+Una categoría eliminada deja de aparecer en las listas, pero las ventas y cotizaciones anteriores no cambian. Después puedes crear otra con el mismo nombre y prefijo.
 
 ---
 
@@ -62,7 +71,7 @@ El ícono de **lápiz** en la fila del producto abre el formulario de edición. 
 
 Arriba de la tabla hay herramientas para encontrar productos rápido:
 
-- **Buscador**: busca por nombre de línea, color o código. No importan los acentos ni las mayúsculas. Si buscas un color o un código, solo se muestran los colores que coinciden.
+- **Buscador**: en pisos busca por nombre de línea, color o código; en otros productos, por nombre o código. No importan los acentos ni las mayúsculas. Si buscas un color o un código, solo se muestran los colores que coinciden.
 - **Categoría**: muestra solo los productos de una categoría.
 - **Solo stock bajo** (solo en pisos): muestra únicamente los colores que necesitan resurtido.
 - **Limpiar filtros**: aparece cuando hay algún filtro activo y los quita todos de una vez.
@@ -129,13 +138,23 @@ El ícono de **reloj (Ver historial de stock)** muestra todos los movimientos de
 
 ## 6. Otros productos
 
-Funciona igual que el catálogo de pisos, pero más sencillo. Cada producto es una sola fila con su nombre, categoría, precio y stock en unidades. Desde la fila se puede:
+Funciona igual que el catálogo de pisos, pero más sencillo. Cada producto es una sola fila con su nombre, código, categoría, precio y stock en unidades. Desde la fila se puede:
 
 - activar o ajustar el stock,
 - ver el historial,
 - editar el producto (lápiz).
 
 Esta sección no tiene filtro de stock bajo, porque estos productos no manejan stock mínimo.
+
+### Código del producto
+
+A diferencia de los pisos, el código de estos productos **se captura a mano** en el formulario (por ejemplo, el código del proveedor):
+
+- Es **opcional**. Los productos sin código muestran "—" en la tabla.
+- No puede llevar espacios y **no se puede repetir**.
+- Se guarda siempre en mayúsculas.
+
+El código también sirve para buscar el producto en el inventario, en cotizaciones y en ventas.
 
 ---
 
@@ -152,3 +171,5 @@ Mejoras que se van agregando al módulo:
 | 2026-10-15 | **Editar piso / producto general**: el stock se puede cambiar, activar o desactivar directamente en el formulario, con confirmación antes de guardar. |
 | 2026-10-15 | **Historial de stock**: el folio de la venta en la columna Origen ahora lleva directo al detalle de la venta. |
 | 2026-10-15 | **Nuevo piso / producto general**: botón **+** junto a la lista de categorías para crear una categoría nueva sin salir del formulario; queda seleccionada al guardarla. |
+| 2026-10-15 | **Configuración → Categorías**: ahora se pueden eliminar categorías que no tengan productos. |
+| 2026-10-15 | **Otros productos**: nuevo campo **Código** (opcional, capturado a mano) en el formulario, columna Código en la tabla y búsqueda por código en inventario, cotizaciones y ventas. |

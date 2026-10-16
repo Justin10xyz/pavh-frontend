@@ -11,7 +11,7 @@
 				v-model:searchQuery="searchQuery"
 				v-model:selectedCategory="selectedCategory"
 				:categoryOptions="categoryOptions"
-				search-placeholder="Buscar por nombre…"
+				search-placeholder="Buscar por nombre o código…"
 				:show-low-stock-filter="false"
 				@clear-filters="clearFilters"
 			/>
@@ -32,10 +32,25 @@
 					<Column header="Nombre">
 						<template #body="{ data }">
 							<span class="font-medium text-text">{{ data.name }}</span>
+							<!-- Sin columna Código por debajo de md: va debajo del nombre, como en pisos -->
+							<span v-if="data.code" class="block md:hidden text-text-muted font-mono text-xs">{{
+								data.code
+							}}</span>
 							<!-- Sin columna Categoría por debajo de sm: va debajo del nombre -->
 							<span class="block sm:hidden text-xs text-text-muted">{{
 								categoryName(data)
 							}}</span>
+						</template>
+					</Column>
+
+					<Column
+						header="Código"
+						header-class="hidden md:table-cell"
+						body-class="hidden md:table-cell whitespace-nowrap"
+					>
+						<template #body="{ data }">
+							<span v-if="data.code" class="text-text-muted font-mono text-xs">{{ data.code }}</span>
+							<span v-else class="text-text-muted">—</span>
 						</template>
 					</Column>
 
@@ -219,7 +234,8 @@ const filteredProducts = computed(() => {
 	return simpleProducts.simpleProducts.filter((product) => {
 		if (selectedCategory.value && categoryName(product) !== selectedCategory.value)
 			return false;
-		if (q && !normalize(product.name).includes(q)) return false;
+		if (q && !normalize(product.name).includes(q) && !normalize(product.code).includes(q))
+			return false;
 		return true;
 	});
 });

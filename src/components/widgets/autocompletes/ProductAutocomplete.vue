@@ -144,7 +144,7 @@ const simpleProductOptions = computed(() => {
 		const categoryName = categoryNames.get(product.category_id) ?? ''
 		return {
 			option: { ...product, type: 'simple', categoryName },
-			searchText: normalize(`${product.name} ${categoryName}`),
+			searchText: normalize(`${product.name} ${categoryName} ${product.code ?? ''}`),
 		}
 	})
 })
