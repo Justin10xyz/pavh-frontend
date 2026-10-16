@@ -24,9 +24,7 @@
                             <span class="spec-badge">PEI {{ group.pei }}</span>
                             <span class="spec-badge">ETT {{ group.ett }}</span>
                         </template>
-                        <span v-if="group.commission_category" class="spec-badge">{{
-                            group.commission_category.code
-                        }}</span>
+                        <CommissionBadge v-if="group.commission_category" :category="group.commission_category" />
                     </span>
                     <span v-if="soldByPiece" class="flex items-center gap-2 whitespace-nowrap">
                         <span class="font-semibold text-primary tabular-nums"
@@ -159,6 +157,7 @@
 
 <script setup>
 import { computed } from "vue";
+import CommissionBadge from "@/components/widgets/badges/CommissionBadge.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import { isTracked, lowStockCount, lowStockLabel } from "@/lib/variantStock";

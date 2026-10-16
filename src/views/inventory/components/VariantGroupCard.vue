@@ -207,8 +207,8 @@
                 <SelectCustom
                     :id="`commission_category_id-${group.id}`"
                     v-model="group.spec.commission_category_id"
-                    :options="catalogs.commissionCategories"
-                    option-label="code"
+                    :options="commissionOptions"
+                    option-label="label"
                     :loading="catalogs.loading"
                     :error="group.specErrors.commission_category_id"
                     placeholder="Sin categoría"
@@ -235,6 +235,7 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { useCatalogsStore } from "@/stores/catalogs";
 import SelectCustom from "@/components/widgets/SelectCustom.vue";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
@@ -242,6 +243,7 @@ import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { PEI_OPTIONS } from "@/lib/productForm";
+import { commissionLabel } from "@/lib/commissionCategories";
 import VariantColorsTable from "./VariantColorsTable.vue";
 
 // Tarjeta de una medida en ProductFormView: su ficha técnica (`group.spec`) y sus
@@ -263,6 +265,11 @@ defineProps({
 const emit = defineEmits(["remove", "remove-color"]);
 
 const catalogs = useCatalogsStore();
+
+// "Vo · Verde oscuro"…, en el orden del backend (de la mayor a la menor comisión).
+const commissionOptions = computed(() =>
+    catalogs.commissionCategories.map((category) => ({ ...category, label: commissionLabel(category) })),
+);
 </script>
 
 <style scoped></style>

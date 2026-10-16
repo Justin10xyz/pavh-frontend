@@ -51,7 +51,7 @@ Un proveedor eliminado deja de aparecer en las listas, pero las ventas y cotizac
 Cada piso se muestra en tres niveles:
 
 1. **Producto (línea)**: el nombre del piso, con su categoría, proveedor y unidad de venta.
-2. **Medida**: cada tamaño del producto, con sus datos técnicos (PEI, ETT, categoría de comisión), su precio por caja y por m², y cuántas piezas, m² y kilos trae cada caja. En los pisos que se venden por pieza solo se muestra el precio por pieza (ver [Pisos que se venden por pieza](#pisos-que-se-venden-por-pieza)).
+2. **Medida**: cada tamaño del producto, con sus datos técnicos (PEI, ETT, [código de comisión](#códigos-de-comisión)), su precio por caja y por m², y cuántas piezas, m² y kilos trae cada caja. En los pisos que se venden por pieza solo se muestra el precio por pieza (ver [Pisos que se venden por pieza](#pisos-que-se-venden-por-pieza)).
 3. **Color**: cada color de esa medida, con su código, su stock en cajas (o en piezas) y su estado.
 
 ### Abrir y cerrar productos y medidas
@@ -77,6 +77,22 @@ El stock mínimo de cada color se configura al editar el producto.
 | **OK** (verde) | El stock está por arriba del mínimo. |
 | **Stock bajo** (rojo) | El stock llegó al mínimo o está por debajo. |
 | **Sin control** (gris) | Este color no lleva control de existencias. |
+
+### Códigos de comisión
+
+Cada medida puede llevar un **código de comisión**, que indica cuánta comisión le deja al vendedor y, por lo tanto, cuánto descuento se le puede dar al cliente. En el catálogo aparece junto al PEI y el ETT como un **punto de color con su código**; al pasar el cursor encima se ve su nombre.
+
+| Código | Color | Comisión para el vendedor |
+| --- | --- | --- |
+| **Vo** | Verde oscuro | La más alta |
+| **Vc** | Verde claro | Alta |
+| **A** | Amarillo | Media |
+| **N** | Naranja | Baja |
+| **R** | Rojo | La más baja |
+
+El código se elige al crear o editar el piso, en la lista **Categoría de comisión** de cada medida (ordenada de la comisión más alta a la más baja). Es opcional: una medida sin código no muestra nada.
+
+El mismo punto de color aparece en cada producto que agregas a una **cotización** o a una **venta**, junto al color y la medida, para saber cuánto descuento se puede dar antes de ajustar el precio. Como es un código de colores, el cliente no ve cuánto gana el vendedor aunque vea la pantalla.
 
 ### Editar un producto
 
@@ -214,3 +230,5 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Cotizaciones y ventas**: los pisos por pieza se cotizan y venden capturando el número de piezas, sin m² requeridos; el detalle y el PDF los muestran en piezas. |
 | 2026-10-16 | **Editar piso**: la **Unidad** ya no se puede cambiar si el piso tiene colores registrados. |
 | 2026-10-16 | **Editar piso**: cuando un cambio no se puede guardar, ahora se muestra el motivo en lugar de no pasar nada. |
+| 2026-10-16 | **Códigos de comisión**: cinco códigos (Vo, Vc, A, N, R) del que más comisión deja al que menos. El catálogo los muestra con un punto de color junto al código, y la lista del formulario dice el nombre de cada uno (*"Vo · Verde oscuro"*). |
+| 2026-10-16 | **Cotizaciones y ventas**: cada piso agregado muestra su código de comisión (punto de color y código) junto al color y la medida. |
