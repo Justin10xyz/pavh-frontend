@@ -52,6 +52,7 @@
 						:options="productFormTypeOptions"
 						option-value="value"
 						option-label="label"
+						:disabled="!!fixedProductFormType"
 						:error="errors.product_form_type"
 						@change="errors.product_form_type = ''"
 					/>
@@ -61,6 +62,20 @@
 						<template v-if="isEditMode">No se puede cambiar si la categoría ya tiene productos.</template>
 					</p>
 				</div>
+
+				<!-- Abierto desde un formulario de producto solo se puede crear; editar,
+				     eliminar y revisar el resto de las categorías queda en Configuración. Es texto y
+				     no enlace para no sacar al usuario del formulario que está llenando. -->
+				<p
+					v-if="fixedProductFormType"
+					class="flex gap-2 text-xs text-text-muted bg-bg border border-border rounded-md p-3 mb-4"
+				>
+					<i class="ti ti-info-circle text-sm shrink-0" aria-hidden="true"></i>
+					<span>
+						Para editar o eliminar categorías, o ver todas las que existen, ve a
+						<span class="font-medium text-text">Configuración → Categorías</span>.
+					</span>
+				</p>
 
 				<p v-if="generalError" class="text-danger text-xs mb-4" role="alert">{{ generalError }}</p>
 
@@ -100,7 +115,15 @@ const visible = defineModel('visible', { type: Boolean, default: false })
 const props = defineProps({
 	// Con una categoría el formulario edita; sin ella, crea una nueva.
 	category: { type: Object, default: null },
+	// Fija el tipo de formulario de la categoría nueva. Lo usan los formularios de
+	// producto: su select solo lista categorías de su tipo, así que una de otro
+	// tipo no aparecería ahí y parecería que no se guardó.
+	fixedProductFormType: { type: String, default: null },
 })
+
+// Se emite con la categoría guardada para que quien abrió el diálogo la use
+// (ej. dejarla seleccionada en el formulario de producto).
+const emit = defineEmits(['saved'])
 
 const catalogs = useCatalogsStore()
 const notify = useNotify()
@@ -145,7 +168,8 @@ function onCodePrefixInput(event) {
 function fillForm() {
 	name.value = props.category?.name ?? ''
 	codePrefix.value = props.category?.code_prefix ?? ''
-	productFormType.value = props.category?.product_form_type ?? DEFAULT_PRODUCT_FORM_TYPE
+	productFormType.value =
+		props.category?.product_form_type ?? props.fixedProductFormType ?? DEFAULT_PRODUCT_FORM_TYPE
 	// Sin esto el foco cae en el botón de cerrar (el primer enfocable del diálogo).
 	document.getElementById('category_name')?.focus()
 }
@@ -185,16 +209,20 @@ async function submitCategory() {
 			product_form_type: productFormType.value,
 		}
 
+		let saved
 		if (isEditMode.value) {
 			const { data } = await axios.put(`/api/categories/${props.category.id}`, payload)
-			catalogs.updateCategory(props.category.id, data.data)
-			notify.success('Categoría actualizada', data.data.name)
+			saved = data.data
+			catalogs.updateCategory(props.category.id, saved)
+			notify.success('Categoría actualizada', saved.name)
 		} else {
 			const { data } = await axios.post('/api/categories', payload)
-			catalogs.addCategory(data.data)
-			notify.success('Categoría guardada', data.data.name)
+			saved = data.data
+			catalogs.addCategory(saved)
+			notify.success('Categoría guardada', saved.name)
 		}
 
+		emit('saved', saved)
 		visible.value = false
 	} catch (err) {
 		if (err.response?.status === 422) {

@@ -11,7 +11,7 @@
 				v-model:searchQuery="searchQuery"
 				v-model:selectedCategory="selectedCategory"
 				:categoryOptions="categoryOptions"
-				search-placeholder="Buscar por nombre…"
+				search-placeholder="Buscar por nombre o código…"
 				:show-low-stock-filter="false"
 				@clear-filters="clearFilters"
 			/>
@@ -32,10 +32,25 @@
 					<Column header="Nombre">
 						<template #body="{ data }">
 							<span class="font-medium text-text">{{ data.name }}</span>
+							<!-- Sin columna Código por debajo de md: va debajo del nombre, como en pisos -->
+							<span v-if="data.code" class="block md:hidden text-text-muted font-mono text-xs">{{
+								data.code
+							}}</span>
 							<!-- Sin columna Categoría por debajo de sm: va debajo del nombre -->
 							<span class="block sm:hidden text-xs text-text-muted">{{
 								categoryName(data)
 							}}</span>
+						</template>
+					</Column>
+
+					<Column
+						header="Código"
+						header-class="hidden md:table-cell"
+						body-class="hidden md:table-cell whitespace-nowrap"
+					>
+						<template #body="{ data }">
+							<span v-if="data.code" class="text-text-muted font-mono text-xs">{{ data.code }}</span>
+							<span v-else class="text-text-muted">—</span>
 						</template>
 					</Column>
 
@@ -59,7 +74,10 @@
 
 					<Column header="Stock">
 						<template #body="{ data }">
-							<span class="text-text tabular-nums">{{ data.stock_quantity }} uds.</span>
+							<span v-if="isTracked(data)" class="text-text tabular-nums"
+							>{{ data.stock_quantity }} uds.</span
+							>
+							<span v-else class="text-text-muted">Sin control</span>
 						</template>
 					</Column>
 
@@ -69,11 +87,14 @@
 								<button
 									type="button"
 									class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-									aria-label="Ajustar stock"
-									title="Ajustar stock"
+									:aria-label="stockActionLabel(data)"
+									:title="stockActionLabel(data)"
 									@click="openStockDialog(data)"
 								>
-									<i class="ti ti-adjustments-horizontal text-base"></i>
+									<i
+										class="ti text-base"
+										:class="isTracked(data) ? 'ti-adjustments-horizontal' : 'ti-circle-plus'"
+									></i>
 								</button>
 								<button
 									type="button"
@@ -157,6 +178,15 @@ function editProduct(id) {
 	router.push({ name: "inventory.simpleProducts.edit", params: { id } });
 }
 
+// `stock_quantity === null` = producto sin control de stock.
+function isTracked(product) {
+	return product.stock_quantity !== null && product.stock_quantity !== undefined;
+}
+
+function stockActionLabel(product) {
+	return isTracked(product) ? "Ajustar stock" : "Activar seguimiento de stock";
+}
+
 const stockDialogOpen = ref(false);
 const stockDialogProduct = ref(null);
 
@@ -204,7 +234,8 @@ const filteredProducts = computed(() => {
 	return simpleProducts.simpleProducts.filter((product) => {
 		if (selectedCategory.value && categoryName(product) !== selectedCategory.value)
 			return false;
-		if (q && !normalize(product.name).includes(q)) return false;
+		if (q && !normalize(product.name).includes(q) && !normalize(product.code).includes(q))
+			return false;
 		return true;
 	});
 });

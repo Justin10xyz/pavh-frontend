@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useDashboardStore } from '@/stores/dashboard'
 import { dateRangeFor } from '@/lib/dateRanges'
 import SalesSummaryCards from './components/SalesSummaryCards.vue'
@@ -57,10 +57,27 @@ function loadTopProducts() {
 
 watch(topProductsFilter, loadTopProducts)
 
+// Al volver a la pestaña se recarga todo, así "hoy" no se queda en el día
+// anterior si la pestaña quedó abierta cruzando la medianoche. Si la carga
+// anterior sigue en curso no se lanza otra (cambios rápidos de pestaña).
+function refreshOnVisible() {
+	if (document.visibilityState !== 'visible') return
+
+	const dashboardLoading =
+		dashboard.salesLoading || dashboard.lowStockLoading || dashboard.activeQuotesLoading
+	if (!dashboardLoading) dashboard.fetchDashboardData()
+	if (!dashboard.topProductsLoading) loadTopProducts()
+}
+
 // Sin `initialized`: el dashboard se consulta en cada visita.
 onMounted(() => {
 	dashboard.fetchDashboardData()
 	loadTopProducts()
+	document.addEventListener('visibilitychange', refreshOnVisible)
+})
+
+onUnmounted(() => {
+	document.removeEventListener('visibilitychange', refreshOnVisible)
 })
 </script>
 

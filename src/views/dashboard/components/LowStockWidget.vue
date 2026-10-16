@@ -51,7 +51,7 @@
 							<!-- Sin stock es lo más urgente de la lista: badge sólido en vez del
 							     mismo rojo que "stock bajo". -->
 							<span
-								v-if="Number(variant.stock_boxes) === 0"
+								v-if="variant.stock_boxes !== null && Number(variant.stock_boxes) === 0"
 								class="inline-block text-xs font-medium text-white bg-danger rounded px-2 py-0.5"
 							>
 								Agotado

@@ -6,8 +6,8 @@
 				<p class="text-sm text-text-muted mt-0.5">
 					{{
 						isEditMode
-							? "Actualiza los datos de la línea y sus variantes."
-							: "Captura la línea de producto junto con su primera variante."
+							? "Modifica los datos de la línea, sus medidas, precios y colores. El stock se ajusta desde Inventario."
+							: "Registra una línea de piso con sus medidas, precios y colores. Puedes agregar más medidas y colores después."
 					}}
 				</p>
 			</div>
@@ -67,15 +67,32 @@
 
 					<div class="space-y-1.5">
 						<FieldLabel html-for="category_id" text="Categoría" required />
-						<SelectCustom
-							id="category_id"
-							v-model="form.category_id"
-							:options="catalogs.categories"
-							:loading="catalogs.loading"
-							:error="errors.category_id"
-							placeholder="Selecciona una categoría"
-							@change="errors.category_id = ''"
-						/>
+						<!-- Crear la categoría aquí evita salir del formulario y perder lo
+						     capturado. Solo con el catálogo cargado (ver CategoriesSettingsView). -->
+						<div class="flex gap-2">
+							<div class="flex-1 min-w-0">
+								<SelectCustom
+									id="category_id"
+									v-model="form.category_id"
+									:options="variantCategories"
+									:loading="catalogs.loading"
+									:error="errors.category_id"
+									placeholder="Selecciona una categoría"
+									empty-message="No hay categorías de tipo Pisos"
+									@change="errors.category_id = ''"
+								/>
+							</div>
+							<button
+								type="button"
+								class="shrink-0 inline-flex items-center justify-center h-10 w-10 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text rounded-md transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+								aria-label="Nueva categoría"
+								title="Nueva categoría"
+								:disabled="!catalogs.initialized"
+								@click="categoryDialogVisible = true"
+							>
+								<i class="ti ti-plus text-base" aria-hidden="true"></i>
+							</button>
+						</div>
 						<p v-if="errors.category_id" class="text-danger text-[12px] mt-1.5">
 							{{ errors.category_id }}
 						</p>
@@ -387,8 +404,8 @@
 								class="flex-1 grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
 							>
 								<span>Color<span class="text-danger ml-0.5">*</span></span>
-								<span>Stock (cajas)<span class="text-danger ml-0.5">*</span></span>
-								<span>Stock mínimo<span class="text-danger ml-0.5">*</span></span>
+								<span>Stock (cajas)</span>
+								<span>Stock mínimo</span>
 							</div>
 							<span class="w-8 shrink-0"></span>
 						</div>
@@ -421,24 +438,13 @@
 										</p>
 									</div>
 
-									<!-- Variante existente: stock de solo lectura, se ajusta desde
-									     Inventario (diálogo con historial), no desde este form. -->
-									<div v-if="row.variantId" class="space-y-1.5 sm:space-y-0">
-										<span class="text-xs font-medium text-text-muted block sm:sr-only">
-											Stock actual (cajas)
-										</span>
-										<p
-											class="h-10 flex items-center text-sm text-text tabular-nums"
-											title="Se ajusta desde Inventario con «Ajustar stock»"
-										>
-											{{ row.stock_boxes }} cj
-										</p>
-									</div>
-									<div v-else class="space-y-1.5 sm:space-y-0">
+									<!-- Mismo campo para colores nuevos (stock inicial) y existentes:
+									     en uno existente el cambio se aplica al guardar como ajuste
+									     con historial (ver applyStockChanges). Vacío = sin control. -->
+									<div class="space-y-1.5 sm:space-y-0">
 										<FieldLabel
 											:html-for="`stock_boxes-${row.id}`"
-											text="Stock inicial (cajas)"
-											required
+											:text="row.variantId ? 'Stock actual (cajas)' : 'Stock inicial (cajas)'"
 											class="sm:sr-only"
 										/>
 										<InputNumberCustom
@@ -446,12 +452,18 @@
 											v-model="row.stock_boxes"
 											:error="row.errors.stock_boxes"
 											:min="0"
-											placeholder="0"
+											placeholder="Sin control"
 											@input="row.errors.stock_boxes = ''"
 											:max-fraction-digits="0"
 										/>
 										<p v-if="row.errors.stock_boxes" class="text-danger text-xs mt-1.5">
 											{{ row.errors.stock_boxes }}
+										</p>
+										<p
+											v-else-if="row.variantId && stockChangePayload(row.originalStock, row.stock_boxes)"
+											class="text-text-muted text-xs mt-1.5"
+										>
+											{{ describeStockChange(row.originalStock, row.stock_boxes, "cj") }}
 										</p>
 									</div>
 
@@ -459,7 +471,6 @@
 										<FieldLabel
 											:html-for="`minimum_stock-${row.id}`"
 											text="Stock mínimo"
-											required
 											class="sm:sr-only"
 										/>
 										<InputNumberCustom
@@ -548,6 +559,14 @@
 			</div>
 		</form>
 
+		<StockChangesConfirmDialog />
+
+		<CategoryFormDialog
+			v-model:visible="categoryDialogVisible"
+			fixed-product-form-type="variant"
+			@saved="onCategoryCreated"
+		/>
+
 		<ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
 			<template #container="{ message, acceptCallback, rejectCallback }">
 				<div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
@@ -589,12 +608,28 @@ import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { groupVariants } from "@/lib/groupVariants";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { confirmStockChanges, describeStockChange, stockChangePayload } from "@/lib/stockChange";
+import StockChangesConfirmDialog from "./components/StockChangesConfirmDialog.vue";
+import CategoryFormDialog from "@/components/widgets/dialogs/CategoryFormDialog.vue";
 
 const route = useRoute();
 const router = useRouter();
 const confirm = useConfirm();
 const catalogs = useCatalogsStore();
 const inventory = useInventoryStore();
+
+// Las categorías de tipo 'simple' son de "Otros productos"; aquí solo las de pisos.
+const variantCategories = computed(() =>
+	catalogs.categories.filter((c) => c.product_form_type === "variant"),
+);
+
+const categoryDialogVisible = ref(false);
+
+// La categoría recién creada queda seleccionada: es para lo que se abrió el diálogo.
+function onCategoryCreated(category) {
+	form.category_id = category.id;
+	errors.category_id = "";
+}
 
 const isEditMode = computed(() => !!route.params.id);
 const loadingProduct = ref(false);
@@ -625,6 +660,8 @@ const errors = reactive({
 // Cada fila se convierte en su propia variante (POST/PUT /api/product-variants). `id` es
 // solo la key local para el v-for; `variantId` es el id real en backend (null si la fila
 // es nueva en esta sesión de edición) y decide POST vs. PUT al guardar.
+// `originalStock` es el stock con el que se cargó la variante: contra él se
+// calcula el ajuste al guardar.
 function createColorRow({
 	variantId = null,
 	color = "",
@@ -636,6 +673,7 @@ function createColorRow({
 		variantId,
 		color,
 		stock_boxes,
+		originalStock: stock_boxes,
 		minimum_stock,
 		errors: { color: "", stock_boxes: "", minimum_stock: "" },
 	};
@@ -807,7 +845,7 @@ const requiredVariantFields = [
 	"pieces_per_box",
 	"m2_per_box",
 ];
-const requiredColorRowFields = ["color", "stock_boxes", "minimum_stock"];
+const requiredColorRowFields = ["color"];
 
 const validateForm = () => {
 	let isValid = true;
@@ -847,9 +885,9 @@ const submitting = ref(false);
 const generalError = ref(null);
 
 // Cada variante toma la ficha técnica de su propio grupo. `stock_boxes` solo va al
-// crear (stock inicial): en una variante existente el stock se cambia con el diálogo
-// de ajuste, que deja historial — mandarlo en el PUT pisaría una venta ocurrida
-// mientras el form estaba abierto.
+// crear (stock inicial): en una variante existente el backend lo ignora en el
+// update, y el cambio viaja aparte como ajuste (applyStockChanges).
+// Vacío viaja como null: la variante queda sin control de stock.
 function buildVariantPayload(productId, group, row) {
 	const { spec } = group;
 	const payload = {
@@ -883,8 +921,49 @@ function applyServerErrors(serverErrors) {
 	}
 }
 
+// Cambios de stock en variantes existentes, con lo que se muestra al confirmar.
+function pendingStockChanges() {
+	return variantGroups.value.flatMap((group) =>
+		group.colorRows
+			.filter((row) => row.variantId)
+			.map((row) => ({ group, row, payload: stockChangePayload(row.originalStock, row.stock_boxes) }))
+			.filter(({ payload }) => payload)
+			.map(({ group, row, payload }) => ({
+				row,
+				payload,
+				label: `${group.spec.size} · ${row.color}`,
+				description: describeStockChange(row.originalStock, row.stock_boxes, "cj"),
+			})),
+	);
+}
+
+// Corre después de guardar las variantes. Cada ajuste es independiente: los que
+// salen bien actualizan `originalStock` para que un reintento no los repita.
+// Devuelve los que fallaron (ej. "Stock insuficiente" si hubo una venta mientras
+// el form estaba abierto).
+async function applyStockChanges(changes) {
+	const results = await Promise.allSettled(
+		changes.map(({ row, payload }) =>
+			axios.patch(`/api/product-variants/${row.variantId}/stock`, payload),
+		),
+	);
+
+	return results.flatMap((result, index) => {
+		const { row, label } = changes[index];
+		if (result.status === "fulfilled") {
+			row.stock_boxes = result.value.data.data.stock_boxes;
+			row.originalStock = row.stock_boxes;
+			return [];
+		}
+		return [`${label} (${result.reason.response?.data?.message ?? "error inesperado"})`];
+	});
+}
+
 const handleSubmit = async () => {
 	if (!validateForm()) return;
+
+	const stockChanges = pendingStockChanges();
+	if (stockChanges.length && !(await confirmStockChanges(confirm, stockChanges))) return;
 
 	generalError.value = null;
 	submitting.value = true;
@@ -927,7 +1006,15 @@ const handleSubmit = async () => {
 			),
 		);
 
+		const stockFailures = await applyStockChanges(stockChanges);
+
 		await inventory.fetchProducts();
+
+		if (stockFailures.length) {
+			generalError.value = `Se guardaron los cambios, pero no se pudo ajustar el stock de: ${stockFailures.join("; ")}.`;
+			return;
+		}
+
 		router.push({ name: "inventory", query: inventory.listQuery });
 	} catch (err) {
 		if (productSaved) {

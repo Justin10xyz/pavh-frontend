@@ -39,7 +39,8 @@
 				<template v-if="option.type === 'variant'">
 					<p class="text-sm text-text">{{ option.lineName }} — {{ option.color }} — {{ option.size }}</p>
 					<p class="text-xs text-text-muted mt-0.5">
-						{{ formatCurrency(option.price_per_m2) }}/m² · Stock: {{ option.stock_boxes }} cajas
+						{{ formatCurrency(option.price_per_m2) }}/m² ·
+						{{ option.stock_boxes === null ? 'Sin control de stock' : `Stock: ${option.stock_boxes} cajas` }}
 					</p>
 				</template>
 
@@ -51,7 +52,8 @@
 						</span>
 					</p>
 					<p class="text-xs text-text-muted mt-0.5">
-						{{ formatCurrency(option.price) }} · Stock: {{ option.stock_quantity }} unidades
+						{{ formatCurrency(option.price) }} ·
+						{{ option.stock_quantity === null ? 'Sin control de stock' : `Stock: ${option.stock_quantity} unidades` }}
 					</p>
 				</template>
 			</li>
@@ -142,7 +144,7 @@ const simpleProductOptions = computed(() => {
 		const categoryName = categoryNames.get(product.category_id) ?? ''
 		return {
 			option: { ...product, type: 'simple', categoryName },
-			searchText: normalize(`${product.name} ${categoryName}`),
+			searchText: normalize(`${product.name} ${categoryName} ${product.code ?? ''}`),
 		}
 	})
 })

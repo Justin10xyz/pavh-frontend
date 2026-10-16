@@ -41,7 +41,7 @@
 							</span>
 						</div>
 						<p class="text-sm text-text-muted mt-0.5">
-							Creada el {{ formatDate(quote.created_at) }}
+							Creada el {{ formatDateTime(quote.created_at) }}
 						</p>
 					</div>
 				</div>
@@ -61,7 +61,10 @@
 							>
 								{{ cancelling ? "Cancelando…" : "Cancelar cotización" }}
 							</button>
-							<span class="hidden sm:block w-px h-6 bg-border" aria-hidden="true"></span>
+							<span
+								class="hidden sm:block w-px h-6 bg-border"
+								aria-hidden="true"
+							></span>
 							<button
 								type="button"
 								@click="editQuote"
@@ -113,9 +116,7 @@
 			<div class="space-y-4">
 				<!-- Datos generales -->
 				<div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-					<h2
-						class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4"
-					>
+					<h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">
 						Datos generales
 					</h2>
 
@@ -180,7 +181,9 @@
 									<th class="text-right">Cantidad</th>
 									<!-- Precio unitario se oculta por debajo de sm: el subtotal ya basta.
 									     normal-case: el uppercase del encabezado convertiría m² en M² -->
-									<th class="text-right hidden sm:table-cell">Precio unitario<span class="normal-case">/m²</span></th>
+									<th class="text-right hidden sm:table-cell">
+										Precio unitario<span class="normal-case">/m²</span>
+									</th>
 									<th class="text-right">Subtotal</th>
 								</tr>
 							</thead>
@@ -214,16 +217,23 @@
 											<!-- Sin boxes: línea previa al cambio a cajas cuya variante no
 											     tenía m2_per_box; se muestra tal cual se emitió, en m² -->
 											<template v-if="item.boxes">
-												{{ item.boxes }} {{ item.boxes === 1 ? "caja" : "cajas" }}
-												<div class="text-text-muted text-xs tabular-nums">{{ formatQuantity(item.quantity) }} m²</div>
+												{{ item.boxes }}
+												{{ item.boxes === 1 ? "caja" : "cajas" }}
+												<div class="text-text-muted text-xs tabular-nums">
+													{{ formatQuantity(item.quantity) }} m²
+												</div>
 											</template>
-											<template v-else>{{ formatQuantity(item.quantity) }} m²</template>
+											<template v-else
+											>{{ formatQuantity(item.quantity) }} m²</template
+											>
 										</td>
 										<td class="text-right text-text hidden sm:table-cell">
-											{{ formatCurrency(item.unit_price) }}/m²
-											<div v-if="item.boxes" class="text-text-muted text-xs tabular-nums">
+											<div v-if="item.boxes">
 												{{ formatCurrency(boxPrice(item)) }}/caja
 											</div>
+											<span class="text-text-muted text-xs tabular-nums">
+												{{ formatCurrency(item.unit_price) }}/m²
+											</span>
 										</td>
 									</template>
 									<td class="text-right text-text">
@@ -289,6 +299,7 @@ import { useDocumentPdf } from "@/composables/useDocumentPdf";
 import { useNotify } from "@/composables/useNotify";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
+import { formatDateTime } from "@/lib/dates";
 
 const route = useRoute();
 const router = useRouter();
@@ -306,7 +317,14 @@ const quote = computed(() => {
 	return current && String(current.id) === String(route.params.id) ? current : null;
 });
 
-const { canShareFiles, pdfBusy, pdfError, downloadPdf, sharePdf, reset: resetPdf } = useDocumentPdf({
+const {
+	canShareFiles,
+	pdfBusy,
+	pdfError,
+	downloadPdf,
+	sharePdf,
+	reset: resetPdf,
+} = useDocumentPdf({
 	fetchPdf: quotes.fetchQuotePdf,
 	filePrefix: "Cotizacion",
 	titlePrefix: "Cotización",
@@ -330,16 +348,6 @@ const isEditable = computed(() => quote.value?.status === "Borrador");
 // como se guardaron en la línea (no el m2_per_box actual de la variante).
 function boxPrice(item) {
 	return Math.round(((Number(item.unit_price) * Number(item.quantity)) / item.boxes) * 100) / 100;
-}
-
-function formatDate(value) {
-	return new Date(value).toLocaleString("es-MX", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
 }
 
 function editQuote() {
