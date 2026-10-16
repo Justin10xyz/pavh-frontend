@@ -25,6 +25,23 @@ En **Configuración → Categorías**, da clic en el ícono de **bote de basura*
 
 Una categoría eliminada deja de aparecer en las listas, pero las ventas y cotizaciones anteriores no cambian. Después puedes crear otra con el mismo nombre y prefijo.
 
+### Proveedores
+
+Cada piso tiene un **proveedor** (por ejemplo, Interceramic). Los productos de *Otros productos* no llevan proveedor.
+
+Si el proveedor que necesitas todavía no existe, da clic en el botón **+** junto a la lista de **Proveedor** en el formulario del piso. Se abre la ventana **Nuevo proveedor** sin salir del formulario y, al guardarlo, queda seleccionado en el piso.
+
+Para ver todos los proveedores, cambiarles el nombre o eliminarlos, ve a **Configuración → Proveedores**. No puede haber dos proveedores con el mismo nombre.
+
+### Eliminar un proveedor
+
+En **Configuración → Proveedores**, da clic en el ícono de **bote de basura** del proveedor:
+
+- Si el proveedor **no tiene productos**, se pide confirmación antes de eliminarlo.
+- Si **tiene productos**, no se puede eliminar. La ventana dice cuántos tiene; primero hay que editar esos pisos y cambiarles el proveedor.
+
+Un proveedor eliminado deja de aparecer en las listas, pero las ventas y cotizaciones anteriores no cambian. Después puedes crear otro con el mismo nombre.
+
 ---
 
 ## 2. Catálogo de pisos
@@ -173,3 +190,5 @@ Mejoras que se van agregando al módulo:
 | 2026-10-15 | **Nuevo piso / producto general**: botón **+** junto a la lista de categorías para crear una categoría nueva sin salir del formulario; queda seleccionada al guardarla. |
 | 2026-10-15 | **Configuración → Categorías**: ahora se pueden eliminar categorías que no tengan productos. |
 | 2026-10-15 | **Otros productos**: nuevo campo **Código** (opcional, capturado a mano) en el formulario, columna Código en la tabla y búsqueda por código en inventario, cotizaciones y ventas. |
+| 2026-10-16 | **Configuración → Proveedores**: nueva pantalla para agregar, editar y eliminar proveedores. Solo se pueden eliminar los que no tengan productos. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: botón **+** junto a la lista de proveedores para crear uno nuevo sin salir del formulario; queda seleccionado al guardarlo. |

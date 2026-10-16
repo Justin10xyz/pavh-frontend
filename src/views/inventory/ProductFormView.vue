@@ -51,15 +51,31 @@
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div class="space-y-1.5">
 						<FieldLabel html-for="supplier_id" text="Proveedor" required />
-						<SelectCustom
-							id="supplier_id"
-							v-model="form.supplier_id"
-							:options="catalogs.suppliers"
-							:loading="catalogs.loading"
-							:error="errors.supplier_id"
-							placeholder="Selecciona un proveedor"
-							@change="errors.supplier_id = ''"
-						/>
+						<!-- Igual que Categoría: crear el proveedor aquí evita salir del
+						     formulario. Solo con el catálogo cargado (ver SuppliersSettingsView). -->
+						<div class="flex gap-2">
+							<div class="flex-1 min-w-0">
+								<SelectCustom
+									id="supplier_id"
+									v-model="form.supplier_id"
+									:options="catalogs.suppliers"
+									:loading="catalogs.loading"
+									:error="errors.supplier_id"
+									placeholder="Selecciona un proveedor"
+									@change="errors.supplier_id = ''"
+								/>
+							</div>
+							<button
+								type="button"
+								class="shrink-0 inline-flex items-center justify-center h-10 w-10 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text rounded-md transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+								aria-label="Nuevo proveedor"
+								title="Nuevo proveedor"
+								:disabled="!catalogs.initialized"
+								@click="supplierDialogVisible = true"
+							>
+								<i class="ti ti-plus text-base" aria-hidden="true"></i>
+							</button>
+						</div>
 						<p v-if="errors.supplier_id" class="text-danger text-[12px] mt-1.5">
 							{{ errors.supplier_id }}
 						</p>
@@ -561,6 +577,12 @@
 
 		<StockChangesConfirmDialog />
 
+		<SupplierFormDialog
+			v-model:visible="supplierDialogVisible"
+			from-product-form
+			@saved="onSupplierCreated"
+		/>
+
 		<CategoryFormDialog
 			v-model:visible="categoryDialogVisible"
 			fixed-product-form-type="variant"
@@ -611,6 +633,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { confirmStockChanges, describeStockChange, stockChangePayload } from "@/lib/stockChange";
 import StockChangesConfirmDialog from "./components/StockChangesConfirmDialog.vue";
 import CategoryFormDialog from "@/components/widgets/dialogs/CategoryFormDialog.vue";
+import SupplierFormDialog from "@/components/widgets/dialogs/SupplierFormDialog.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -622,6 +645,14 @@ const inventory = useInventoryStore();
 const variantCategories = computed(() =>
 	catalogs.categories.filter((c) => c.product_form_type === "variant"),
 );
+
+const supplierDialogVisible = ref(false);
+
+// El proveedor recién creado queda seleccionado: es para lo que se abrió el diálogo.
+function onSupplierCreated(supplier) {
+	form.supplier_id = supplier.id;
+	errors.supplier_id = "";
+}
 
 const categoryDialogVisible = ref(false);
 
