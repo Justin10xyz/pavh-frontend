@@ -186,7 +186,7 @@
                         <span
                             v-if="group.spec.price_per_box !== null && group.spec.price_per_box !== ''"
                             class="font-semibold text-primary tabular-nums"
-                        >{{ formatCurrency(group.spec.price_per_box) }}/caja</span
+                        >{{ formatCurrency(group.spec.price_per_box) }}/{{ soldByPiece ? "pieza" : "caja" }}</span
                         >
                         <span class="text-xs text-text-muted">
                             · {{ group.colorRows.length }}
@@ -205,7 +205,8 @@
                     </button>
                 </div>
 
-                <!-- Grupo 1 — Medida y especificaciones técnicas -->
+                <!-- Grupo 1 — Medida y especificaciones técnicas. PEI/ETT no aplican
+				     a pisos por pieza (el backend los rechaza). -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="space-y-1.5">
                         <FieldLabel :html-for="`size-${group.id}`" text="Medida" required />
@@ -221,7 +222,7 @@
                         </p>
                     </div>
 
-                    <div class="space-y-1.5">
+                    <div v-if="!soldByPiece" class="space-y-1.5">
                         <FieldLabel :html-for="`pei-${group.id}`" text="PEI" />
                         <SelectCustom
                             :id="`pei-${group.id}`"
@@ -237,7 +238,7 @@
                         </p>
                     </div>
 
-                    <div class="space-y-1.5">
+                    <div v-if="!soldByPiece" class="space-y-1.5">
                         <FieldLabel :html-for="`ett-${group.id}`" text="ETT" />
                         <InputTextCustom
                             :id="`ett-${group.id}`"
@@ -252,10 +253,15 @@
                     </div>
                 </div>
 
-                <!-- Grupo 3 — Precio -->
+                <!-- Grupo 3 — Precio. Pisos por pieza: un solo precio, el de la pieza,
+				     que viaja como price_per_box (no llevan precio por m²). -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 border-t border-border pt-4">
                     <div class="space-y-1.5">
-                        <FieldLabel :html-for="`price_per_box-${group.id}`" text="Precio por caja" required />
+                        <FieldLabel
+                            :html-for="`price_per_box-${group.id}`"
+                            :text="soldByPiece ? 'Precio por pieza' : 'Precio por caja'"
+                            required
+                        />
                         <InputNumberCustom
                             :id="`price_per_box-${group.id}`"
                             v-model="group.spec.price_per_box"
@@ -274,7 +280,7 @@
                         </p>
                     </div>
 
-                    <div class="space-y-1.5">
+                    <div v-if="!soldByPiece" class="space-y-1.5">
                         <FieldLabel :html-for="`price_per_m2-${group.id}`" text="Precio por m²" required />
                         <InputNumberCustom
                             :id="`price_per_m2-${group.id}`"
@@ -292,7 +298,8 @@
                     </div>
                 </div>
 
-                <!-- Grupo 2 — Datos por caja -->
+                <!-- Grupo 2 — Datos por caja. En pisos por pieza solo queda piezas por
+				     caja: m², kilos y cajas por tarima son logística de caja que no aplica. -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                     <div class="space-y-1.5">
                         <FieldLabel :html-for="`pieces_per_box-${group.id}`" text="Piezas por caja" required />
@@ -313,7 +320,7 @@
                         </p>
                     </div>
 
-                    <div class="space-y-1.5">
+                    <div v-if="!soldByPiece" class="space-y-1.5">
                         <FieldLabel :html-for="`kilos_per_box-${group.id}`" text="Kilos por caja" />
                         <InputNumberCustom
                             :id="`kilos_per_box-${group.id}`"
@@ -332,7 +339,7 @@
                         </p>
                     </div>
 
-                    <div class="space-y-1.5">
+                    <div v-if="!soldByPiece" class="space-y-1.5">
                         <FieldLabel :html-for="`m2_per_box-${group.id}`" text="m² por caja" required />
                         <InputNumberCustom
                             :id="`m2_per_box-${group.id}`"
@@ -348,7 +355,7 @@
                         </p>
                     </div>
 
-                    <div class="space-y-1.5">
+                    <div v-if="!soldByPiece" class="space-y-1.5">
                         <FieldLabel :html-for="`boxes_per_pallet-${group.id}`" text="Cajas por tarima" />
                         <InputNumberCustom
                             :id="`boxes_per_pallet-${group.id}`"
@@ -420,7 +427,7 @@
                                 class="flex-1 grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
                             >
                                 <span>Color<span class="text-danger ml-0.5">*</span></span>
-                                <span>Stock (cajas)</span>
+                                <span>Stock ({{ stockUnit.label }})</span>
                                 <span>Stock mínimo</span>
                             </div>
                             <span class="w-8 shrink-0"></span>
@@ -460,7 +467,7 @@
                                     <div class="space-y-1.5 sm:space-y-0">
                                         <FieldLabel
                                             :html-for="`stock_boxes-${row.id}`"
-                                            :text="row.variantId ? 'Stock actual (cajas)' : 'Stock inicial (cajas)'"
+                                            :text="`${row.variantId ? 'Stock actual' : 'Stock inicial'} (${stockUnit.label})`"
                                             class="sm:sr-only"
                                         />
                                         <InputNumberCustom
@@ -479,7 +486,7 @@
                                             v-else-if="row.variantId && stockChangePayload(row.originalStock, row.stock_boxes)"
                                             class="text-text-muted text-xs mt-1.5"
                                         >
-                                            {{ describeStockChange(row.originalStock, row.stock_boxes, "cj") }}
+                                            {{ describeStockChange(row.originalStock, row.stock_boxes, stockUnit.short) }}
                                         </p>
                                     </div>
 
@@ -631,6 +638,7 @@ import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { groupVariants } from "@/lib/groupVariants";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { confirmStockChanges, describeStockChange, stockChangePayload } from "@/lib/stockChange";
+import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import StockChangesConfirmDialog from "./components/StockChangesConfirmDialog.vue";
 import CategoryFormDialog from "@/components/widgets/dialogs/CategoryFormDialog.vue";
 import SupplierFormDialog from "@/components/widgets/dialogs/SupplierFormDialog.vue";
@@ -679,6 +687,24 @@ const form = reactive({
     name: "",
     purchase_unit: "",
 });
+
+// Se recalcula al cambiar el selector de Unidad, en creación y en edición.
+const selectedUnitTypeName = computed(
+    () => catalogs.unitTypes.find((unitType) => unitType.id === form.unit_type_id)?.name ?? null,
+);
+const soldByPiece = computed(() => isSoldByPiece(selectedUnitTypeName.value));
+const stockUnit = computed(() => variantStockUnit(selectedUnitTypeName.value));
+
+// Campos de variante que no aplican a pisos por pieza: no se muestran, no se
+// validan y no viajan en el payload (el backend rechaza los de m²/PEI/ETT).
+const pieceExcludedVariantFields = [
+    "pei",
+    "ett",
+    "price_per_m2",
+    "m2_per_box",
+    "kilos_per_box",
+    "boxes_per_pallet",
+];
 
 const errors = reactive({
     supplier_id: "",
@@ -889,8 +915,17 @@ const validateForm = () => {
         }
     }
 
+    const variantFields = soldByPiece.value
+        ? requiredVariantFields.filter((field) => !pieceExcludedVariantFields.includes(field))
+        : requiredVariantFields;
+
     for (const group of variantGroups.value) {
-        for (const field of requiredVariantFields) {
+        // Errores que quedaron de antes de cambiar la Unidad a pieza, en campos ya ocultos.
+        if (soldByPiece.value) {
+            for (const field of pieceExcludedVariantFields) group.specErrors[field] = "";
+        }
+
+        for (const field of variantFields) {
             group.specErrors[field] = "";
             if (group.spec[field] === "" || group.spec[field] === null) {
                 group.specErrors[field] = "Este campo es requerido";
@@ -939,6 +974,11 @@ function buildVariantPayload(productId, group, row) {
 
     if (!row.variantId) payload.stock_boxes = row.stock_boxes;
 
+    // Pisos por pieza: los campos que no aplican ni siquiera viajan como null.
+    if (soldByPiece.value) {
+        for (const field of pieceExcludedVariantFields) delete payload[field];
+    }
+
     return payload;
 }
 
@@ -963,7 +1003,7 @@ function pendingStockChanges() {
                 row,
                 payload,
                 label: `${group.spec.size} · ${row.color}`,
-                description: describeStockChange(row.originalStock, row.stock_boxes, "cj"),
+                description: describeStockChange(row.originalStock, row.stock_boxes, stockUnit.value.short),
             })),
     );
 }

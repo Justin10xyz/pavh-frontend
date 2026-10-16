@@ -108,13 +108,25 @@
                                         >
                                             <span class="flex items-center gap-2 whitespace-nowrap">
                                                 <span class="font-medium text-text">{{ group.size }}</span>
-                                                <span class="spec-badge">PEI {{ group.pei }}</span>
-                                                <span class="spec-badge">ETT {{ group.ett }}</span>
+                                                <!-- Pisos por pieza: sin PEI/ETT, un solo precio (por
+								     pieza) y sin datos de logística por caja. -->
+                                                <template v-if="!isSoldByPiece(data.unit_type)">
+                                                    <span class="spec-badge">PEI {{ group.pei }}</span>
+                                                    <span class="spec-badge">ETT {{ group.ett }}</span>
+                                                </template>
                                                 <span v-if="group.commission_category" class="spec-badge">{{
                                                     group.commission_category.code
                                                 }}</span>
                                             </span>
-                                            <span class="flex items-center gap-2 whitespace-nowrap">
+                                            <span
+                                                v-if="isSoldByPiece(data.unit_type)"
+                                                class="flex items-center gap-2 whitespace-nowrap"
+                                            >
+                                                <span class="font-semibold text-primary tabular-nums"
+                                                >{{ formatCurrency(group.price_per_box) }}/pieza</span
+                                                >
+                                            </span>
+                                            <span v-else class="flex items-center gap-2 whitespace-nowrap">
                                                 <span class="font-semibold text-primary tabular-nums"
                                                 >{{ formatCurrency(group.price_per_box) }}/caja</span
                                                 >
@@ -122,7 +134,7 @@
                                                 >{{ formatCurrency(group.price_per_m2) }}/m²</span
                                                 >
                                             </span>
-                                            <span class="text-text-muted">
+                                            <span v-if="!isSoldByPiece(data.unit_type)" class="text-text-muted">
                                                 {{ group.pieces_per_box }} pzas/caja ·
                                                 {{ Number(group.m2_per_box).toFixed(2) }} m²/caja ·
                                                 {{ group.kilos_per_box }} kg/caja
@@ -198,7 +210,7 @@
                                                     >
                                                         {{
                                                             isTracked(variant)
-                                                                ? `${variant.stock_boxes} cj`
+                                                                ? `${variant.stock_boxes} ${variantStockUnit(data.unit_type).short}`
                                                                 : "—"
                                                         }}
                                                     </td>
@@ -226,7 +238,7 @@
                                                             >
                                                                 <button
                                                                     type="button"
-                                                                    @click="emit('open-stock-dialog', variant)"
+                                                                    @click="emit('open-stock-dialog', variant, data)"
                                                                     class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
                                                                     :aria-label="stockActionLabel(variant)"
                                                                     :title="stockActionLabel(variant)"
@@ -243,7 +255,7 @@
                                                                 <button
                                                                     type="button"
                                                                     @click="
-                                                                        emit('open-movements-dialog', variant)
+                                                                        emit('open-movements-dialog', variant, data)
                                                                     "
                                                                     class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
                                                                     aria-label="Ver historial de stock"
@@ -274,6 +286,7 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { groupVariants } from "@/lib/groupVariants";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 
 const props = defineProps({
     products: {
@@ -292,6 +305,8 @@ const props = defineProps({
     },
 });
 
+// Los diálogos de stock reciben (variant, product): la variante no trae su
+// unidad de venta, que vive en el producto (unit_type).
 const emit = defineEmits(["edit-product", "open-stock-dialog", "open-movements-dialog"]);
 
 // `expandedRows` = filas que PrimeVue tiene montadas; `openRows` = filas que el
