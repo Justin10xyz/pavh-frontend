@@ -192,3 +192,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-15 | **Otros productos**: nuevo campo **Código** (opcional, capturado a mano) en el formulario, columna Código en la tabla y búsqueda por código en inventario, cotizaciones y ventas. |
 | 2026-10-16 | **Configuración → Proveedores**: nueva pantalla para agregar, editar y eliminar proveedores. Solo se pueden eliminar los que no tengan productos. |
 | 2026-10-16 | **Nuevo piso / Editar piso**: botón **+** junto a la lista de proveedores para crear uno nuevo sin salir del formulario; queda seleccionado al guardarlo. |
+| 2026-10-16 | **Categorías y proveedores**: al guardar un nombre que ya existe, el aviso ahora dice claramente *"Ya existe una categoría con ese nombre."* o *"Ya existe un proveedor con ese nombre."* |
