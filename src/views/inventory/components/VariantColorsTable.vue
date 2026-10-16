@@ -135,7 +135,7 @@
 
         <button
             type="button"
-            @click="rows.push(createColorRow())"
+            @click="addRow"
             class="mt-3 w-full border border-dashed border-border rounded-md py-2 text-sm text-text-muted hover:text-text hover:border-accent transition-colors select-none cursor-pointer"
         >
             + Agregar color
@@ -144,6 +144,7 @@
 </template>
 
 <script setup>
+import { nextTick } from "vue";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
@@ -164,6 +165,14 @@ defineProps({
 });
 
 const emit = defineEmits(["remove"]);
+
+// Sin mouse: el foco pasa al color de la fila nueva para capturarlo de inmediato.
+async function addRow() {
+    const row = createColorRow();
+    rows.value.push(row);
+    await nextTick();
+    document.getElementById(`color-${row.id}`)?.focus();
+}
 </script>
 
 <style scoped></style>

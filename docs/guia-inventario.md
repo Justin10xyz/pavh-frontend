@@ -114,6 +114,17 @@ En **cotizaciones y ventas** se captura directamente cuántas piezas lleva el cl
 
 > La **Unidad** de un piso no se puede cambiar una vez que tiene colores registrados: la lista aparece deshabilitada con un aviso. Si un piso se registró con la unidad equivocada, hay que crearlo de nuevo con la unidad correcta.
 
+### Capturar un piso con el teclado
+
+El formulario del piso se puede llenar completo sin usar el mouse:
+
+- Al abrir **Nuevo piso**, el cursor ya está en **Proveedor**: se puede empezar a capturar de inmediato.
+- **Tab** avanza al siguiente campo y **Shift + Tab** regresa al anterior.
+- En las listas (Proveedor, Categoría, Unidad, PEI…), escribir la primera letra salta a la opción que empieza con ella; las **flechas** recorren la lista y **Enter** elige.
+- Al presionar **+ Agregar color**, el cursor pasa directo al campo **Color** de la fila nueva. Con **+ Agregar medida**, pasa a la **Medida** nueva.
+- Al quitar un color o una medida, el cursor se queda en el color o la medida de al lado, para seguir capturando.
+- Si al guardar falta algún dato, el cursor salta al primer campo marcado en rojo.
+
 ---
 
 ## 3. Búsqueda y filtros
@@ -232,3 +243,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Editar piso**: cuando un cambio no se puede guardar, ahora se muestra el motivo en lugar de no pasar nada. |
 | 2026-10-16 | **Códigos de comisión**: cinco códigos (Vo, Vc, A, N, R) del que más comisión deja al que menos. El catálogo los muestra con un punto de color junto al código, y la lista del formulario dice el nombre de cada uno (*"Vo · Verde oscuro"*). |
 | 2026-10-16 | **Cotizaciones y ventas**: cada piso agregado muestra su código de comisión (punto de color y código) junto al color y la medida. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: captura con teclado más fluida. El cursor empieza en Proveedor, pasa solo al color o medida nuevos al agregarlos, no se pierde al quitarlos, y salta al primer campo con error al intentar guardar. |

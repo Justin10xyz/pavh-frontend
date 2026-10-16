@@ -41,7 +41,7 @@
             {{ generalError }}
         </p>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+        <form ref="formRef" @submit.prevent="handleSubmit" class="space-y-4">
             <!-- Sección 1 — Datos del producto (línea) -->
             <ProductInfoSection
                 v-model:form="form"
@@ -126,7 +126,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
@@ -159,10 +159,29 @@ const inventory = useInventoryStore();
 const isEditMode = computed(() => !!route.params.id);
 const loadingProduct = ref(false);
 
+const formRef = ref(null);
+
+// Sin mouse: en un alta se puede empezar a capturar sin hacer clic. El Select
+// pone su `labelId` en el elemento enfocable (ver SelectCustom.vue).
 onMounted(() => {
     if (!catalogs.initialized) catalogs.fetchCatalogs();
     if (isEditMode.value) fetchProduct();
+    else document.getElementById("supplier_id")?.focus();
 });
+
+// Tras agregar o quitar algo el foco no se pierde en el <body>: va al campo con
+// el que se sigue capturando.
+async function focusField(id) {
+    await nextTick();
+    document.getElementById(id)?.focus();
+}
+
+// Los widgets marcan `aria-invalid` con su prop `error`, así que basta con el
+// primero en el DOM (mismo orden que en pantalla). `focus()` lo trae a la vista.
+async function focusFirstInvalidField() {
+    await nextTick();
+    formRef.value?.querySelector('[aria-invalid="true"]')?.focus();
+}
 
 const form = reactive({
     supplier_id: "",
@@ -196,7 +215,9 @@ const hasSavedVariants = computed(() =>
 );
 
 function addVariantGroup() {
-    variantGroups.value.push(createVariantGroup());
+    const group = createVariantGroup();
+    variantGroups.value.push(group);
+    focusField(`size-${group.id}`);
 }
 
 // Mismo criterio que colores nuevos vs. existentes: un grupo solo se quita si
@@ -208,7 +229,18 @@ function canRemoveGroup(group) {
 function removeVariantGroup(groupId) {
     const group = variantGroups.value.find((g) => g.id === groupId);
     if (!group || !canRemoveGroup(group)) return;
+    const index = variantGroups.value.indexOf(group);
     variantGroups.value = variantGroups.value.filter((g) => g.id !== groupId);
+    focusField(`size-${variantGroups.value[Math.max(index - 1, 0)].id}`);
+}
+
+// El foco pasa al color de la fila que quedó en su lugar (o a la anterior si
+// era la última).
+function removeRowAndFocus(group, rowId) {
+    const index = group.colorRows.findIndex((r) => r.id === rowId);
+    group.colorRows = group.colorRows.filter((r) => r.id !== rowId);
+    const next = group.colorRows[Math.min(index, group.colorRows.length - 1)];
+    focusField(`color-${next.id}`);
 }
 
 const deletingRowId = ref(null);
@@ -225,7 +257,7 @@ function removeColorRow(group, rowId) {
     if (!row) return;
 
     if (!row.variantId) {
-        group.colorRows = group.colorRows.filter((r) => r.id !== rowId);
+        removeRowAndFocus(group, rowId);
         return;
     }
 
@@ -242,7 +274,7 @@ async function deleteVariantRow(group, row) {
 
     try {
         await axios.delete(`/api/product-variants/${row.variantId}`);
-        group.colorRows = group.colorRows.filter((r) => r.id !== row.id);
+        removeRowAndFocus(group, row.id);
     } catch (err) {
         if (err.response?.status === 422) {
             generalError.value = err.response.data.message;
@@ -341,7 +373,10 @@ async function applyStockChanges(changes) {
 }
 
 const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+        focusFirstInvalidField();
+        return;
+    }
 
     const stockChanges = pendingStockChanges(variantGroups.value, stockUnit.value.short);
     if (stockChanges.length && !(await confirmStockChanges(confirm, stockChanges))) return;
