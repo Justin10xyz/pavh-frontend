@@ -41,7 +41,13 @@
             {{ generalError }}
         </p>
 
-        <form ref="formRef" @submit.prevent="handleSubmit" class="space-y-4">
+        <form
+            ref="formRef"
+            @submit.prevent="handleSubmit"
+            @keydown.capture="advanceSelectOnEnter"
+            @keydown="advanceOnEnter"
+            class="space-y-4"
+        >
             <!-- Sección 1 — Datos del producto (línea) -->
             <ProductInfoSection
                 v-model:form="form"
@@ -134,6 +140,7 @@ import axios from "@/lib/axios";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { useInventoryStore } from "@/stores/inventory";
 import { confirmStockChanges } from "@/lib/stockChange";
+import { advanceOnEnter, advanceSelectOnEnter } from "@/lib/formKeyboard";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import {
     buildVariantPayload,

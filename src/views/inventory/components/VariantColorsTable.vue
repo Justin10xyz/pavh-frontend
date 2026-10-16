@@ -97,6 +97,7 @@
                                 :min="0"
                                 placeholder="0"
                                 @input="row.errors.minimum_stock = ''"
+                                @keydown.enter="addRowOnEnter($event, row)"
                                 :max-fraction-digits="0"
                             />
                             <p v-if="row.errors.minimum_stock" class="text-danger text-xs mt-1.5">
@@ -172,6 +173,17 @@ async function addRow() {
     rows.value.push(row);
     await nextTick();
     document.getElementById(`color-${row.id}`)?.focus();
+}
+
+// Como en una hoja de cálculo: Enter en el último campo de la última fila abre
+// una fila nueva. Solo si esa fila ya tiene color; si no, el Enter sigue de
+// largo al siguiente campo (ver advanceOnEnter en lib/formKeyboard.js), así no
+// se acumulan filas vacías. preventDefault le avisa al form que ya se resolvió.
+function addRowOnEnter(event, row) {
+    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    if (row !== rows.value.at(-1) || !row.color.trim()) return;
+    event.preventDefault();
+    addRow();
 }
 </script>
 

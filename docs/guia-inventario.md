@@ -119,8 +119,10 @@ En **cotizaciones y ventas** se captura directamente cuántas piezas lleva el cl
 El formulario del piso se puede llenar completo sin usar el mouse:
 
 - Al abrir **Nuevo piso**, el cursor ya está en **Proveedor**: se puede empezar a capturar de inmediato.
-- **Tab** avanza al siguiente campo y **Shift + Tab** regresa al anterior.
-- En las listas (Proveedor, Categoría, Unidad, PEI…), escribir la primera letra salta a la opción que empieza con ella; las **flechas** recorren la lista y **Enter** elige.
+- **Enter** avanza al siguiente campo, igual que **Tab** pero sin detenerse en los botones. **Shift + Tab** regresa al anterior. Enter ya no intenta guardar el piso a medio capturar.
+- En las listas (Proveedor, Categoría, Unidad, PEI…), escribir la primera letra abre la lista y salta a la opción que empieza con ella; las **flechas** recorren la lista y **Enter** elige. Con la lista cerrada, Enter pasa al siguiente campo.
+- Al pasar a un campo con Enter, su contenido queda seleccionado: lo que escribas lo reemplaza.
+- En los colores, **Enter** en **Stock mínimo** de la última fila agrega un color nuevo y deja el cursor en él, como en una hoja de cálculo. Si esa fila todavía no tiene color, Enter pasa al siguiente campo sin agregar filas vacías.
 - Al presionar **+ Agregar color**, el cursor pasa directo al campo **Color** de la fila nueva. Con **+ Agregar medida**, pasa a la **Medida** nueva.
 - Al quitar un color o una medida, el cursor se queda en el color o la medida de al lado, para seguir capturando.
 - Si al guardar falta algún dato, el cursor salta al primer campo marcado en rojo.
@@ -244,3 +246,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Códigos de comisión**: cinco códigos (Vo, Vc, A, N, R) del que más comisión deja al que menos. El catálogo los muestra con un punto de color junto al código, y la lista del formulario dice el nombre de cada uno (*"Vo · Verde oscuro"*). |
 | 2026-10-16 | **Cotizaciones y ventas**: cada piso agregado muestra su código de comisión (punto de color y código) junto al color y la medida. |
 | 2026-10-16 | **Nuevo piso / Editar piso**: captura con teclado más fluida. El cursor empieza en Proveedor, pasa solo al color o medida nuevos al agregarlos, no se pierde al quitarlos, y salta al primer campo con error al intentar guardar. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: **Enter** avanza al siguiente campo en lugar de intentar guardar, y en el último color agrega uno nuevo. |
