@@ -221,6 +221,15 @@ A diferencia de los pisos, el código de estos productos **se captura a mano** e
 
 El código también sirve para buscar el producto en el inventario, en cotizaciones y en ventas.
 
+### Capturar un producto con el teclado
+
+Funciona igual que en los pisos (ver [Capturar un piso con el teclado](#capturar-un-piso-con-el-teclado)):
+
+- Al abrir **Nuevo producto general**, el cursor ya está en **Categoría**.
+- **Enter** avanza al siguiente campo. En **Descripción**, Enter hace un salto de línea, como en cualquier texto.
+- **Ctrl + S** o **Ctrl + Enter** guardan desde cualquier campo.
+- Si falta un dato o el código ya existe, el cursor salta al campo que hay que corregir.
+
 ---
 
 ## Registro de cambios
@@ -252,3 +261,5 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Nuevo piso / Editar piso**: **Enter** avanza al siguiente campo en lugar de intentar guardar, y en el último color agrega uno nuevo. |
 | 2026-10-16 | **Nuevo piso / Editar piso**: atajo **Ctrl + S** (o **Ctrl + Enter**) para guardar desde cualquier campo. |
 | 2026-10-16 | **Nuevo piso / Editar piso**: los botones muestran un contorno dorado cuando el cursor está en ellos, y las ventanas de confirmación ya se pueden contestar con Enter o Esc. |
+| 2026-10-16 | **Nuevo / Editar producto general**: la misma captura con teclado que en los pisos (cursor inicial en Categoría, Enter para avanzar, Ctrl + S para guardar y salto al campo con error). |
+| 2026-10-16 | **Nuevo piso / Editar piso**: si al guardar el sistema rechaza un dato, el cursor salta a ese campo. |

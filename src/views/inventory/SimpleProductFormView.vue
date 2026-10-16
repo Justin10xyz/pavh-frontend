@@ -13,9 +13,8 @@
             </div>
             <button
                 type="button"
-                shrink-0
                 @click="handleCancel"
-                class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+                class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-1.5 shrink-0 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
             >
                 <i class="ti ti-arrow-left text-sm"></i>
                 Volver
@@ -42,7 +41,15 @@
             {{ generalError }}
         </p>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+        <!-- Captura con teclado: mismo esquema que ProductFormView (ver lib/formKeyboard.js).
+		     En la Descripción (textarea) Enter sigue siendo salto de línea. -->
+        <form
+            ref="formRef"
+            @submit.prevent="handleSubmit"
+            @keydown.capture="advanceSelectOnEnter"
+            @keydown="advanceOnEnter"
+            class="space-y-4"
+        >
             <div class="bg-surface border border-border rounded-md p-5 sm:p-6">
                 <h2 class="text-[11px] font-medium uppercase tracking-wide text-text-muted mb-4">
                     Datos del producto
@@ -69,7 +76,7 @@
                             </div>
                             <button
                                 type="button"
-                                class="shrink-0 inline-flex items-center justify-center h-10 w-10 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text rounded-md transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                class="shrink-0 inline-flex items-center justify-center h-10 w-10 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text rounded-md transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                                 aria-label="Nueva categoría"
                                 title="Nueva categoría"
                                 :disabled="!catalogs.initialized || loadingProduct"
@@ -187,17 +194,19 @@
 
             <!-- Acciones -->
             <div class="flex items-center justify-end gap-3">
+                <SaveShortcutHint :modifier-label="modifierLabel" class="mr-auto" />
                 <button
                     type="button"
                     @click="handleCancel"
-                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
+                    :aria-keyshortcuts="ariaKeyshortcuts"
                     :disabled="submitting || loadingProduct || loadFailed"
-                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                 >
                     {{
                         submitting
@@ -221,7 +230,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useConfirm } from "primevue/useconfirm";
 import axios from "@/lib/axios";
@@ -233,6 +242,9 @@ import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import TextareaCustom from "@/components/widgets/TextareaCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { confirmStockChanges, describeStockChange, stockChangePayload } from "@/lib/stockChange";
+import { advanceOnEnter, advanceSelectOnEnter, focusFirstInvalidField } from "@/lib/formKeyboard";
+import { useSaveShortcut } from "@/composables/useSaveShortcut";
+import SaveShortcutHint from "@/components/widgets/labels/SaveShortcutHint.vue";
 import StockChangesConfirmDialog from "./components/StockChangesConfirmDialog.vue";
 import CategoryFormDialog from "@/components/widgets/dialogs/CategoryFormDialog.vue";
 
@@ -292,9 +304,18 @@ const stockChange = computed(() =>
 const submitting = ref(false);
 const generalError = ref(null);
 
+const formRef = ref(null);
+
+const { modifierLabel, ariaKeyshortcuts } = useSaveShortcut(
+    formRef,
+    () => !submitting.value && !loadingProduct.value && !loadFailed.value,
+);
+
+// Sin mouse: en un alta se puede empezar a capturar sin hacer clic (ver ProductFormView).
 onMounted(() => {
     if (!catalogs.initialized) catalogs.fetchCatalogs();
     if (isEditMode.value) loadProduct();
+    else document.getElementById("category_id")?.focus();
 });
 
 async function loadProduct() {
@@ -379,17 +400,26 @@ function applyServerErrors(serverErrors) {
 }
 
 async function handleSubmit() {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+        focusFirstInvalidField(formRef.value);
+        return;
+    }
 
     const stockPayload = stockChange.value;
     if (stockPayload) {
+        // Al regresar sin guardar, el foco vuelve a donde estaba (el diálogo lo tomó).
+        const returnFocus = document.activeElement;
         const confirmed = await confirmStockChanges(confirm, [
             {
                 label: form.name.trim(),
                 description: describeStockChange(originalStock.value, form.stock_quantity, "unidades"),
             },
         ]);
-        if (!confirmed) return;
+        if (!confirmed) {
+            await nextTick();
+            returnFocus?.focus();
+            return;
+        }
     }
 
     generalError.value = null;
@@ -427,6 +457,8 @@ async function handleSubmit() {
         // solo con `message`.
         if (err.response?.status === 422 && err.response.data.errors) {
             applyServerErrors(err.response.data.errors);
+            // Ej. un código repetido: el cursor queda en el campo a corregir.
+            focusFirstInvalidField(formRef.value);
         } else {
             console.error(err);
             generalError.value =

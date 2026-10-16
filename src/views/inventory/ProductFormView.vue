@@ -79,14 +79,7 @@
 
             <!-- Acciones -->
             <div class="flex items-center justify-end gap-3">
-                <!-- Pista del atajo (useSaveShortcut). Solo desde sm: en pantallas
-				     táctiles no hay teclado físico que la aproveche. -->
-                <p class="hidden sm:block text-xs text-text-muted mr-auto" aria-hidden="true">
-                    <kbd class="font-sans border border-border rounded px-1 py-0.5">{{ modifierLabel }}</kbd>
-                    +
-                    <kbd class="font-sans border border-border rounded px-1 py-0.5">S</kbd>
-                    para guardar
-                </p>
+                <SaveShortcutHint :modifier-label="modifierLabel" class="mr-auto" />
                 <button
                     type="button"
                     @click="handleCancel"
@@ -152,7 +145,8 @@ import axios from "@/lib/axios";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { useInventoryStore } from "@/stores/inventory";
 import { confirmStockChanges } from "@/lib/stockChange";
-import { advanceOnEnter, advanceSelectOnEnter } from "@/lib/formKeyboard";
+import { advanceOnEnter, advanceSelectOnEnter, focusFirstInvalidField } from "@/lib/formKeyboard";
+import SaveShortcutHint from "@/components/widgets/labels/SaveShortcutHint.vue";
 import { useSaveShortcut } from "@/composables/useSaveShortcut";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import {
@@ -194,13 +188,6 @@ onMounted(() => {
 async function focusField(id) {
     await nextTick();
     document.getElementById(id)?.focus();
-}
-
-// Los widgets marcan `aria-invalid` con su prop `error`, así que basta con el
-// primero en el DOM (mismo orden que en pantalla). `focus()` lo trae a la vista.
-async function focusFirstInvalidField() {
-    await nextTick();
-    formRef.value?.querySelector('[aria-invalid="true"]')?.focus();
 }
 
 const form = reactive({
@@ -396,7 +383,7 @@ async function applyStockChanges(changes) {
 
 const handleSubmit = async () => {
     if (!validateForm()) {
-        focusFirstInvalidField();
+        focusFirstInvalidField(formRef.value);
         return;
     }
 
@@ -466,7 +453,9 @@ const handleSubmit = async () => {
         } else if (err.response?.status === 422) {
             // Mismo criterio que CategoryFormDialog/SupplierFormDialog: sin error
             // de campo aplicable, el mensaje va como error general.
-            if (!applyServerErrors(err.response.data.errors ?? {})) {
+            if (applyServerErrors(err.response.data.errors ?? {})) {
+                focusFirstInvalidField(formRef.value);
+            } else {
                 generalError.value = err.response.data.message || "No se pudo guardar el producto.";
             }
         } else {

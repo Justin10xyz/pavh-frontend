@@ -1,3 +1,5 @@
+import { nextTick } from "vue";
+
 // Captura sin mouse en los formularios de producto: Enter avanza al siguiente
 // campo (como Tab, pero sin pasar por botones) en vez de enviar el form. Los
 // handlers van en el <form>: `@keydown.capture="advanceSelectOnEnter"` y
@@ -47,4 +49,13 @@ export function advanceOnEnter(event) {
 
     event.preventDefault();
     focusNextField(event.currentTarget, event.target);
+}
+
+// Tras una validación fallida (local o 422), el foco va al primer campo con
+// error. Los widgets marcan `aria-invalid` con su prop `error`, así que basta
+// con el primero en el DOM (mismo orden que en pantalla). `focus()` lo trae a
+// la vista. Espera al render para que los errores recién puestos ya estén.
+export async function focusFirstInvalidField(form) {
+    await nextTick();
+    form?.querySelector('[aria-invalid="true"]')?.focus();
 }
