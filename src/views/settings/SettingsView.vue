@@ -19,6 +19,20 @@
 				</span>
 				<i class="ti ti-chevron-right text-text-muted group-hover:text-text transition-colors"></i>
 			</router-link>
+
+			<router-link
+				:to="{ name: 'settings.suppliers' }"
+				class="group flex items-center gap-4 w-full sm:w-80 bg-surface border border-border rounded-md p-5 hover:border-accent focus:outline-none focus-visible:border-accent transition-colors"
+			>
+				<span class="w-10 h-10 flex items-center justify-center rounded-md bg-primary text-white flex-shrink-0">
+					<i class="ti ti-truck text-lg"></i>
+				</span>
+				<span class="flex-1 min-w-0">
+					<span class="block text-sm font-medium text-text">Proveedores</span>
+					<span class="block text-xs text-text-muted mt-0.5">Consulta, agrega y edita los proveedores de pisos.</span>
+				</span>
+				<i class="ti ti-chevron-right text-text-muted group-hover:text-text transition-colors"></i>
+			</router-link>
 		</div>
 	</div>
 </template>

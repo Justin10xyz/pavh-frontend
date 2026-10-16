@@ -38,6 +38,24 @@ export const useCatalogsStore = defineStore('catalogs', () => {
 		}
 	}
 
+	// Mutación puntual: agrega el proveedor recién creado sin refetch completo.
+	// El backend lista proveedores por id, así que el nuevo va al final.
+	function addSupplier(supplier) {
+		suppliers.value.push(supplier)
+	}
+
+	// Mutación puntual: reemplaza en su lugar los datos del proveedor editado,
+	// así los selects que ya lo muestran se actualizan sin refetch.
+	function updateSupplier(id, payload) {
+		const supplier = suppliers.value.find((s) => s.id === id)
+		if (supplier) Object.assign(supplier, payload)
+	}
+
+	// Mutación puntual: quita el proveedor eliminado (soft delete en el backend).
+	function removeSupplier(id) {
+		suppliers.value = suppliers.value.filter((s) => s.id !== id)
+	}
+
 	// Mutación puntual: agrega la categoría recién creada sin refetch completo.
 	// El backend lista categorías por id, así que la nueva va al final.
 	function addCategory(category) {
@@ -65,6 +83,9 @@ export const useCatalogsStore = defineStore('catalogs', () => {
 		error,
 		initialized,
 		fetchCatalogs,
+		addSupplier,
+		updateSupplier,
+		removeSupplier,
 		addCategory,
 		updateCategory,
 		removeCategory,

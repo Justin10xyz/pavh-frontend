@@ -11,4 +11,10 @@ export default [
 		component: () => import('@/views/settings/CategoriesSettingsView.vue'),
 		meta: { layout: 'AppLayout', section: 'settings', title: 'Categorías de producto', requiresAuth: true },
 	},
+	{
+		path: '/configuracion/proveedores',
+		name: 'settings.suppliers',
+		component: () => import('@/views/settings/SuppliersSettingsView.vue'),
+		meta: { layout: 'AppLayout', section: 'settings', title: 'Proveedores', requiresAuth: true },
+	},
 ]
