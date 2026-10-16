@@ -20,14 +20,18 @@
                     <button
                         type="button"
                         @click="rejectCallback"
-                        class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                        class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                     >
                         Volver
                     </button>
+                    <!-- Con la plantilla `container` PrimeVue no enfoca nada por su cuenta y
+					     el foco se queda en el form de fondo (Enter/Ctrl+S seguirían actuando
+					     ahí). El usuario ya pidió guardar: Enter lo confirma, Esc regresa. -->
                     <button
                         type="button"
+                        autofocus
                         @click="acceptCallback"
-                        class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                        class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                     >
                         Guardar
                     </button>

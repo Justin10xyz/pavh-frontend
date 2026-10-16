@@ -33,7 +33,7 @@
                 v-if="removable"
                 type="button"
                 @click="emit('remove')"
-                class="text-xs text-text-muted hover:text-danger underline transition-colors cursor-pointer"
+                class="text-xs text-text-muted hover:text-danger underline rounded transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
             >
                 Quitar medida
             </button>

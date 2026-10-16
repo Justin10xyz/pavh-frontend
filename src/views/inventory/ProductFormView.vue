@@ -14,7 +14,7 @@
             <button
                 type="button"
                 @click="handleCancel"
-                class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+                class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-1.5 shrink-0 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
             >
                 <i class="ti ti-arrow-left text-sm"></i>
                 Volver
@@ -41,7 +41,13 @@
             {{ generalError }}
         </p>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+        <form
+            ref="formRef"
+            @submit.prevent="handleSubmit"
+            @keydown.capture="advanceSelectOnEnter"
+            @keydown="advanceOnEnter"
+            class="space-y-4"
+        >
             <!-- Sección 1 — Datos del producto (línea) -->
             <ProductInfoSection
                 v-model:form="form"
@@ -66,24 +72,26 @@
             <button
                 type="button"
                 @click="addVariantGroup"
-                class="w-full border border-dashed border-border rounded-md py-3 text-sm text-text-muted hover:text-text hover:border-accent bg-surface transition-colors select-none cursor-pointer"
+                class="w-full border border-dashed border-border rounded-md py-3 text-sm text-text-muted hover:text-text hover:border-accent bg-surface transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
             >
                 + Agregar medida
             </button>
 
             <!-- Acciones -->
             <div class="flex items-center justify-end gap-3">
+                <SaveShortcutHint :modifier-label="modifierLabel" class="mr-auto" />
                 <button
                     type="button"
                     @click="handleCancel"
-                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
+                    :aria-keyshortcuts="ariaKeyshortcuts"
                     :disabled="submitting || loadingProduct"
-                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                 >
                     {{
                         submitting
@@ -104,17 +112,20 @@
                     <h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
                     <p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
                     <div class="flex items-center justify-end gap-3">
+                        <!-- Foco inicial en Cancelar (ver StockChangesConfirmDialog): en una
+						     acción que no se puede deshacer, Enter no debe eliminar. -->
                         <button
                             type="button"
+                            autofocus
                             @click="rejectCallback"
-                            class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                            class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         >
                             Cancelar
                         </button>
                         <button
                             type="button"
                             @click="acceptCallback"
-                            class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                            class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                         >
                             Eliminar
                         </button>
@@ -126,7 +137,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
@@ -134,6 +145,9 @@ import axios from "@/lib/axios";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { useInventoryStore } from "@/stores/inventory";
 import { confirmStockChanges } from "@/lib/stockChange";
+import { advanceOnEnter, advanceSelectOnEnter, focusFirstInvalidField } from "@/lib/formKeyboard";
+import SaveShortcutHint from "@/components/widgets/labels/SaveShortcutHint.vue";
+import { useSaveShortcut } from "@/composables/useSaveShortcut";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import {
     buildVariantPayload,
@@ -159,10 +173,22 @@ const inventory = useInventoryStore();
 const isEditMode = computed(() => !!route.params.id);
 const loadingProduct = ref(false);
 
+const formRef = ref(null);
+
+// Sin mouse: en un alta se puede empezar a capturar sin hacer clic. El Select
+// pone su `labelId` en el elemento enfocable (ver SelectCustom.vue).
 onMounted(() => {
     if (!catalogs.initialized) catalogs.fetchCatalogs();
     if (isEditMode.value) fetchProduct();
+    else document.getElementById("supplier_id")?.focus();
 });
+
+// Tras agregar o quitar algo el foco no se pierde en el <body>: va al campo con
+// el que se sigue capturando.
+async function focusField(id) {
+    await nextTick();
+    document.getElementById(id)?.focus();
+}
 
 const form = reactive({
     supplier_id: "",
@@ -196,7 +222,9 @@ const hasSavedVariants = computed(() =>
 );
 
 function addVariantGroup() {
-    variantGroups.value.push(createVariantGroup());
+    const group = createVariantGroup();
+    variantGroups.value.push(group);
+    focusField(`size-${group.id}`);
 }
 
 // Mismo criterio que colores nuevos vs. existentes: un grupo solo se quita si
@@ -208,7 +236,18 @@ function canRemoveGroup(group) {
 function removeVariantGroup(groupId) {
     const group = variantGroups.value.find((g) => g.id === groupId);
     if (!group || !canRemoveGroup(group)) return;
+    const index = variantGroups.value.indexOf(group);
     variantGroups.value = variantGroups.value.filter((g) => g.id !== groupId);
+    focusField(`size-${variantGroups.value[Math.max(index - 1, 0)].id}`);
+}
+
+// El foco pasa al color de la fila que quedó en su lugar (o a la anterior si
+// era la última).
+function removeRowAndFocus(group, rowId) {
+    const index = group.colorRows.findIndex((r) => r.id === rowId);
+    group.colorRows = group.colorRows.filter((r) => r.id !== rowId);
+    const next = group.colorRows[Math.min(index, group.colorRows.length - 1)];
+    focusField(`color-${next.id}`);
 }
 
 const deletingRowId = ref(null);
@@ -225,7 +264,7 @@ function removeColorRow(group, rowId) {
     if (!row) return;
 
     if (!row.variantId) {
-        group.colorRows = group.colorRows.filter((r) => r.id !== rowId);
+        removeRowAndFocus(group, rowId);
         return;
     }
 
@@ -242,7 +281,7 @@ async function deleteVariantRow(group, row) {
 
     try {
         await axios.delete(`/api/product-variants/${row.variantId}`);
-        group.colorRows = group.colorRows.filter((r) => r.id !== row.id);
+        removeRowAndFocus(group, row.id);
     } catch (err) {
         if (err.response?.status === 422) {
             generalError.value = err.response.data.message;
@@ -303,6 +342,8 @@ const validateForm = () => {
 const submitting = ref(false);
 const generalError = ref(null);
 
+const { modifierLabel, ariaKeyshortcuts } = useSaveShortcut(formRef, () => !submitting.value && !loadingProduct.value);
+
 // Solo mapea a `errors` los campos del producto — es lo único validado antes
 // de que exista un `productId`, momento en el que aplican los 422.
 // Devuelve si aplicó alguno. Los guards del backend (ej. el bloqueo de cambio
@@ -341,10 +382,21 @@ async function applyStockChanges(changes) {
 }
 
 const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+        focusFirstInvalidField(formRef.value);
+        return;
+    }
 
     const stockChanges = pendingStockChanges(variantGroups.value, stockUnit.value.short);
-    if (stockChanges.length && !(await confirmStockChanges(confirm, stockChanges))) return;
+    if (stockChanges.length) {
+        // Al regresar sin guardar, el foco vuelve a donde estaba (el diálogo lo tomó).
+        const returnFocus = document.activeElement;
+        if (!(await confirmStockChanges(confirm, stockChanges))) {
+            await nextTick();
+            returnFocus?.focus();
+            return;
+        }
+    }
 
     generalError.value = null;
     submitting.value = true;
@@ -401,7 +453,9 @@ const handleSubmit = async () => {
         } else if (err.response?.status === 422) {
             // Mismo criterio que CategoryFormDialog/SupplierFormDialog: sin error
             // de campo aplicable, el mensaje va como error general.
-            if (!applyServerErrors(err.response.data.errors ?? {})) {
+            if (applyServerErrors(err.response.data.errors ?? {})) {
+                focusFirstInvalidField(formRef.value);
+            } else {
                 generalError.value = err.response.data.message || "No se pudo guardar el producto.";
             }
         } else {

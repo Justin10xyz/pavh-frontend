@@ -114,6 +114,22 @@ En **cotizaciones y ventas** se captura directamente cuántas piezas lleva el cl
 
 > La **Unidad** de un piso no se puede cambiar una vez que tiene colores registrados: la lista aparece deshabilitada con un aviso. Si un piso se registró con la unidad equivocada, hay que crearlo de nuevo con la unidad correcta.
 
+### Capturar un piso con el teclado
+
+El formulario del piso se puede llenar completo sin usar el mouse:
+
+- Al abrir **Nuevo piso**, el cursor ya está en **Proveedor**: se puede empezar a capturar de inmediato.
+- **Enter** avanza al siguiente campo, igual que **Tab** pero sin detenerse en los botones. **Shift + Tab** regresa al anterior. Enter ya no intenta guardar el piso a medio capturar.
+- En las listas (Proveedor, Categoría, Unidad, PEI…), escribir la primera letra abre la lista y salta a la opción que empieza con ella; las **flechas** recorren la lista y **Enter** elige. Con la lista cerrada, Enter pasa al siguiente campo.
+- Al pasar a un campo con Enter, su contenido queda seleccionado: lo que escribas lo reemplaza.
+- En los colores, **Enter** en **Stock mínimo** de la última fila agrega un color nuevo y deja el cursor en él, como en una hoja de cálculo. Si esa fila todavía no tiene color, Enter pasa al siguiente campo sin agregar filas vacías.
+- Al presionar **+ Agregar color**, el cursor pasa directo al campo **Color** de la fila nueva. Con **+ Agregar medida**, pasa a la **Medida** nueva.
+- Al quitar un color o una medida, el cursor se queda en el color o la medida de al lado, para seguir capturando.
+- Para guardar sin buscar el botón: **Ctrl + S** o **Ctrl + Enter** desde cualquier campo (en Mac, **⌘ + S** o **⌘ + Enter**). El atajo aparece como recordatorio junto al botón **Guardar**.
+- Si al guardar falta algún dato, el cursor salta al primer campo marcado en rojo.
+- Con **Tab** también se llega a los botones (**+**, **Quitar medida**, la **X** de cada color, **+ Agregar color**…). El botón donde está el cursor se marca con un contorno dorado y se presiona con **Enter** o **Espacio**.
+- En las ventanas de confirmación el cursor ya está en un botón. Al **confirmar cambios de stock**, Enter guarda; al **eliminar un color**, Enter cancela (para no borrar por accidente) y hay que pasar con Tab a **Eliminar**. **Esc** cierra la ventana sin hacer nada.
+
 ---
 
 ## 3. Búsqueda y filtros
@@ -205,6 +221,15 @@ A diferencia de los pisos, el código de estos productos **se captura a mano** e
 
 El código también sirve para buscar el producto en el inventario, en cotizaciones y en ventas.
 
+### Capturar un producto con el teclado
+
+Funciona igual que en los pisos (ver [Capturar un piso con el teclado](#capturar-un-piso-con-el-teclado)):
+
+- Al abrir **Nuevo producto general**, el cursor ya está en **Categoría**.
+- **Enter** avanza al siguiente campo. En **Descripción**, Enter hace un salto de línea, como en cualquier texto.
+- **Ctrl + S** o **Ctrl + Enter** guardan desde cualquier campo.
+- Si falta un dato o el código ya existe, el cursor salta al campo que hay que corregir.
+
 ---
 
 ## Registro de cambios
@@ -232,3 +257,9 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Editar piso**: cuando un cambio no se puede guardar, ahora se muestra el motivo en lugar de no pasar nada. |
 | 2026-10-16 | **Códigos de comisión**: cinco códigos (Vo, Vc, A, N, R) del que más comisión deja al que menos. El catálogo los muestra con un punto de color junto al código, y la lista del formulario dice el nombre de cada uno (*"Vo · Verde oscuro"*). |
 | 2026-10-16 | **Cotizaciones y ventas**: cada piso agregado muestra su código de comisión (punto de color y código) junto al color y la medida. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: captura con teclado más fluida. El cursor empieza en Proveedor, pasa solo al color o medida nuevos al agregarlos, no se pierde al quitarlos, y salta al primer campo con error al intentar guardar. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: **Enter** avanza al siguiente campo en lugar de intentar guardar, y en el último color agrega uno nuevo. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: atajo **Ctrl + S** (o **Ctrl + Enter**) para guardar desde cualquier campo. |
+| 2026-10-16 | **Nuevo piso / Editar piso**: los botones muestran un contorno dorado cuando el cursor está en ellos, y las ventanas de confirmación ya se pueden contestar con Enter o Esc. |
+| 2026-10-16 | **Nuevo / Editar producto general**: la misma captura con teclado que en los pisos (cursor inicial en Categoría, Enter para avanzar, Ctrl + S para guardar y salto al campo con error). |
+| 2026-10-16 | **Nuevo piso / Editar piso**: si al guardar el sistema rechaza un dato, el cursor salta a ese campo. |

@@ -97,6 +97,7 @@
                                 :min="0"
                                 placeholder="0"
                                 @input="row.errors.minimum_stock = ''"
+                                @keydown.enter="addRowOnEnter($event, row)"
                                 :max-fraction-digits="0"
                             />
                             <p v-if="row.errors.minimum_stock" class="text-danger text-xs mt-1.5">
@@ -110,7 +111,7 @@
                         type="button"
                         @click="emit('remove', row)"
                         :disabled="rows.length === 1 || deletingRowId === row.id"
-                        class="w-8 h-10 shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        class="w-8 h-10 shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         :aria-label="row.color ? `Eliminar color ${row.color}` : 'Eliminar color'"
                         title="Eliminar color"
                     >
@@ -135,8 +136,8 @@
 
         <button
             type="button"
-            @click="rows.push(createColorRow())"
-            class="mt-3 w-full border border-dashed border-border rounded-md py-2 text-sm text-text-muted hover:text-text hover:border-accent transition-colors select-none cursor-pointer"
+            @click="addRow"
+            class="mt-3 w-full border border-dashed border-border rounded-md py-2 text-sm text-text-muted hover:text-text hover:border-accent transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
         >
             + Agregar color
         </button>
@@ -144,6 +145,7 @@
 </template>
 
 <script setup>
+import { nextTick } from "vue";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
@@ -164,6 +166,25 @@ defineProps({
 });
 
 const emit = defineEmits(["remove"]);
+
+// Sin mouse: el foco pasa al color de la fila nueva para capturarlo de inmediato.
+async function addRow() {
+    const row = createColorRow();
+    rows.value.push(row);
+    await nextTick();
+    document.getElementById(`color-${row.id}`)?.focus();
+}
+
+// Como en una hoja de cálculo: Enter en el último campo de la última fila abre
+// una fila nueva. Solo si esa fila ya tiene color; si no, el Enter sigue de
+// largo al siguiente campo (ver advanceOnEnter en lib/formKeyboard.js), así no
+// se acumulan filas vacías. preventDefault le avisa al form que ya se resolvió.
+function addRowOnEnter(event, row) {
+    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    if (row !== rows.value.at(-1) || !row.color.trim()) return;
+    event.preventDefault();
+    addRow();
+}
 </script>
 
 <style scoped></style>
