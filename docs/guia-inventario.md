@@ -51,8 +51,8 @@ Un proveedor eliminado deja de aparecer en las listas, pero las ventas y cotizac
 Cada piso se muestra en tres niveles:
 
 1. **Producto (línea)**: el nombre del piso, con su categoría, proveedor y unidad de venta.
-2. **Medida**: cada tamaño del producto, con sus datos técnicos (PEI, ETT, categoría de comisión), su precio por caja y por m², y cuántas piezas, m² y kilos trae cada caja.
-3. **Color**: cada color de esa medida, con su código, su stock en cajas y su estado.
+2. **Medida**: cada tamaño del producto, con sus datos técnicos (PEI, ETT, categoría de comisión), su precio por caja y por m², y cuántas piezas, m² y kilos trae cada caja. En los pisos que se venden por pieza solo se muestra el precio por pieza (ver [Pisos que se venden por pieza](#pisos-que-se-venden-por-pieza)).
+3. **Color**: cada color de esa medida, con su código, su stock en cajas (o en piezas) y su estado.
 
 ### Abrir y cerrar productos y medidas
 
@@ -82,6 +82,22 @@ El stock mínimo de cada color se configura al editar el producto.
 
 El ícono de **lápiz** en la fila del producto abre el formulario de edición. Ahí se cambian los datos generales, las medidas, los precios, los colores, el stock y el stock mínimo. El stock también se puede corregir desde ahí (ver [Desde el formulario del producto](#desde-el-formulario-del-producto)).
 
+Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), el motivo aparece en un aviso rojo arriba del formulario.
+
+### Pisos que se venden por pieza
+
+Algunos pisos, como mosaicos o decorados, no se venden por caja ni por m², sino **por pieza**. Para registrarlos, en el formulario del piso elige **pieza** en la lista **Unidad**. El formulario cambia:
+
+- El precio se captura como **Precio por pieza**.
+- Desaparecen los datos que solo aplican a cajas: **PEI**, **ETT**, **Precio por m²**, **Piezas por caja**, **m² por caja**, **Kilos por caja** y **Cajas por tarima**.
+- El stock de cada color se cuenta en **piezas**.
+
+En el catálogo, estos pisos muestran su precio como **"$85.50/pieza"** y su stock como **"12 pzas"**. Las ventanas de ajuste e historial de stock también hablan de piezas.
+
+En **cotizaciones y ventas** se captura directamente cuántas piezas lleva el cliente: no aparece el campo de **m² requeridos** y el total es piezas × precio por pieza. Al vender, se descuentan esas piezas del stock.
+
+> La **Unidad** de un piso no se puede cambiar una vez que tiene colores registrados: la lista aparece deshabilitada con un aviso. Si un piso se registró con la unidad equivocada, hay que crearlo de nuevo con la unidad correcta.
+
 ---
 
 ## 3. Búsqueda y filtros
@@ -99,7 +115,7 @@ Arriba de la tabla hay herramientas para encontrar productos rápido:
 
 ## 4. Control de stock
 
-Los pisos y los demás productos funcionan igual. El stock se puede cambiar de dos formas: con los íconos de la tabla del inventario o desde el formulario de edición del producto. La diferencia es que en pisos el stock se cuenta en **cajas** y en otros productos en **unidades**.
+Los pisos y los demás productos funcionan igual. El stock se puede cambiar de dos formas: con los íconos de la tabla del inventario o desde el formulario de edición del producto. La diferencia es que en pisos el stock se cuenta en **cajas** (o en **piezas**, si el piso se vende por pieza) y en otros productos en **unidades**.
 
 ### Activar el seguimiento de stock
 
@@ -193,3 +209,8 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Configuración → Proveedores**: nueva pantalla para agregar, editar y eliminar proveedores. Solo se pueden eliminar los que no tengan productos. |
 | 2026-10-16 | **Nuevo piso / Editar piso**: botón **+** junto a la lista de proveedores para crear uno nuevo sin salir del formulario; queda seleccionado al guardarlo. |
 | 2026-10-16 | **Categorías y proveedores**: al guardar un nombre que ya existe, el aviso ahora dice claramente *"Ya existe una categoría con ese nombre."* o *"Ya existe un proveedor con ese nombre."* |
+| 2026-10-16 | **Pisos por pieza**: los pisos con unidad **pieza** (mosaicos, decorados) se registran solo con precio por pieza, sin PEI, ETT ni datos de caja, y su stock se cuenta en piezas. |
+| 2026-10-16 | **Catálogo de pisos**: los pisos por pieza muestran su precio como *"/pieza"* y su stock en *"pzas"*, también en las ventanas de ajuste e historial de stock. |
+| 2026-10-16 | **Cotizaciones y ventas**: los pisos por pieza se cotizan y venden capturando el número de piezas, sin m² requeridos; el detalle y el PDF los muestran en piezas. |
+| 2026-10-16 | **Editar piso**: la **Unidad** ya no se puede cambiar si el piso tiene colores registrados. |
+| 2026-10-16 | **Editar piso**: cuando un cambio no se puede guardar, ahora se muestra el motivo en lugar de no pasar nada. |
