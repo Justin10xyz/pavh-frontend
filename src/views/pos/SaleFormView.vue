@@ -46,232 +46,58 @@
             <div class="bg-surface border border-border rounded-md p-5 sm:p-6">
                 <h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">Productos</h2>
 
-                <!-- Tabla compacta (mismo patrón que los colores en ProductFormView):
-				     encabezado una vez y una fila delgada por producto. Por debajo de sm
-				     cada fila apila sus campos con su label visible; desde sm los labels
-				     pasan a sr-only y el encabezado toma su lugar. Header y filas comparten
-				     el mismo grid + hueco del botón para alinear. `relative`: los labels
-				     sr-only son absolute y sin ancestro posicionado escapan del scroll. -->
-                <div class="relative border border-border rounded-md">
-                    <div
-                        class="hidden sm:flex items-center gap-2 bg-bg border-b border-border rounded-t-md px-3 py-2"
-                        aria-hidden="true"
-                    >
-                        <div
-                            class="flex-1 grid grid-cols-[minmax(0,2.2fr)_repeat(4,minmax(0,1fr))] gap-3 text-xs font-medium uppercase tracking-wide text-text-muted"
-                        >
-                            <span>Producto<span class="text-danger ml-0.5">*</span></span>
-                            <span>m² requeridos</span>
-                            <span>Cantidad<span class="text-danger ml-0.5">*</span></span>
-                            <!-- normal-case: el uppercase del encabezado convertiría m² en M² -->
-                            <span>Precio unitario<span class="normal-case">/m²</span><span class="text-danger ml-0.5">*</span></span>
-                            <span class="text-right">Subtotal</span>
-                        </div>
-                        <span class="w-8 shrink-0"></span>
-                    </div>
-
-                    <div class="divide-y divide-border">
-                        <div v-for="(row, index) in lines" :key="row.id" class="px-3 py-3 sm:py-2">
-                            <div class="flex items-start gap-2">
-                                <!-- Sin producto elegido: el buscador ocupa toda la fila -->
-                                <div v-if="!hasProduct(row)" class="flex-1 min-w-0 space-y-1.5 sm:space-y-0">
-                                    <label
-                                        :for="`product-${row.id}`"
-                                        class="text-xs font-medium text-text-muted block sm:sr-only"
-                                    >
-                                        Producto {{ index + 1 }}
-                                    </label>
-                                    <ProductAutocomplete
-                                        :input-id="`product-${row.id}`"
-                                        include-simple-products
-                                        @select="(option) => selectProductForRow(row, option)"
-                                    />
-                                </div>
-
-                                <div
-                                    v-else
-                                    class="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[minmax(0,2.2fr)_repeat(4,minmax(0,1fr))] gap-3"
-                                >
-                                    <!-- Producto: nombre + detalle en dos renglones, "Cambiar" en línea -->
-                                    <div class="min-w-0 sm:min-h-10 flex flex-col justify-center">
-                                        <template v-if="row.simpleProduct">
-                                            <p class="text-sm font-medium text-text truncate" :title="simpleProductFor(row).name">
-                                                {{ simpleProductFor(row).name }}
-                                            </p>
-                                            <p class="text-xs text-text-muted flex items-center gap-2">
-                                                <span
-                                                    v-if="simpleProductCategoryName(row)"
-                                                    class="border border-border rounded px-1.5"
-                                                >
-                                                    {{ simpleProductCategoryName(row) }}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    @click="changeLine(row)"
-                                                    class="text-accent hover:underline cursor-pointer"
-                                                >
-                                                    Cambiar
-                                                </button>
-                                            </p>
-                                        </template>
-                                        <template v-else>
-                                            <p class="text-sm font-medium text-text truncate" :title="row.variant.lineName">
-                                                {{ row.variant.lineName }}
-                                            </p>
-                                            <p class="text-xs text-text-muted flex items-center gap-2 min-w-0">
-                                                <span class="truncate">{{ row.variant.color }} · {{ row.variant.size }}</span>
-                                                <button
-                                                    type="button"
-                                                    @click="changeLine(row)"
-                                                    class="text-accent hover:underline shrink-0 cursor-pointer"
-                                                >
-                                                    Cambiar
-                                                </button>
-                                            </p>
-                                        </template>
-                                        <p v-if="mergedRowId === row.id" class="text-xs text-success mt-0.5">
-                                            Cantidad fusionada con esta línea existente.
-                                        </p>
-                                        <p v-if="boxConversionError(row)" class="text-danger text-xs mt-0.5">
-                                            {{ boxConversionError(row) }}
-                                        </p>
-                                    </div>
-
-                                    <!-- m² que pide el cliente (opcional, solo variantes por caja): sugieren
-									     las cajas con ceil. No se envían al backend: la cantidad real son las
-									     cajas, que se pueden ajustar después (ej. una de más por merma). Las
-									     variantes por pieza no tienen m²: se captura la cantidad directa. -->
-                                    <div v-if="row.variant && !isPieceLine(row)" class="space-y-1.5 sm:space-y-0">
-                                        <FieldLabel
-                                            :html-for="`requested-${row.id}`"
-                                            text="m² requeridos"
-                                            class="sm:sr-only"
-                                        />
-                                        <InputNumberCustom
-                                            :id="`requested-${row.id}`"
-                                            :model-value="row.requestedM2"
-                                            :min="0"
-                                            placeholder="Opcional"
-                                            suffix=" m²"
-                                            :max-fraction-digits="2"
-                                            :disabled="!row.variant.m2_per_box"
-                                            @update:model-value="(value) => applyRequestedM2(row, value)"
-                                        />
-                                    </div>
-                                    <div v-else class="hidden sm:block" aria-hidden="true"></div>
-
-                                    <!-- Cantidad en la unidad física de stock: cajas completas (variante) o
-									     unidades (simple). En variantes, debajo los m² que cubren esas cajas. -->
-                                    <div class="space-y-1.5 sm:space-y-0">
-                                        <FieldLabel
-                                            :html-for="`quantity-${row.id}`"
-                                            :text="row.variant ? (isPieceLine(row) ? 'Piezas' : 'Cajas') : 'Cantidad (unidades)'"
-                                            required
-                                            class="sm:sr-only"
-                                        />
-                                        <InputNumberCustom
-                                            v-if="row.variant"
-                                            :id="`quantity-${row.id}`"
-                                            v-model="row.quantity"
-                                            :min="1"
-                                            :placeholder="`0 ${lineUnit(row)}`"
-                                            :suffix="` ${lineUnit(row)}`"
-                                            :max-fraction-digits="0"
-                                            :error="quantityError(row)"
-                                        />
-                                        <InputNumberCustom
-                                            v-else
-                                            :id="`quantity-${row.id}`"
-                                            v-model="row.quantity"
-                                            :min="1"
-                                            placeholder="0 uds."
-                                            suffix=" uds."
-                                            :max-fraction-digits="0"
-                                            :error="quantityError(row)"
-                                        />
-                                        <p v-if="quantityError(row)" class="text-danger text-xs mt-1.5">{{ quantityError(row) }}</p>
-                                        <p
-                                            v-else-if="row.variant && coveredM2(row) !== null"
-                                            class="text-xs mt-1 tabular-nums"
-                                            :class="coversRequested(row) ? 'text-text-muted' : 'text-amber-700'"
-                                        >
-                                            {{ formatQuantity(coveredM2(row)) }} m²<template v-if="!coversRequested(row)">
-                                                · no cubre {{ formatQuantity(row.requestedM2) }}</template>
-                                        </p>
-                                    </div>
-
-                                    <div class="space-y-1.5 sm:space-y-0">
-                                        <FieldLabel
-                                            :html-for="`unit-price-${row.id}`"
-                                            :text="row.variant ? `Precio unitario (${isPieceLine(row) ? 'pieza' : 'm²'})` : 'Precio unitario'"
-                                            required
-                                            class="sm:sr-only"
-                                        />
-                                        <InputNumberCustom
-                                            :id="`unit-price-${row.id}`"
-                                            v-model="row.unit_price"
-                                            :min="0"
-                                            placeholder="$0.00"
-                                            mode="currency"
-                                            currency="MXN"
-                                            :error="priceError(row)"
-                                        />
-                                        <p v-if="priceError(row)" class="text-danger text-xs mt-1.5">{{ priceError(row) }}</p>
-                                        <template v-else>
-                                            <!-- Lo que vale cada caja al precio capturado -->
-                                            <p v-if="boxPrice(row) !== null" class="text-xs text-text-muted mt-1 tabular-nums">
-                                                {{ formatCurrency(boxPrice(row)) }}/caja
-                                            </p>
-                                            <!-- Referencia solo si el precio se ajustó: hace visible un descuento
-											     o un error de dedo antes de registrar -->
-                                            <p v-if="priceDiffersFromList(row)" class="text-xs text-text-muted mt-0.5 tabular-nums">
-                                                Lista: {{ formatCurrency(listPrice(row)) }}{{ row.variant ? (isPieceLine(row) ? '/pieza' : '/m²') : '' }}
-                                            </p>
-                                        </template>
-                                    </div>
-
-                                    <div class="space-y-1.5 sm:space-y-0">
-                                        <span class="text-xs font-medium text-text-muted block sm:sr-only">Subtotal</span>
-                                        <p class="sm:h-10 flex items-center sm:justify-end text-sm font-medium text-text tabular-nums">
-                                            {{ formatCurrency(lineSubtotal(row)) }}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <!-- Mismo alto que los inputs para quedar centrado con ellos desde sm -->
-                                <button
-                                    type="button"
-                                    @click="removeLine(row.id)"
-                                    :disabled="lines.length === 1"
-                                    class="w-8 h-10 shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer"
-                                    aria-label="Quitar producto"
-                                    title="Quitar producto"
-                                >
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <!-- danger, no amber como en Cotizaciones: aquí el backend sí rechaza la venta -->
-                            <p
-                                v-if="hasProduct(row) && hasInsufficientStock(row)"
-                                class="mt-2 sm:mr-10 flex items-start gap-1.5 text-xs text-danger bg-danger/10 border border-danger/20 rounded-md px-3 py-2"
-                            >
-                                <i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
-                                <span>{{ stockError(row) }}</span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <button
-                    type="button"
-                    @click="addLine"
-                    class="mt-3 w-full border border-dashed border-border rounded-md py-2 text-sm text-text-muted hover:text-text hover:border-accent transition-colors select-none cursor-pointer"
+                <DocumentLinesTable
+                    v-model:lines="lines"
+                    :submit-attempted="submitAttempted"
+                    action="vender"
+                    price-required
+                    :line-subtotal="lineSubtotal"
+                    :empty-line-fields="{ unit_price: null }"
+                    @select="setListPrice"
                 >
-                    + Agregar producto
-                </button>
+                    <template #price="{ row }">
+                        <div class="space-y-1.5 sm:space-y-0">
+                            <FieldLabel
+                                :html-for="`unit-price-${row.id}`"
+                                :text="row.variant ? `Precio unitario (${isPieceLine(row) ? 'pieza' : 'm²'})` : 'Precio unitario'"
+                                required
+                                class="sm:sr-only"
+                            />
+                            <InputNumberCustom
+                                :id="`unit-price-${row.id}`"
+                                v-model="row.unit_price"
+                                :min="0"
+                                placeholder="$0.00"
+                                mode="currency"
+                                currency="MXN"
+                                :error="priceError(row)"
+                            />
+                            <p v-if="priceError(row)" class="text-danger text-xs mt-1.5">{{ priceError(row) }}</p>
+                            <template v-else>
+                                <!-- Lo que vale cada caja al precio capturado -->
+                                <p v-if="boxPrice(row) !== null" class="text-xs text-text-muted mt-1 tabular-nums">
+                                    {{ formatCurrency(boxPrice(row)) }}/caja
+                                </p>
+                                <!-- Referencia solo si el precio se ajustó: hace visible un descuento
+                                     o un error de dedo antes de registrar -->
+                                <p v-if="priceDiffersFromList(row)" class="text-xs text-text-muted mt-0.5 tabular-nums">
+                                    Lista: {{ formatCurrency(listPrice(row)) }}{{ row.variant ? (isPieceLine(row) ? '/pieza' : '/m²') : '' }}
+                                </p>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- danger, no amber como en Cotizaciones: aquí el backend sí rechaza la venta -->
+                    <template #stock-alert="{ row }">
+                        <p
+                            v-if="hasProduct(row) && hasInsufficientStock(row)"
+                            class="mt-2 sm:mr-10 flex items-start gap-1.5 text-xs text-danger bg-danger/10 border border-danger/20 rounded-md px-3 py-2"
+                        >
+                            <i class="ti ti-alert-triangle text-sm leading-none" aria-hidden="true"></i>
+                            <span>{{ stockError(row) }}</span>
+                        </p>
+                    </template>
+                </DocumentLinesTable>
 
                 <div class="flex justify-end mt-5 pt-4 border-t border-border">
                     <div class="w-full sm:w-64 space-y-1.5">
@@ -365,7 +191,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
@@ -376,21 +202,14 @@ import { useCatalogsStore } from '@/stores/catalogs'
 import { useSalesStore } from '@/stores/sales'
 import { useQuotesStore } from '@/stores/quotes'
 import CustomerSearch from '@/components/widgets/autocompletes/CustomerSearch.vue'
-import ProductAutocomplete from '@/components/widgets/autocompletes/ProductAutocomplete.vue'
+import DocumentLinesTable from '@/components/widgets/tables/DocumentLinesTable.vue'
 import InputNumberCustom from '@/components/widgets/InputNumberCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 import { useNotify } from '@/composables/useNotify'
 import { formatCurrency } from '@/lib/formatCurrency'
-import { formatQuantity } from '@/lib/formatQuantity'
-import { pieceVariantIds } from '@/lib/unitTypes'
+import { useLineProducts } from '@/composables/useLineProducts'
 import * as documentLines from '@/lib/documentLines'
-import {
-    applyRequestedM2,
-    findLineForProduct,
-    hasProduct,
-    lineItemPayload,
-    serializeLines,
-} from '@/lib/documentLines'
+import { hasProduct, lineItemPayload, serializeLines } from '@/lib/documentLines'
 
 const route = useRoute()
 const router = useRouter()
@@ -401,6 +220,7 @@ const simpleProducts = useSimpleProductsStore()
 const catalogs = useCatalogsStore()
 const notify = useNotify()
 const confirm = useConfirm()
+const { isPieceLine, findSimpleProduct, simpleProductFor } = useLineProducts()
 
 // Precio de lista, stock y categoría de las líneas simples salen de estos
 // stores (cacheados vía `initialized`); ProductAutocomplete también los carga,
@@ -548,10 +368,6 @@ function missingProductsMessage(variantIds, simpleProductIds) {
     return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} de esta cotización ya no ${plural ? 'están disponibles' : 'está disponible'} en inventario. No se puede convertir a venta.`
 }
 
-function findSimpleProduct(simpleProductId) {
-    return simpleProducts.simpleProducts.find((p) => p.id === simpleProductId) ?? null
-}
-
 function findInventoryVariantWithLine(variantId) {
     for (const product of inventory.products) {
         const variant = product.variants?.find((v) => v.id === variantId)
@@ -560,7 +376,7 @@ function findInventoryVariantWithLine(variantId) {
     return null
 }
 
-// En venta cada línea lleva además su precio, capturable (ver selectProductForRow).
+// En venta cada línea lleva además su precio, capturable (ver setListPrice).
 function createEmptyLine() {
     return documentLines.createEmptyLine({ unit_price: null })
 }
@@ -612,113 +428,16 @@ function handleBeforeUnload(event) {
 
 window.addEventListener('beforeunload', handleBeforeUnload)
 onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
-const mergedRowId = ref(null)
-let mergeTimeoutHandle = null
 
-function flashMerge(id) {
-    mergedRowId.value = id
-    clearTimeout(mergeTimeoutHandle)
-    mergeTimeoutHandle = setTimeout(() => {
-        mergedRowId.value = null
-    }, 2500)
-}
-
-function addLine() {
-    lines.value.push(createEmptyLine())
-}
-
-function removeLine(id) {
-    if (lines.value.length === 1) return
-    lines.value = lines.value.filter((l) => l.id !== id)
-}
-
-function changeLine(row) {
-    row.variant = null
-    row.simpleProduct = null
-}
-
-// Sin mouse: tras elegir un producto el foco pasa a su cantidad. En una variante
-// nueva va a "m² requeridos" (el cliente suele pedir en m² y de ahí salen las
-// cajas); en una fusión, a las cajas/unidades que acaban de sumar uno.
-async function focusLineQuantity(row, { merged = false } = {}) {
-    await nextTick()
-    const field = !merged && row.variant && Number(row.variant.m2_per_box) > 0 ? 'requested' : 'quantity'
-    const input = document.getElementById(`${field}-${row.id}`)
-    input?.focus()
-    input?.select()
-}
-
-// Misma fusión que QuoteFormView: si el producto (variante o simple) ya está en
-// otra línea se suma la cantidad ahí (conservando el precio que ya se haya
-// capturado en esa línea) en vez de duplicar la fila.
-function selectProductForRow(row, option) {
-    const isSimple = option.type === 'simple'
-    const target = findLineForProduct(lines.value, option)
-
-    if (target) {
-        target.quantity = (Number(target.quantity) || 0) + 1
-        flashMerge(target.id)
-        lines.value = lines.value.filter((l) => l.id !== row.id)
-        if (lines.value.length === 0) lines.value.push(createEmptyLine())
-        focusLineQuantity(target, { merged: true })
-        return
-    }
-
-    row.variant = isSimple ? null : option
-    row.simpleProduct = isSimple ? option : null
-
-    // Cajas y unidades son enteras: al "Cambiar" se conserva la cantidad. Los m²
-    // requeridos solo aplican a variantes; con otra variante (otro m² por caja)
-    // se recalculan las cajas.
-    row.quantity = row.quantity > 0 ? row.quantity : 1
-    if (isSimple || isPieceLine(row)) row.requestedM2 = null
-    else if (row.requestedM2 > 0) applyRequestedM2(row, row.requestedM2)
-
-    // En venta el backend sí acepta unit_price del cliente: se precarga con el
-    // precio de lista (por m², por pieza o por unidad) como valor inicial editable.
+// En venta el backend sí acepta unit_price del cliente: al elegir un producto
+// (no al fusionarlo con una línea existente, que conserva su precio) se precarga
+// con el precio de lista (por m², por pieza o por unidad) como valor inicial editable.
+function setListPrice(row) {
     row.unit_price = listPrice(row)
-
-    focusLineQuantity(row)
-}
-
-// Datos vivos del producto simple (stock, categoría) desde el store; si no
-// está ahí, se usa lo que trae la línea.
-function simpleProductFor(row) {
-    return findSimpleProduct(row.simpleProduct.id) ?? row.simpleProduct
-}
-
-function simpleProductCategoryName(row) {
-    const categoryId = simpleProductFor(row).category_id
-    return catalogs.categories.find((c) => c.id === categoryId)?.name ?? ''
-}
-
-// Variantes de pisos por pieza (unit_type "pieza"): la cantidad son piezas, que
-// se mandan tal cual como `boxes`, y el precio es por pieza, sin m². Se resuelve
-// contra Inventario (de ahí salen las variantes del buscador y de /convert).
-const pieceVariantIdSet = computed(() => pieceVariantIds(inventory.products))
-
-function isPieceLine(row) {
-    return !!row.variant && pieceVariantIdSet.value.has(row.variant.id)
 }
 
 // Las reglas de cada línea viven en lib/documentLines.js; aquí solo se les pasa
 // lo que depende de los stores (si es por pieza, el producto simple y el stock "en vivo").
-function lineUnit(row) {
-    return documentLines.lineUnit(isPieceLine(row))
-}
-
-function coveredM2(row) {
-    return documentLines.coveredM2(row, isPieceLine(row))
-}
-
-function coversRequested(row) {
-    return documentLines.coversRequested(row, isPieceLine(row))
-}
-
-function boxConversionError(row) {
-    return documentLines.boxConversionError(row, isPieceLine(row), 'vender')
-}
-
 function hasInsufficientStock(row) {
     return documentLines.exceedsStock(row, lineStock(row))
 }
@@ -776,9 +495,13 @@ const generalError = ref(null)
 // (mismo criterio que QuoteFormView).
 const submitAttempted = ref(false)
 
+// La tabla muestra estos mismos errores por línea; aquí deciden si se puede registrar.
 function quantityError(row) {
-    if (!submitAttempted.value) return ''
     return documentLines.missingQuantityMessage(row, isPieceLine(row))
+}
+
+function boxConversionError(row) {
+    return documentLines.boxConversionError(row, isPieceLine(row), 'vender')
 }
 
 // StoreSaleRequest exige unit_price >= 0.01; sin esto el 422 llegaba como un
@@ -855,7 +578,6 @@ function refreshStock() {
 function resetForm() {
     form.customer_id = ''
     lines.value = [createEmptyLine()]
-    mergedRowId.value = null
     submitAttempted.value = false
     savedSnapshot.value = serializeForm()
 }
