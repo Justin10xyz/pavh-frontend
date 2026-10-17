@@ -12,7 +12,6 @@
                 v-model:selectedCategory="selectedCategory"
                 :categoryOptions="categoryOptions"
                 search-placeholder="Buscar por nombre o código…"
-                :show-low-stock-filter="false"
                 @clear-filters="clearFilters"
             />
 

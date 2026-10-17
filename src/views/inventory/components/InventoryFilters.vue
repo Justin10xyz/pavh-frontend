@@ -25,13 +25,24 @@
             />
         </div>
 
-        <label
-            v-if="showLowStockFilter"
-            class="flex items-center gap-2 text-sm text-text select-none cursor-pointer"
-        >
-            <CheckboxCustom v-model="lowStockOnly" />
-            Solo stock bajo
-        </label>
+        <!-- Solo en Catálogo de pisos: "Otros productos" no pasa estas opciones. -->
+        <div v-if="supplierOptions" class="w-full sm:w-56">
+            <SelectCustom
+                v-model="selectedSupplier"
+                :options="supplierOptions"
+                placeholder="Todos los proveedores"
+                allow-empty
+            />
+        </div>
+
+        <div v-if="unitTypeOptions" class="w-full sm:w-44">
+            <SelectCustom
+                v-model="selectedUnitType"
+                :options="unitTypeOptions"
+                placeholder="Todas las unidades"
+                allow-empty
+            />
+        </div>
 
         <button
             v-if="hasActiveFilters"
@@ -48,7 +59,6 @@
 import { computed } from "vue";
 import SelectCustom from "@/components/widgets/SelectCustom.vue";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
-import CheckboxCustom from "@/components/widgets/CheckboxCustom.vue";
 
 defineProps({
     categoryOptions: {
@@ -59,10 +69,15 @@ defineProps({
         type: String,
         default: "Buscar por línea, color o código…",
     },
-    // Los productos simples no tienen stock mínimo, así que no aplica "stock bajo".
-    showLowStockFilter: {
-        type: Boolean,
-        default: true,
+    // Catálogos { id, name } (proveedores, unidades de venta). Sin ellos, el
+    // selector no se muestra.
+    supplierOptions: {
+        type: Array,
+        default: null,
+    },
+    unitTypeOptions: {
+        type: Array,
+        default: null,
     },
 });
 
@@ -70,9 +85,14 @@ const emit = defineEmits(["clear-filters"]);
 
 const searchQuery = defineModel("searchQuery", { type: String, default: "" });
 const selectedCategory = defineModel("selectedCategory", { type: String, default: "" });
-const lowStockOnly = defineModel("lowStockOnly", { type: Boolean, default: false });
+const selectedSupplier = defineModel("selectedSupplier", { type: [String, Number], default: "" });
+const selectedUnitType = defineModel("selectedUnitType", { type: [String, Number], default: "" });
 
 const hasActiveFilters = computed(
-    () => searchQuery.value !== "" || selectedCategory.value !== "" || lowStockOnly.value,
+    () =>
+        searchQuery.value !== "" ||
+        selectedCategory.value !== "" ||
+        selectedSupplier.value !== "" ||
+        selectedUnitType.value !== "",
 );
 </script>
