@@ -54,6 +54,7 @@
                     :line-subtotal="lineSubtotal"
                     :empty-line-fields="{ unit_price: null }"
                     @select="setListPrice"
+                    @price-type-change="setListPrice"
                 >
                     <template #price="{ row }">
                         <div class="space-y-1.5 sm:space-y-0">
@@ -189,7 +190,7 @@ const simpleProducts = useSimpleProductsStore()
 const catalogs = useCatalogsStore()
 const notify = useNotify()
 const confirm = useConfirm()
-const { isPieceLine, simpleProductFor } = useLineProducts()
+const { isPieceLine, simpleProductFor, linePriceType } = useLineProducts()
 
 // Precio de lista, stock y categoría de las líneas simples salen de estos
 // stores (cacheados vía `initialized`); ProductAutocomplete también los carga,
@@ -346,6 +347,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
 // En venta el backend sí acepta unit_price del cliente: al elegir un producto
 // (no al fusionarlo con una línea existente, que conserva su precio) se precarga
 // con el precio de lista (por m², por pieza o por unidad) como valor inicial editable.
+// Igual al cambiar entre menudeo y mayoreo: se precarga el precio de ese tipo.
 function setListPrice(row) {
     row.unit_price = listPrice(row)
 }
@@ -500,7 +502,7 @@ const handleSubmit = async () => {
         const payload = {
             customer_id: form.customer_id || null,
             ...(quoteId.value ? { quote_id: Number(quoteId.value) } : {}),
-            items: validLines.map((l) => ({ ...lineItemPayload(l), unit_price: l.unit_price })),
+            items: validLines.map((l) => ({ ...lineItemPayload(l, linePriceType(l)), unit_price: l.unit_price })),
         }
 
         const sale = await sales.createSale(payload)

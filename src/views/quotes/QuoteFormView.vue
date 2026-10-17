@@ -82,7 +82,7 @@
                             <p class="flex items-center text-xs text-text-muted tabular-nums">
                                 {{
                                     !row.variant
-                                        ? formatCurrency(simpleProductFor(row).price)
+                                        ? formatCurrency(simpleProductListPrice(row))
                                         : isPieceLine(row)
                                             ? `${formatCurrency(row.variant.price_per_box)}/pieza`
                                             : `${formatCurrency(row.variant.price_per_m2)}/m²`
@@ -212,7 +212,7 @@ const catalogs = useCatalogsStore();
 const quotes = useQuotesStore();
 const notify = useNotify();
 const confirm = useConfirm();
-const { isPieceLine, simpleProductFor } = useLineProducts();
+const { isPieceLine, simpleProductFor, linePriceType } = useLineProducts();
 
 // Modo edición cuando la ruta trae :id (quotes.edit); sin :id es creación.
 const quoteId = computed(() => route.params.id ?? null);
@@ -272,6 +272,7 @@ async function loadQuote() {
         // Variante: sus cajas (null en líneas previas al cambio a cajas sin
         // m2_per_box; se piden al guardar). Los m² requeridos no se guardan.
         quantity: item.product_variant_id ? item.boxes : Number(item.quantity),
+        priceType: item.price_type ?? "retail",
     }));
     lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()];
     savedSnapshot.value = serializeForm();
@@ -344,6 +345,12 @@ function stockWarning(row) {
     });
 }
 
+// En cotización el precio no se edita: todo se calcula al precio de lista (en
+// productos simples, el del tipo elegido; el backend lo resuelve igual).
+function simpleProductListPrice(row) {
+    return documentLines.simpleProductPrice(simpleProductFor(row), linePriceType(row));
+}
+
 // En cotización el precio no se edita: todo se calcula al precio de lista.
 function boxPrice(row) {
     return documentLines.boxPrice(row, isPieceLine(row), row.variant?.price_per_m2);
@@ -409,7 +416,7 @@ const handleSubmit = async () => {
         const payload = {
             customer_id: form.customer_id || null,
             notes: form.notes || null,
-            items: validLines.map(lineItemPayload),
+            items: validLines.map((l) => lineItemPayload(l, linePriceType(l))),
         };
 
         if (isEdit.value) {

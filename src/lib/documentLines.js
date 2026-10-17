@@ -11,8 +11,9 @@ import { variantStockUnit } from "@/lib/unitTypes";
 // exclusivo product_variant_id / simple_product_id del backend.
 // `quantity` va en la unidad física de stock: cajas completas (variante), piezas
 // (variante por pieza) o unidades (simple). `requestedM2` es solo ayuda de
-// captura para variantes por caja; no se envía. `fields` agrega lo propio de
-// cada documento (ej. `unit_price` en venta).
+// captura para variantes por caja; no se envía. `priceType` (retail|wholesale)
+// solo aplica a productos simples con mayoreo; ver linePriceType(). `fields`
+// agrega lo propio de cada documento (ej. `unit_price` en venta).
 export function createEmptyLine(fields = {}) {
     return {
         id: crypto.randomUUID(),
@@ -20,6 +21,7 @@ export function createEmptyLine(fields = {}) {
         simpleProduct: null,
         quantity: null,
         requestedM2: null,
+        priceType: "retail",
         ...fields,
     };
 }
@@ -37,16 +39,36 @@ export function serializeLines(lines, { withPrice = false } = {}) {
             line.variant?.id ?? null,
             line.simpleProduct?.id ?? null,
             line.quantity ?? null,
+            line.priceType,
             ...(withPrice ? [line.unit_price ?? null] : []),
         ]);
 }
 
 // Producto + cantidad de un item del payload. Variante: cajas o piezas (los m²
-// los deriva el backend). Simple: unidades.
-export function lineItemPayload(line) {
+// los deriva el backend). Simple: unidades y su `price_type` (el backend lo
+// prohíbe en variantes). `priceType` ya resuelto con linePriceType().
+export function lineItemPayload(line, priceType) {
     return line.simpleProduct
-        ? { simple_product_id: line.simpleProduct.id, quantity: line.quantity }
+        ? { simple_product_id: line.simpleProduct.id, quantity: line.quantity, price_type: priceType }
         : { product_variant_id: line.variant.id, boxes: line.quantity };
+}
+
+// price_wholesale es opcional: null = el producto no se vende a mayoreo.
+export function hasWholesalePrice(simpleProduct) {
+    return simpleProduct?.price_wholesale !== null && simpleProduct?.price_wholesale !== undefined;
+}
+
+// Precio de un producto simple según el tipo (menudeo o mayoreo).
+export function simpleProductPrice(simpleProduct, priceType) {
+    return Number(priceType === "wholesale" ? simpleProduct.price_wholesale : simpleProduct.price) || 0;
+}
+
+// Tipo de precio con el que de verdad se resuelve la línea: mayoreo solo si el
+// producto lo tiene (si se lo quitaron después de cotizar, la línea vuelve a
+// menudeo, que es lo que se ve sin selector). Variantes: siempre menudeo.
+export function linePriceType(line, simpleProduct) {
+    if (!line.simpleProduct || !hasWholesalePrice(simpleProduct)) return "retail";
+    return line.priceType;
 }
 
 // Línea que ya tiene el producto elegido (variante o simple), para fusionar en
@@ -96,10 +118,10 @@ export function boxConversionError(line, isPiece, action) {
 }
 
 // Precio de lista por m² (variante por caja), por pieza (variante por pieza,
-// price_per_box) o por unidad (simple). `simpleProduct` es el producto simple
-// "en vivo" que resuelve la vista.
+// price_per_box) o por unidad (simple, del tipo de precio de la línea).
+// `simpleProduct` es el producto simple "en vivo" que resuelve la vista.
 export function listPrice(line, isPiece, simpleProduct) {
-    if (!line.variant) return Number(simpleProduct.price) || 0;
+    if (!line.variant) return simpleProductPrice(simpleProduct, linePriceType(line, simpleProduct));
     return Number(isPiece ? line.variant.price_per_box : line.variant.price_per_m2) || 0;
 }
 

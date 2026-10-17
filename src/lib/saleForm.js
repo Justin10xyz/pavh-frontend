@@ -28,7 +28,10 @@ export function resolveConversionLines(items, { products, simpleProducts, create
             // Variante: las cajas cotizadas (null en líneas previas al cambio a
             // cajas sin m2_per_box; se piden al registrar). Simple: unidades.
             quantity: item.product_variant_id ? item.boxes : Number(item.quantity),
+            // Ya viene al precio actual del tipo cotizado; el vendedor puede
+            // cambiar el tipo antes de registrar (se vuelve a precargar).
             unit_price: Number(item.unit_price),
+            priceType: item.price_type ?? "retail",
         };
 
         if (item.simple_product_id) {
