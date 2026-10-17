@@ -67,6 +67,7 @@
                     :stock-unit="stockUnit"
                     :removable="canRemoveGroup(group)"
                     :deleting-row-id="deletingRowId"
+                    :delete-error="deleteError"
                     @remove="removeVariantGroup(group.id)"
                     @remove-color="(row) => removeColorRow(group, row.id)"
                 />
@@ -113,7 +114,7 @@
             <template #container="{ message, acceptCallback, rejectCallback }">
                 <div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
                     <h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
-                    <p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+                    <p class="text-sm text-text-muted mb-5 whitespace-pre-line">{{ message.message }}</p>
                     <div class="flex items-center justify-end gap-3">
                         <!-- Foco inicial en Cancelar (ver StockChangesConfirmDialog): en una
 						     acción que no se puede deshacer, Enter no debe eliminar. -->
@@ -262,6 +263,8 @@ function removeRowAndFocus(group, rowId) {
 }
 
 const deletingRowId = ref(null);
+// { rowId, message } del último DELETE rechazado con 422; se muestra bajo esa fila.
+const deleteError = ref(null);
 
 // Filas sin `variantId` son nuevas en esta sesión (o el flujo de creación, donde
 // ninguna fila lo tiene) — se quitan del array local sin tocar el backend. Filas con
@@ -281,7 +284,7 @@ function removeColorRow(group, rowId) {
 
     confirm.require({
         header: "Eliminar variante",
-        message: `¿Eliminar el color "${row.color}"? Esta acción no se puede deshacer.`,
+        message: `¿Eliminar el color "${row.color}"? Esta acción no se puede deshacer.\nEste color se eliminará de inmediato, aunque no hayas guardado los demás cambios del formulario.`,
         accept: () => deleteVariantRow(group, row),
     });
 }
@@ -289,13 +292,19 @@ function removeColorRow(group, rowId) {
 async function deleteVariantRow(group, row) {
     deletingRowId.value = row.id;
     generalError.value = null;
+    deleteError.value = null;
 
     try {
         await axios.delete(`/api/product-variants/${row.variantId}`);
         removeRowAndFocus(group, row.id);
     } catch (err) {
+        // 422 de negocio sin `errors` (ej. última variante del producto): corresponde
+        // a la fila que se intentó eliminar, así que va bajo ella, no al error general.
         if (err.response?.status === 422) {
-            generalError.value = err.response.data.message;
+            deleteError.value = {
+                rowId: row.id,
+                message: err.response.data.message || "No se pudo eliminar este color.",
+            };
         } else {
             generalError.value = "No se pudo eliminar la variante. Intenta de nuevo.";
         }
@@ -415,6 +424,7 @@ const handleSubmit = async () => {
     }
 
     generalError.value = null;
+    deleteError.value = null;
     submitting.value = true;
     let productId = isEditMode.value ? route.params.id : null;
     let productSaved = false;

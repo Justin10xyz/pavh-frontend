@@ -104,6 +104,15 @@
                                 {{ row.errors.minimum_stock }}
                             </p>
                         </div>
+
+                        <!-- Rechazo del DELETE de este color (ej. última variante del producto) -->
+                        <p
+                            v-if="deleteError?.rowId === row.id"
+                            role="alert"
+                            class="text-danger text-xs sm:col-span-3"
+                        >
+                            {{ deleteError.message }}
+                        </p>
                     </div>
 
                     <!-- Mismo alto que los inputs para quedar centrado con ellos desde sm -->
@@ -163,6 +172,8 @@ defineProps({
     stockUnit: { type: Object, required: true },
     // Fila cuya variante se está eliminando (su botón queda deshabilitado).
     deletingRowId: { type: String, default: null },
+    // { rowId, message } del DELETE rechazado; se muestra bajo esa fila.
+    deleteError: { type: Object, default: null },
 });
 
 const emit = defineEmits(["remove"]);

@@ -100,6 +100,8 @@ El ícono de **lápiz** en la fila del producto abre el formulario de edición. 
 
 Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), el motivo aparece en un aviso rojo arriba del formulario.
 
+**Eliminar un color ya guardado** (la **X** de su fila) pide confirmación y lo borra **en ese momento**: no espera a **Guardar cambios**, así que aunque después salgas con **Cancelar**, el color ya no regresa. Un producto no puede quedarse sin colores: si intentas eliminar el último que tiene guardado, el motivo aparece en rojo debajo de ese color.
+
 ### Una medida abierta a la vez
 
 En el formulario del piso, cada medida es un bloque que se abre y se cierra dando clic en su encabezado (la medida, el PEI, el ETT, el precio por caja y cuántos colores tiene). Solo una medida está abierta a la vez: al abrir otra, la anterior se cierra. Así, en el celular o la tablet siempre se sabe qué medida se está editando.
@@ -315,3 +317,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-17 | **Catálogo de pisos**: todas las medidas se muestran con **X** mayúscula (por ejemplo *60X60* en lugar de *60x60*). Los códigos de los productos no cambiaron. |
 | 2026-10-17 | **Nuevo piso / Editar piso**: la medida se guarda siempre sin espacios y con **X** mayúscula, aunque se escriba *60x60* o *60 x 60*. |
 | 2026-10-17 | **Nuevo piso / Editar piso**: el PEI se elige en dos pasos: el nivel en **PEI** y, si es rango, el otro nivel en **Rango con** (ver [Capturar el PEI](#capturar-el-pei)). |
+| 2026-10-17 | **Editar piso**: la confirmación al eliminar un color aclara que se borra en ese momento, sin esperar a Guardar cambios. Si no se puede eliminar (es el último color del producto), el motivo aparece debajo de ese color en lugar de arriba del formulario. |

@@ -269,6 +269,7 @@
                     v-model:rows="group.colorRows"
                     :stock-unit="stockUnit"
                     :deleting-row-id="deletingRowId"
+                    :delete-error="deleteError"
                     @remove="(row) => emit('remove-color', row)"
                 />
             </div>
@@ -305,6 +306,7 @@ defineProps({
     // Solo medidas sin variantes guardadas (lo decide la vista).
     removable: { type: Boolean, default: false },
     deletingRowId: { type: String, default: null },
+    deleteError: { type: Object, default: null },
 });
 
 const emit = defineEmits(["remove", "remove-color"]);
