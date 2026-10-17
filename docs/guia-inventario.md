@@ -104,6 +104,8 @@ Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), 
 
 Cada medida necesita **al menos un color**: cuando una medida tiene uno solo, su **X** aparece apagada y, al pasar el cursor encima, dice *"Cada medida necesita al menos un color"*. Para cambiar ese color, edita su nombre en lugar de quitarlo, o agrega otro primero.
 
+Una medida que ya tiene colores guardados no muestra **Quitar medida**. Al abrirla, una nota bajo su encabezado explica cómo quitarla: primero se eliminan sus colores guardados con la **X** de cada uno y, como siempre debe quedar un color, hay que agregar uno nuevo antes de eliminar el último. Cuando ya no le quedan colores guardados, aparece **Quitar medida**.
+
 ### Una medida abierta a la vez
 
 En el formulario del piso, cada medida es un bloque que se abre y se cierra dando clic en su encabezado (la medida, el PEI, el ETT, el precio por caja y cuántos colores tiene). Solo una medida está abierta a la vez: al abrir otra, la anterior se cierra. Así, en el celular o la tablet siempre se sabe qué medida se está editando.
@@ -321,3 +323,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-17 | **Nuevo piso / Editar piso**: el PEI se elige en dos pasos: el nivel en **PEI** y, si es rango, el otro nivel en **Rango con** (ver [Capturar el PEI](#capturar-el-pei)). |
 | 2026-10-17 | **Editar piso**: la confirmación al eliminar un color aclara que se borra en ese momento, sin esperar a Guardar cambios. Si no se puede eliminar (es el último color del producto), el motivo aparece debajo de ese color en lugar de arriba del formulario. |
 | 2026-10-17 | **Nuevo piso / Editar piso**: la **X** apagada del único color de una medida ahora explica, al pasar el cursor, que cada medida necesita al menos un color. |
+| 2026-10-17 | **Editar piso**: las medidas con colores guardados explican, al abrirlas, cómo quitarlas (eliminar primero sus colores guardados). |

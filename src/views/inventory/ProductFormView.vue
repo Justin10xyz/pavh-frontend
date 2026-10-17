@@ -66,6 +66,7 @@
                     :sold-by-piece="soldByPiece"
                     :stock-unit="stockUnit"
                     :removable="canRemoveGroup(group)"
+                    :removal-hint="needsSavedColorsRemoved(group)"
                     :deleting-row-id="deletingRowId"
                     :delete-error="deleteError"
                     @remove="removeVariantGroup(group.id)"
@@ -241,6 +242,12 @@ function addVariantGroup() {
 // ninguna de sus filas existe ya como variante en backend. Siempre queda al menos uno.
 function canRemoveGroup(group) {
     return variantGroups.value.length > 1 && group.colorRows.every((row) => !row.variantId);
+}
+
+// Lo único que impide quitarla son sus colores guardados (con una sola medida no
+// hay nada que explicar: el producto siempre conserva al menos una).
+function needsSavedColorsRemoved(group) {
+    return variantGroups.value.length > 1 && group.colorRows.some((row) => row.variantId);
 }
 
 function removeVariantGroup(groupId) {

@@ -5,7 +5,7 @@
         <!-- as-child: el botón que colapsa y "Quitar medida" van lado a lado
 		     (un botón no puede ir dentro de otro). -->
         <AccordionHeader as-child v-slot="{ active, a11yAttrs, onClick }">
-            <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4">
+            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-5 sm:px-6 py-4">
                 <!-- Mismo criterio que el encabezado de cada medida en InventoryTable.vue:
 				     la medida sola no basta (puede repetirse con otro PEI/ETT/precio). -->
                 <h2 class="min-w-0 flex-1 text-sm">
@@ -56,6 +56,14 @@
                 >
                     Quitar medida
                 </button>
+                <!-- En lugar de "Quitar medida" (ver canRemoveGroup en la vista). Solo con
+				     el panel abierto, para no repetirlo en cada medida cerrada. basis-full:
+				     baja a su propia línea; pl-6 lo alinea con el texto, después del chevron. -->
+                <p v-if="active && removalHint" class="basis-full pl-6 text-xs text-text-muted">
+                    Para quitar esta medida, primero elimina sus colores guardados con la X
+                    de cada uno. Como siempre debe quedar un color, agrega uno nuevo antes
+                    de eliminar el último.
+                </p>
             </div>
         </AccordionHeader>
 
@@ -305,6 +313,8 @@ defineProps({
     stockUnit: { type: Object, required: true },
     // Solo medidas sin variantes guardadas (lo decide la vista).
     removable: { type: Boolean, default: false },
+    // Medida con colores guardados (no removible por eso): muestra cómo quitarla.
+    removalHint: { type: Boolean, default: false },
     deletingRowId: { type: String, default: null },
     deleteError: { type: Object, default: null },
 });
