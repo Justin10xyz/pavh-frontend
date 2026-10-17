@@ -75,6 +75,7 @@
         :stock-unit="stockDialogUnit.short"
         :quantity-label="`Cantidad (${stockDialogUnit.label})`"
         :subtitle="stockDialogVariant?.color"
+        :low-stock="stockDialogVariant?.low_stock ?? false"
         @stock-updated="onVariantStockUpdated"
     />
 

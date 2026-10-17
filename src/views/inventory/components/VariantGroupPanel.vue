@@ -101,23 +101,10 @@
                             </td>
                             <td class="py-1.5 pr-3 sm:pr-6">
                                 <div class="flex items-center justify-start gap-1.5">
-                                    <span
-                                        v-if="!isTracked(variant)"
-                                        class="text-xs px-2 py-0.5 rounded border border-border text-text-muted"
-                                    >
-                                        Sin control
-                                    </span>
-                                    <span
-                                        v-else
-                                        class="text-xs px-2 py-0.5 rounded"
-                                        :class="
-                                            variant.low_stock
-                                                ? 'bg-danger/10 text-danger'
-                                                : 'bg-success/10 text-success'
-                                        "
-                                    >
-                                        {{ variant.low_stock ? "Stock bajo" : "OK" }}
-                                    </span>
+                                    <StockStatusBadge
+                                        :tracked="isTracked(variant)"
+                                        :low-stock="variant.low_stock"
+                                    />
                                     <div class="flex items-center justify-end gap-1.5 ml-auto">
                                         <button
                                             type="button"
@@ -162,6 +149,7 @@ import { formatCurrency } from "@/lib/formatCurrency";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import { isTracked, lowStockCount, lowStockLabel } from "@/lib/variantStock";
 import { clearCollapseHeight, onCollapseEnter, onCollapseLeave } from "@/lib/collapseTransition";
+import StockStatusBadge from "./StockStatusBadge.vue";
 
 // Una medida dentro de la expansión de un producto en InventoryTable: su ficha
 // (precio, specs, aviso de stock bajo) y, al abrirla, el stock por color. Si
