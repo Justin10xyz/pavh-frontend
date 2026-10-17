@@ -100,6 +100,14 @@ El ícono de **lápiz** en la fila del producto abre el formulario de edición. 
 
 Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), el motivo aparece en un aviso rojo arriba del formulario.
 
+### Una medida abierta a la vez
+
+En el formulario del piso, cada medida es un bloque que se abre y se cierra dando clic en su encabezado (la medida, el PEI, el ETT, el precio por caja y cuántos colores tiene). Solo una medida está abierta a la vez: al abrir otra, la anterior se cierra. Así, en el celular o la tablet siempre se sabe qué medida se está editando.
+
+- Al editar un piso, la **primera medida** aparece abierta y las demás cerradas.
+- Con **+ Agregar medida**, la medida nueva se abre sola.
+- Si al guardar falta un dato en una medida cerrada, esa medida se abre para mostrar el campo marcado en rojo.
+
 ### Pisos que se venden por pieza
 
 Algunos pisos, como mosaicos o decorados, no se venden por caja ni por m², sino **por pieza**. Para registrarlos, en el formulario del piso elige **pieza** en la lista **Unidad**. El formulario cambia:
@@ -127,6 +135,7 @@ El formulario del piso se puede llenar completo sin usar el mouse:
 - Al quitar un color o una medida, el cursor se queda en el color o la medida de al lado, para seguir capturando.
 - Para guardar sin buscar el botón: **Ctrl + S** o **Ctrl + Enter** desde cualquier campo (en Mac, **⌘ + S** o **⌘ + Enter**). El atajo aparece como recordatorio junto al botón **Guardar**.
 - Si al guardar falta algún dato, el cursor salta al primer campo marcado en rojo.
+- Con **Tab** también se llega al encabezado de cada medida: **Enter** o **Espacio** la abre o la cierra, y las **flechas ↑ ↓** pasan al encabezado de la medida anterior o siguiente. Enter en el último campo de una medida no salta a una medida cerrada.
 - Con **Tab** también se llega a los botones (**+**, **Quitar medida**, la **X** de cada color, **+ Agregar color**…). El botón donde está el cursor se marca con un contorno dorado y se presiona con **Enter** o **Espacio**.
 - En las ventanas de confirmación el cursor ya está en un botón. Al **confirmar cambios de stock**, Enter guarda; al **eliminar un color**, Enter cancela (para no borrar por accidente) y hay que pasar con Tab a **Eliminar**. **Esc** cierra la ventana sin hacer nada.
 
@@ -284,3 +293,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Nuevo piso / Editar piso**: si al guardar el sistema rechaza un dato, el cursor salta a ese campo. |
 | 2026-10-16 | **Otros productos**: nuevo **precio de mayoreo** opcional, que se agrega con **+ Agregar precio de mayoreo** en el formulario. |
 | 2026-10-16 | **Cotizaciones y ventas**: en productos con mayoreo, la casilla **Mayoreo** elige el precio de cada línea. El detalle y el PDF marcan esas líneas con la etiqueta **Mayoreo**. |
+| 2026-10-17 | **Nuevo piso / Editar piso**: las medidas se abren y cierran desde su encabezado, una a la vez, para no perder de vista qué medida y color se editan en celular o tablet. La medida nueva se abre sola y, si falta un dato en una medida cerrada, se abre al guardar. |
