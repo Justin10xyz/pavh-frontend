@@ -181,8 +181,30 @@
                             </p>
                         </div>
 
-                        <!-- Precio: capturable en venta, informativo en cotización -->
-                        <slot name="price" :row="row"></slot>
+                        <!-- Precio: capturable en venta, informativo en cotización. Debajo,
+                             solo en productos simples con mayoreo: el tipo de precio (menudeo
+                             por defecto) y el del otro tipo como referencia. Una casilla y no
+                             un segmentado Menudeo/Mayoreo: no cabe en la columna desde md. -->
+                        <div class="min-w-0">
+                            <slot name="price" :row="row"></slot>
+                            <div v-if="hasWholesale(row)" class="mt-1.5">
+                                <label
+                                    class="inline-flex items-center gap-1.5 text-xs text-text cursor-pointer select-none"
+                                >
+                                    <CheckboxCustom
+                                        :id="`wholesale-${row.id}`"
+                                        size="sm"
+                                        :model-value="row.priceType === 'wholesale'"
+                                        @update:model-value="(checked) => setPriceType(row, checked)"
+                                    />
+                                    Mayoreo
+                                </label>
+                                <p class="text-xs text-text-muted mt-0.5 tabular-nums">
+                                    {{ row.priceType === "wholesale" ? "Menudeo" : "Mayoreo" }}:
+                                    {{ formatCurrency(otherPrice(row)) }}
+                                </p>
+                            </div>
+                        </div>
 
                         <div class="space-y-1.5 sm:space-y-0">
                             <span class="text-xs font-medium text-text-muted block sm:sr-only"
@@ -237,17 +259,25 @@
 import { nextTick, ref } from "vue";
 import ProductAutocomplete from "@/components/widgets/autocompletes/ProductAutocomplete.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
+import CheckboxCustom from "@/components/widgets/CheckboxCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import CommissionBadge from "@/components/widgets/badges/CommissionBadge.vue";
 import { useLineProducts } from "@/composables/useLineProducts";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
 import * as documentLines from "@/lib/documentLines";
-import { applyRequestedM2, createEmptyLine, findLineForProduct, hasProduct } from "@/lib/documentLines";
+import {
+    applyRequestedM2,
+    createEmptyLine,
+    findLineForProduct,
+    hasProduct,
+    simpleProductPrice,
+} from "@/lib/documentLines";
 
 // Lista repetible de productos de un documento (QuoteFormView, SaleFormView):
-// buscador, fusión de productos repetidos, m² requeridos, cantidad y subtotal
-// por línea. Lo que cambia entre documentos llega de la vista: la celda de
+// buscador, fusión de productos repetidos, m² requeridos, cantidad, tipo de
+// precio (menudeo/mayoreo, solo productos simples con mayoreo) y subtotal por
+// línea. Lo que cambia entre documentos llega de la vista: la celda de
 // precio (slot `price`), el aviso de stock (slot `stock-alert`) y el subtotal
 // (`lineSubtotal`, porque en venta el precio se captura y en cotización es el
 // de lista). Las líneas se editan sobre el mismo array (`v-model:lines`).
@@ -266,10 +296,12 @@ const props = defineProps({
 });
 
 // `select`: la línea recibió un producto nuevo (no una fusión), ej. para
-// precargar su precio de lista en venta.
-const emit = defineEmits(["select"]);
+// precargar su precio de lista en venta. `price-type-change`: se cambió entre
+// menudeo y mayoreo (venta vuelve a precargar el precio de ese tipo).
+const emit = defineEmits(["select", "price-type-change"]);
 
-const { isPieceLine, commissionCategoryFor, simpleProductFor, simpleProductCategoryName } = useLineProducts();
+const { isPieceLine, commissionCategoryFor, simpleProductFor, simpleProductCategoryName, hasWholesale } =
+    useLineProducts();
 
 function newLine() {
     return createEmptyLine(props.emptyLineFields);
@@ -331,6 +363,8 @@ function selectProductForRow(row, option) {
 
     row.variant = isSimple ? null : option;
     row.simpleProduct = isSimple ? option : null;
+    // Un producto nuevo empieza en menudeo; el mayoreo siempre lo elige el vendedor.
+    row.priceType = "retail";
 
     // Cajas y unidades son enteras: al "Cambiar" se conserva la cantidad. Los m²
     // requeridos solo aplican a variantes; con otra variante (otro m² por caja)
@@ -342,6 +376,16 @@ function selectProductForRow(row, option) {
     emit("select", row);
 
     focusLineQuantity(row);
+}
+
+function setPriceType(row, wholesale) {
+    row.priceType = wholesale ? "wholesale" : "retail";
+    emit("price-type-change", row);
+}
+
+// Precio del tipo no elegido, como referencia.
+function otherPrice(row) {
+    return simpleProductPrice(simpleProductFor(row), row.priceType === "wholesale" ? "retail" : "wholesale");
 }
 
 function lineUnit(row) {

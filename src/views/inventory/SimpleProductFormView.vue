@@ -147,6 +147,40 @@
                         <p v-if="errors.price" class="text-danger text-[12px] mt-1.5">
                             {{ errors.price }}
                         </p>
+                        <!-- El mayoreo es opcional: el campo se revela a pedido para no
+                             agregar ruido a los productos que no lo usan. -->
+                        <button
+                            v-if="!showWholesale"
+                            type="button"
+                            class="text-accent hover:underline text-[12px] mt-1.5 cursor-pointer rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                            :disabled="loadingProduct"
+                            @click="revealWholesale"
+                        >
+                            + Agregar precio de mayoreo
+                        </button>
+                    </div>
+
+                    <!-- Vacío al guardar = sin mayoreo (price_wholesale null). Solo se usa
+                         cuando el vendedor lo elige en la línea de cotización/venta. -->
+                    <div v-if="showWholesale" class="space-y-1.5">
+                        <FieldLabel html-for="price_wholesale" text="Precio de mayoreo" />
+                        <InputNumberCustom
+                            id="price_wholesale"
+                            v-model="form.price_wholesale"
+                            :error="errors.price_wholesale"
+                            :min="0"
+                            placeholder="Sin mayoreo"
+                            mode="currency"
+                            currency="MXN"
+                            :disabled="loadingProduct"
+                            @input="errors.price_wholesale = ''"
+                        />
+                        <p v-if="errors.price_wholesale" class="text-danger text-[12px] mt-1.5">
+                            {{ errors.price_wholesale }}
+                        </p>
+                        <p v-else class="text-text-muted text-[12px] mt-1.5">
+                            Opcional. Déjalo vacío si no se vende a mayoreo.
+                        </p>
                     </div>
 
                     <!-- En edición, el cambio se aplica al guardar como ajuste con historial
@@ -278,6 +312,7 @@ const form = reactive({
     code: "",
     name: "",
     price: null,
+    price_wholesale: null,
     description: "",
     // Al crear viaja como stock inicial; en edición se compara contra
     // `originalStock` y se aplica como ajuste. Vacío (null) = sin control.
@@ -289,6 +324,7 @@ const errors = reactive({
     code: "",
     name: "",
     price: "",
+    price_wholesale: "",
     description: "",
     stock_quantity: "",
 });
@@ -300,6 +336,15 @@ const originalStock = ref(null);
 const stockChange = computed(() =>
     isEditMode.value ? stockChangePayload(originalStock.value, form.stock_quantity) : null,
 );
+
+// En edición se abre de una vez si el producto ya tiene mayoreo (ver loadProduct).
+const showWholesale = ref(false);
+
+async function revealWholesale() {
+    showWholesale.value = true;
+    await nextTick();
+    document.getElementById("price_wholesale")?.focus();
+}
 
 const submitting = ref(false);
 const generalError = ref(null);
@@ -327,6 +372,8 @@ async function loadProduct() {
         form.code = product.code ?? "";
         form.name = product.name;
         form.price = product.price;
+        form.price_wholesale = product.price_wholesale ?? null;
+        showWholesale.value = form.price_wholesale !== null;
         form.description = product.description ?? "";
         form.stock_quantity = product.stock_quantity;
         originalStock.value = product.stock_quantity;
@@ -430,6 +477,8 @@ async function handleSubmit() {
         code: form.code.trim() || null,
         name: form.name.trim(),
         price: form.price,
+        // Vaciar el campo regresa el producto a un solo precio.
+        price_wholesale: form.price_wholesale ?? null,
         description: form.description.trim() || null,
     };
 

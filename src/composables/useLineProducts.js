@@ -3,6 +3,7 @@ import { useInventoryStore } from "@/stores/inventory";
 import { useSimpleProductsStore } from "@/stores/simpleProducts";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { pieceVariantIds } from "@/lib/unitTypes";
+import { hasWholesalePrice, linePriceType as resolveLinePriceType } from "@/lib/documentLines";
 
 // Datos de las líneas de un documento (cotización o venta) que dependen de los
 // stores: si la variante se vende por pieza, su código de comisión y el producto
@@ -51,5 +52,23 @@ export function useLineProducts() {
         return catalogs.categories.find((c) => c.id === categoryId)?.name ?? "";
     }
 
-    return { isPieceLine, commissionCategoryFor, findSimpleProduct, simpleProductFor, simpleProductCategoryName };
+    // Mayoreo disponible en una línea de producto simple (precio "en vivo").
+    function hasWholesale(line) {
+        return !!line.simpleProduct && hasWholesalePrice(simpleProductFor(line));
+    }
+
+    // Tipo de precio efectivo de la línea (ver documentLines.linePriceType).
+    function linePriceType(line) {
+        return resolveLinePriceType(line, line.simpleProduct ? simpleProductFor(line) : null);
+    }
+
+    return {
+        isPieceLine,
+        commissionCategoryFor,
+        findSimpleProduct,
+        simpleProductFor,
+        simpleProductCategoryName,
+        hasWholesale,
+        linePriceType,
+    };
 }
