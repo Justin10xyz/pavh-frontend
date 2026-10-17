@@ -147,7 +147,7 @@ Arriba de la tabla hay herramientas para encontrar productos rápido:
 
 - **Buscador**: en pisos busca por nombre de línea, color o código; en otros productos, por nombre o código. No importan los acentos ni las mayúsculas. Si buscas un color o un código, solo se muestran los colores que coinciden.
 - **Categoría**: muestra solo los productos de una categoría.
-- **Proveedor** (solo en pisos): muestra solo los pisos de un proveedor.
+- **Proveedor** (solo en pisos): muestra solo los pisos de un proveedor. La lista solo incluye proveedores que tienen pisos registrados.
 - **Unidad de venta** (solo en pisos): muestra solo los pisos que se venden por m² o solo los que se venden por pieza.
 - **Limpiar filtros**: aparece cuando hay algún filtro activo y los quita todos de una vez.
 

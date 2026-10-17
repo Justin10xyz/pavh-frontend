@@ -40,7 +40,7 @@
                 v-model:selectedSupplier="selectedSupplier"
                 v-model:selectedUnitType="selectedUnitType"
                 :categoryOptions="categoryOptions"
-                :supplier-options="catalogs.suppliers"
+                :supplier-options="supplierOptions"
                 :unit-type-options="catalogs.unitTypes"
                 @clear-filters="clearFilters"
             />
@@ -212,6 +212,13 @@ function clearFilters() {
 const categoryOptions = computed(() => {
     const set = new Set(inventory.products.map((p) => p.category).filter(Boolean));
     return Array.from(set).sort();
+});
+
+// Solo proveedores con pisos registrados: los demás (ej. solo de "Otros
+// productos") dejarían la tabla vacía. En el orden del catálogo.
+const supplierOptions = computed(() => {
+    const ids = new Set(inventory.products.map((p) => p.supplier_id));
+    return catalogs.suppliers.filter((supplier) => ids.has(supplier.id));
 });
 
 function normalize(str) {
