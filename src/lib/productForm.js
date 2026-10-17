@@ -9,6 +9,34 @@ import { describeStockChange, stockChangePayload } from "@/lib/stockChange";
 // romano simple o rango de dos niveles consecutivos, ordenado por nivel.
 export const PEI_OPTIONS = ["I", "I/II", "II", "II/III", "III", "III/IV", "IV", "IV/V", "V"];
 
+// El formulario elige el PEI en dos pasos: un nivel principal y, opcionalmente, un
+// vecino con el que forma rango. El valor que viaja sigue siendo uno de PEI_OPTIONS.
+export const PEI_LEVELS = ["I", "II", "III", "IV", "V"];
+
+// Niveles con los que `level` puede formar rango (I solo con II, V solo con IV).
+// Un valor fuera del catálogo no tiene vecinos.
+export function peiNeighbors(level) {
+    const index = PEI_LEVELS.indexOf(level);
+    if (index === -1) return [];
+    return [PEI_LEVELS[index - 1], PEI_LEVELS[index + 1]].filter(Boolean);
+}
+
+// "III/IV" → { base: "III", range: "IV" } (el menor como principal). Un nivel solo, un
+// vacío o un valor fuera del catálogo quedan enteros en `base`, sin rango.
+export function splitPei(pei) {
+    if (PEI_OPTIONS.includes(pei) && pei.includes("/")) {
+        const [base, range] = pei.split("/");
+        return { base, range };
+    }
+    return { base: pei ?? "", range: "" };
+}
+
+// Inversa de splitPei: el rango siempre del menor al mayor ("III/IV", nunca "IV/III").
+export function composePei(base, range) {
+    if (!range) return base;
+    return [base, range].sort((a, b) => PEI_LEVELS.indexOf(a) - PEI_LEVELS.indexOf(b)).join("/");
+}
+
 // Campos de variante que no aplican a pisos por pieza: no se muestran, no se
 // validan y no viajan en el payload (el backend rechaza los de m²/PEI/ETT).
 export const PIECE_EXCLUDED_VARIANT_FIELDS = [

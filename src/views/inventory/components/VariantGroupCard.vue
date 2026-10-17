@@ -78,17 +78,35 @@
                         </p>
                     </div>
 
+                    <!-- PEI en dos pasos: nivel principal y, si tiene vecinos, un rango
+		     opcional con uno de ellos. Comparten la celda para que ETT no se
+		     mueva cuando aparece el segundo select. -->
                     <div v-if="!soldByPiece" class="space-y-1.5">
-                        <FieldLabel :html-for="`pei-${group.id}`" text="PEI" />
-                        <SelectCustom
-                            :id="`pei-${group.id}`"
-                            v-model="group.spec.pei"
-                            :options="PEI_OPTIONS"
-                            keep-unknown-value
-                            :error="group.specErrors.pei"
-                            placeholder="Selecciona un PEI"
-                            @change="group.specErrors.pei = ''"
-                        />
+                        <div :class="peiRangeOptions.length ? 'grid grid-cols-2 gap-2' : ''">
+                            <div class="space-y-1.5">
+                                <FieldLabel :html-for="`pei-${group.id}`" text="PEI" />
+                                <SelectCustom
+                                    :id="`pei-${group.id}`"
+                                    v-model="peiBase"
+                                    :options="PEI_LEVELS"
+                                    keep-unknown-value
+                                    :error="group.specErrors.pei"
+                                    placeholder="Selecciona un PEI"
+                                    @change="onPeiBaseChange"
+                                />
+                            </div>
+                            <div v-if="peiRangeOptions.length" class="space-y-1.5">
+                                <FieldLabel :html-for="`pei-range-${group.id}`" text="Rango con" />
+                                <SelectCustom
+                                    :id="`pei-range-${group.id}`"
+                                    v-model="peiRange"
+                                    :options="peiRangeOptions"
+                                    allow-empty
+                                    placeholder="Sin rango"
+                                    @change="onPeiRangeChange"
+                                />
+                            </div>
+                        </div>
                         <p v-if="group.specErrors.pei" class="text-danger text-[12px] mt-1.5">
                             {{ group.specErrors.pei }}
                         </p>
@@ -259,7 +277,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import AccordionPanel from "primevue/accordionpanel";
 import AccordionHeader from "primevue/accordionheader";
 import AccordionContent from "primevue/accordioncontent";
@@ -269,7 +287,7 @@ import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { PEI_OPTIONS } from "@/lib/productForm";
+import { PEI_LEVELS, composePei, peiNeighbors, splitPei } from "@/lib/productForm";
 import { commissionLabel } from "@/lib/commissionCategories";
 import VariantColorsTable from "./VariantColorsTable.vue";
 
@@ -292,6 +310,36 @@ defineProps({
 const emit = defineEmits(["remove", "remove-color"]);
 
 const catalogs = useCatalogsStore();
+
+// PEI en dos pasos. `group.spec.pei` sigue siendo el valor final ("IV", "III/IV") y lo
+// único que viaja; principal y rango son estado local para que elegir "III" + "II"
+// no reacomode los selects a "II" + "III" a medio editar. Solo se vuelven a derivar
+// si el valor cambia desde fuera (carga del producto).
+const peiBase = ref("");
+const peiRange = ref("");
+
+watch(
+    () => group.value.spec.pei,
+    (pei) => {
+        if (pei === composePei(peiBase.value, peiRange.value)) return;
+        ({ base: peiBase.value, range: peiRange.value } = splitPei(pei));
+    },
+    { immediate: true },
+);
+
+const peiRangeOptions = computed(() => peiNeighbors(peiBase.value));
+
+// Cambiar el principal descarta el rango: el vecino anterior puede ya no serlo.
+function onPeiBaseChange() {
+    peiRange.value = "";
+    group.value.spec.pei = peiBase.value;
+    group.value.specErrors.pei = "";
+}
+
+function onPeiRangeChange() {
+    group.value.spec.pei = composePei(peiBase.value, peiRange.value);
+    group.value.specErrors.pei = "";
+}
 
 // "Vo · Verde oscuro"…, en el orden del backend (de la mayor a la menor comisión).
 const commissionOptions = computed(() =>
