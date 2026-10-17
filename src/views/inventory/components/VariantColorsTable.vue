@@ -115,14 +115,15 @@
                         </p>
                     </div>
 
-                    <!-- Mismo alto que los inputs para quedar centrado con ellos desde sm -->
+                    <!-- Mismo alto que los inputs para quedar centrado con ellos desde sm.
+					     Con un solo color el botón queda deshabilitado: el title explica por qué. -->
                     <button
                         type="button"
                         @click="emit('remove', row)"
                         :disabled="rows.length === 1 || deletingRowId === row.id"
                         class="w-8 h-10 shrink-0 flex items-center justify-center rounded text-text-muted hover:text-danger disabled:opacity-30 disabled:hover:text-text-muted disabled:cursor-not-allowed transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-                        :aria-label="row.color ? `Eliminar color ${row.color}` : 'Eliminar color'"
-                        title="Eliminar color"
+                        :aria-label="rows.length === 1 ? MIN_ONE_COLOR : row.color ? `Eliminar color ${row.color}` : 'Eliminar color'"
+                        :title="rows.length === 1 ? MIN_ONE_COLOR : 'Eliminar color'"
                     >
                         <svg
                             class="w-4 h-4"
@@ -177,6 +178,8 @@ defineProps({
 });
 
 const emit = defineEmits(["remove"]);
+
+const MIN_ONE_COLOR = "Cada medida necesita al menos un color";
 
 // Sin mouse: el foco pasa al color de la fila nueva para capturarlo de inmediato.
 async function addRow() {
