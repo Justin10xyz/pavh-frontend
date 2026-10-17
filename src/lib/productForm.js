@@ -156,6 +156,15 @@ export function validateVariantGroups(groups, soldByPiece) {
     return isValid;
 }
 
+// Si la medida quedó con algún error tras validateVariantGroups: en el acordeón
+// del form se abre antes de llevar el foco al primer campo con error.
+export function groupHasErrors(group) {
+    return (
+        Object.values(group.specErrors).some(Boolean) ||
+        group.colorRows.some((row) => Object.values(row.errors).some(Boolean))
+    );
+}
+
 // Cada variante toma la ficha técnica de su propio grupo. `stock_boxes` solo va al
 // crear (stock inicial): en una variante existente el backend lo ignora en el
 // update, y el cambio viaja aparte como ajuste (ver pendingStockChanges).
