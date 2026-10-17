@@ -108,6 +108,15 @@ En el formulario del piso, cada medida es un bloque que se abre y se cierra dand
 - Con **+ Agregar medida**, la medida nueva se abre sola.
 - Si al guardar falta un dato en una medida cerrada, esa medida se abre para mostrar el campo marcado en rojo.
 
+### Capturar el PEI
+
+El PEI se elige en dos pasos:
+
+1. En **PEI**, elige el nivel (de **I** a **V**).
+2. Si el proveedor lo publica como rango (por ejemplo *III/IV*), elige el otro nivel en **Rango con**, que aparece junto al PEI. Solo ofrece los niveles vecinos: con **I** solo **II**, con **V** solo **IV**, y con los demás el de abajo y el de arriba. Si no es rango, déjalo en **Sin rango**.
+
+No importa en qué orden se elijan: el rango siempre se guarda de menor a mayor (*III* con *II* queda como *II/III*). Al volver a abrir el piso, **PEI** muestra el nivel menor y **Rango con** el mayor. Si cambias el nivel en **PEI**, el rango se borra y hay que volver a elegirlo.
+
 ### Pisos que se venden por pieza
 
 Algunos pisos, como mosaicos o decorados, no se venden por caja ni por m², sino **por pieza**. Para registrarlos, en el formulario del piso elige **pieza** en la lista **Unidad**. El formulario cambia:
@@ -304,3 +313,5 @@ Mejoras que se van agregando al módulo:
 | 2026-10-17 | **Ajustar stock / Activar seguimiento**: la ventana muestra el nombre del color o producto arriba y, en su propia línea, la misma etiqueta de estado del catálogo (**OK**, **Stock bajo** o **Sin control**). |
 | 2026-10-17 | **Nuevo piso / Editar piso**: la lista de **PEI** incluye los rangos que publica el proveedor (**I/II**, **II/III**, **III/IV**, **IV/V**) además de I a V. Los PEI que estaban capturados en números (por ejemplo *3/4*) se pasaron a romano (*III/IV*). |
 | 2026-10-17 | **Catálogo de pisos**: todas las medidas se muestran con **X** mayúscula (por ejemplo *60X60* en lugar de *60x60*). Los códigos de los productos no cambiaron. |
+| 2026-10-17 | **Nuevo piso / Editar piso**: la medida se guarda siempre sin espacios y con **X** mayúscula, aunque se escriba *60x60* o *60 x 60*. |
+| 2026-10-17 | **Nuevo piso / Editar piso**: el PEI se elige en dos pasos: el nivel en **PEI** y, si es rango, el otro nivel en **Rango con** (ver [Capturar el PEI](#capturar-el-pei)). |
