@@ -304,3 +304,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-17 | **Ajustar stock / Activar seguimiento**: la ventana muestra el nombre del color o producto arriba y, en su propia línea, la misma etiqueta de estado del catálogo (**OK**, **Stock bajo** o **Sin control**). |
 | 2026-10-17 | **Nuevo piso / Editar piso**: la lista de **PEI** incluye los rangos que publica el proveedor (**I/II**, **II/III**, **III/IV**, **IV/V**) además de I a V. Los PEI que estaban capturados en números (por ejemplo *3/4*) se pasaron a romano (*III/IV*). |
 | 2026-10-17 | **Catálogo de pisos**: todas las medidas se muestran con **X** mayúscula (por ejemplo *60X60* en lugar de *60x60*). Los códigos de los productos no cambiaron. |
+| 2026-10-17 | **Nuevo piso / Editar piso**: la medida se guarda siempre sin espacios y con **X** mayúscula, aunque se escriba *60x60* o *60 x 60*. |
