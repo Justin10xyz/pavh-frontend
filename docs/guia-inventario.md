@@ -147,10 +147,13 @@ Arriba de la tabla hay herramientas para encontrar productos rápido:
 
 - **Buscador**: en pisos busca por nombre de línea, color o código; en otros productos, por nombre o código. No importan los acentos ni las mayúsculas. Si buscas un color o un código, solo se muestran los colores que coinciden.
 - **Categoría**: muestra solo los productos de una categoría.
-- **Solo stock bajo** (solo en pisos): muestra únicamente los colores que necesitan resurtido.
+- **Proveedor** (solo en pisos): muestra solo los pisos de un proveedor.
+- **Unidad de venta** (solo en pisos): muestra solo los pisos que se venden por m² o solo los que se venden por pieza.
 - **Limpiar filtros**: aparece cuando hay algún filtro activo y los quita todos de una vez.
 
-> Desde el **Dashboard**, al dar clic en una alerta de stock bajo, el catálogo se abre ya filtrado y desplegado en el producto que necesita atención.
+Para saber qué pisos necesitan resurtido no hace falta filtrar: la etiqueta roja **"N con stock bajo"** aparece en el producto y en la medida (ver [Avisos de stock bajo](#avisos-de-stock-bajo)).
+
+> Desde el **Dashboard**, al dar clic en una alerta de stock bajo, el catálogo se abre en el producto que necesita atención: ya desplegado, con sus medidas con stock bajo abiertas y marcado con un fondo dorado claro. **Ver todo** muestra ahí mismo la lista completa de alertas.
 
 ---
 
@@ -294,3 +297,5 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Otros productos**: nuevo **precio de mayoreo** opcional, que se agrega con **+ Agregar precio de mayoreo** en el formulario. |
 | 2026-10-16 | **Cotizaciones y ventas**: en productos con mayoreo, la casilla **Mayoreo** elige el precio de cada línea. El detalle y el PDF marcan esas líneas con la etiqueta **Mayoreo**. |
 | 2026-10-17 | **Nuevo piso / Editar piso**: las medidas se abren y cierran desde su encabezado, una a la vez, para no perder de vista qué medida y color se editan en celular o tablet. La medida nueva se abre sola y, si falta un dato en una medida cerrada, se abre al guardar. |
+| 2026-10-17 | **Catálogo de pisos**: nuevos filtros **Proveedor** y **Unidad de venta**. Se quitó **Solo stock bajo**: la etiqueta roja ya señala dónde falta stock. |
+| 2026-10-17 | **Dashboard**: una alerta de stock bajo abre el catálogo en ese producto (desplegado y resaltado) sin filtrarlo, y **Ver todo** despliega la lista completa en el mismo recuadro. |
