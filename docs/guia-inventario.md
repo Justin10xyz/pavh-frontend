@@ -100,6 +100,14 @@ El ícono de **lápiz** en la fila del producto abre el formulario de edición. 
 
 Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), el motivo aparece en un aviso rojo arriba del formulario.
 
+### Una medida abierta a la vez
+
+En el formulario del piso, cada medida es un bloque que se abre y se cierra dando clic en su encabezado (la medida, el PEI, el ETT, el precio por caja y cuántos colores tiene). Solo una medida está abierta a la vez: al abrir otra, la anterior se cierra. Así, en el celular o la tablet siempre se sabe qué medida se está editando.
+
+- Al editar un piso, la **primera medida** aparece abierta y las demás cerradas.
+- Con **+ Agregar medida**, la medida nueva se abre sola.
+- Si al guardar falta un dato en una medida cerrada, esa medida se abre para mostrar el campo marcado en rojo.
+
 ### Pisos que se venden por pieza
 
 Algunos pisos, como mosaicos o decorados, no se venden por caja ni por m², sino **por pieza**. Para registrarlos, en el formulario del piso elige **pieza** en la lista **Unidad**. El formulario cambia:
@@ -127,6 +135,7 @@ El formulario del piso se puede llenar completo sin usar el mouse:
 - Al quitar un color o una medida, el cursor se queda en el color o la medida de al lado, para seguir capturando.
 - Para guardar sin buscar el botón: **Ctrl + S** o **Ctrl + Enter** desde cualquier campo (en Mac, **⌘ + S** o **⌘ + Enter**). El atajo aparece como recordatorio junto al botón **Guardar**.
 - Si al guardar falta algún dato, el cursor salta al primer campo marcado en rojo.
+- Con **Tab** también se llega al encabezado de cada medida: **Enter** o **Espacio** la abre o la cierra, y las **flechas ↑ ↓** pasan al encabezado de la medida anterior o siguiente. Enter en el último campo de una medida no salta a una medida cerrada.
 - Con **Tab** también se llega a los botones (**+**, **Quitar medida**, la **X** de cada color, **+ Agregar color**…). El botón donde está el cursor se marca con un contorno dorado y se presiona con **Enter** o **Espacio**.
 - En las ventanas de confirmación el cursor ya está en un botón. Al **confirmar cambios de stock**, Enter guarda; al **eliminar un color**, Enter cancela (para no borrar por accidente) y hay que pasar con Tab a **Eliminar**. **Esc** cierra la ventana sin hacer nada.
 
@@ -138,10 +147,14 @@ Arriba de la tabla hay herramientas para encontrar productos rápido:
 
 - **Buscador**: en pisos busca por nombre de línea, color o código; en otros productos, por nombre o código. No importan los acentos ni las mayúsculas. Si buscas un color o un código, solo se muestran los colores que coinciden.
 - **Categoría**: muestra solo los productos de una categoría.
-- **Solo stock bajo** (solo en pisos): muestra únicamente los colores que necesitan resurtido.
+- **Proveedor** (solo en pisos): muestra solo los pisos de un proveedor. La lista solo incluye proveedores que tienen pisos registrados.
+- **Unidad de venta** (solo en pisos): muestra solo los pisos que se venden por m² o solo los que se venden por pieza.
+- **Mayoreo** (solo en otros productos): con **Con mayoreo** muestra solo los productos que tienen precio de mayoreo. En la tabla, esos productos muestran su precio de mayoreo en gris debajo del precio normal (*"Mayoreo $85.00"*).
 - **Limpiar filtros**: aparece cuando hay algún filtro activo y los quita todos de una vez.
 
-> Desde el **Dashboard**, al dar clic en una alerta de stock bajo, el catálogo se abre ya filtrado y desplegado en el producto que necesita atención.
+Para saber qué pisos necesitan resurtido no hace falta filtrar: la etiqueta roja **"N con stock bajo"** aparece en el producto y en la medida (ver [Avisos de stock bajo](#avisos-de-stock-bajo)).
+
+> Desde el **Dashboard**, al dar clic en una alerta de stock bajo, el catálogo se abre en el producto que necesita atención: ya desplegado, con sus medidas con stock bajo abiertas y marcado con un fondo dorado claro. **Ver todo** muestra ahí mismo la lista completa de alertas.
 
 ---
 
@@ -284,3 +297,10 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Nuevo piso / Editar piso**: si al guardar el sistema rechaza un dato, el cursor salta a ese campo. |
 | 2026-10-16 | **Otros productos**: nuevo **precio de mayoreo** opcional, que se agrega con **+ Agregar precio de mayoreo** en el formulario. |
 | 2026-10-16 | **Cotizaciones y ventas**: en productos con mayoreo, la casilla **Mayoreo** elige el precio de cada línea. El detalle y el PDF marcan esas líneas con la etiqueta **Mayoreo**. |
+| 2026-10-17 | **Nuevo piso / Editar piso**: las medidas se abren y cierran desde su encabezado, una a la vez, para no perder de vista qué medida y color se editan en celular o tablet. La medida nueva se abre sola y, si falta un dato en una medida cerrada, se abre al guardar. |
+| 2026-10-17 | **Catálogo de pisos**: nuevos filtros **Proveedor** y **Unidad de venta**. Se quitó **Solo stock bajo**: la etiqueta roja ya señala dónde falta stock. |
+| 2026-10-17 | **Dashboard**: una alerta de stock bajo abre el catálogo en ese producto (desplegado y resaltado) sin filtrarlo, y **Ver todo** despliega la lista completa en el mismo recuadro. |
+| 2026-10-17 | **Otros productos**: nuevo filtro **Con mayoreo** para ver solo los productos con precio de mayoreo, y la tabla muestra ese precio debajo del precio normal. |
+| 2026-10-17 | **Ajustar stock / Activar seguimiento**: la ventana muestra el nombre del color o producto arriba y, en su propia línea, la misma etiqueta de estado del catálogo (**OK**, **Stock bajo** o **Sin control**). |
+| 2026-10-17 | **Nuevo piso / Editar piso**: la lista de **PEI** incluye los rangos que publica el proveedor (**I/II**, **II/III**, **III/IV**, **IV/V**) además de I a V. Los PEI que estaban capturados en números (por ejemplo *3/4*) se pasaron a romano (*III/IV*). |
+| 2026-10-17 | **Catálogo de pisos**: todas las medidas se muestran con **X** mayúscula (por ejemplo *60X60* en lugar de *60x60*). Los códigos de los productos no cambiaron. |

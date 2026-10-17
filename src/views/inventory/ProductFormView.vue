@@ -55,19 +55,22 @@
                 :has-saved-variants="hasSavedVariants"
             />
 
-            <!-- Sección 2 — Una tarjeta por medida: su ficha técnica + sus colores -->
-            <VariantGroupCard
-                v-for="(group, index) in variantGroups"
-                :key="group.id"
-                v-model:group="variantGroups[index]"
-                :index="index"
-                :sold-by-piece="soldByPiece"
-                :stock-unit="stockUnit"
-                :removable="canRemoveGroup(group)"
-                :deleting-row-id="deletingRowId"
-                @remove="removeVariantGroup(group.id)"
-                @remove-color="(row) => removeColorRow(group, row.id)"
-            />
+            <!-- Sección 2 — Un panel por medida: su ficha técnica + sus colores. Una
+			     sola abierta a la vez para no perder de vista qué medida se edita. -->
+            <Accordion v-model:value="openGroupId" class="variant-groups">
+                <VariantGroupCard
+                    v-for="(group, index) in variantGroups"
+                    :key="group.id"
+                    v-model:group="variantGroups[index]"
+                    :index="index"
+                    :sold-by-piece="soldByPiece"
+                    :stock-unit="stockUnit"
+                    :removable="canRemoveGroup(group)"
+                    :deleting-row-id="deletingRowId"
+                    @remove="removeVariantGroup(group.id)"
+                    @remove-color="(row) => removeColorRow(group, row.id)"
+                />
+            </Accordion>
 
             <button
                 type="button"
@@ -139,6 +142,7 @@
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import Accordion from "primevue/accordion";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import axios from "@/lib/axios";
@@ -152,6 +156,7 @@ import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import {
     buildVariantPayload,
     createVariantGroup,
+    groupHasErrors,
     pendingStockChanges,
     validateVariantGroups,
     variantGroupsFromProduct,
@@ -215,6 +220,9 @@ const stockUnit = computed(() => variantStockUnit(selectedUnitTypeName.value));
 
 const variantGroups = ref([createVariantGroup()]);
 
+// Medida abierta en el acordeón (su `id`); null si el usuario las colapsó todas.
+const openGroupId = ref(variantGroups.value[0].id);
+
 // Solo en edición hay filas con `variantId`. Con variantes guardadas la Unidad
 // no se puede cambiar (el backend lo rechaza), así que el selector se bloquea.
 const hasSavedVariants = computed(() =>
@@ -224,6 +232,7 @@ const hasSavedVariants = computed(() =>
 function addVariantGroup() {
     const group = createVariantGroup();
     variantGroups.value.push(group);
+    openGroupId.value = group.id;
     focusField(`size-${group.id}`);
 }
 
@@ -238,7 +247,9 @@ function removeVariantGroup(groupId) {
     if (!group || !canRemoveGroup(group)) return;
     const index = variantGroups.value.indexOf(group);
     variantGroups.value = variantGroups.value.filter((g) => g.id !== groupId);
-    focusField(`size-${variantGroups.value[Math.max(index - 1, 0)].id}`);
+    const next = variantGroups.value[Math.max(index - 1, 0)];
+    openGroupId.value = next.id;
+    focusField(`size-${next.id}`);
 }
 
 // El foco pasa al color de la fila que quedó en su lugar (o a la anterior si
@@ -302,6 +313,7 @@ function populateFormFromProduct(product) {
 
     const groups = variantGroupsFromProduct(product);
     if (groups.length) variantGroups.value = groups;
+    openGroupId.value = variantGroups.value[0].id;
 }
 
 async function fetchProduct() {
@@ -383,6 +395,10 @@ async function applyStockChanges(changes) {
 
 const handleSubmit = async () => {
     if (!validateForm()) {
+        // Un campo dentro de una medida colapsada no se puede enfocar: se abre la
+        // primera medida con errores (las anteriores no tienen ninguno).
+        const invalidGroup = variantGroups.value.find(groupHasErrors);
+        if (invalidGroup) openGroupId.value = invalidGroup.id;
         focusFirstInvalidField(formRef.value);
         return;
     }
@@ -472,4 +488,21 @@ function handleCancel() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Accordion unstyled: cada panel se ve como las demás tarjetas del form. */
+.variant-groups {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+.variant-groups :deep([data-pc-name="accordionpanel"]) {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 0.375rem;
+}
+/* Abierta: una línea sutil separa el encabezado de la ficha. */
+.variant-groups :deep([data-pc-name="accordioncontent"]) {
+	border-top: 1px solid var(--color-border);
+	padding-top: 1.25rem;
+}
+</style>

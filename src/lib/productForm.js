@@ -5,7 +5,9 @@
 import { groupVariants } from "@/lib/groupVariants";
 import { describeStockChange, stockChangePayload } from "@/lib/stockChange";
 
-export const PEI_OPTIONS = ["I", "II", "III", "IV", "V"];
+// Catálogo cerrado de PEI, igual que ProductVariant::PEI_VALUES en el backend:
+// romano simple o rango de dos niveles consecutivos, ordenado por nivel.
+export const PEI_OPTIONS = ["I", "I/II", "II", "II/III", "III", "III/IV", "IV", "IV/V", "V"];
 
 // Campos de variante que no aplican a pisos por pieza: no se muestran, no se
 // validan y no viajan en el payload (el backend rechaza los de m²/PEI/ETT).
@@ -154,6 +156,15 @@ export function validateVariantGroups(groups, soldByPiece) {
     }
 
     return isValid;
+}
+
+// Si la medida quedó con algún error tras validateVariantGroups: en el acordeón
+// del form se abre antes de llevar el foco al primer campo con error.
+export function groupHasErrors(group) {
+    return (
+        Object.values(group.specErrors).some(Boolean) ||
+        group.colorRows.some((row) => Object.values(row.errors).some(Boolean))
+    );
 }
 
 // Cada variante toma la ficha técnica de su propio grupo. `stock_boxes` solo va al

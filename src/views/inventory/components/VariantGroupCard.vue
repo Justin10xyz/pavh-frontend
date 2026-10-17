@@ -1,241 +1,268 @@
 <template>
-    <div class="bg-surface border border-border rounded-md p-5 sm:p-6">
-        <div class="flex items-center justify-between gap-3 mb-4">
-            <!-- Mismo criterio que el encabezado de cada medida en InventoryTable.vue:
-			     la medida sola no basta (puede repetirse con otro PEI/ETT/precio). -->
-            <h2 class="flex flex-wrap items-center gap-2 text-sm">
-                <span class="font-medium text-text">
-                    {{ group.spec.size || `Medida nueva ${index + 1}` }}
-                </span>
-                <span
-                    v-if="group.spec.pei"
-                    class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
-                >PEI {{ group.spec.pei }}</span
+    <!-- Panel del acordeón de medidas en ProductFormView (una abierta a la vez).
+	     Estilos del panel con :deep() en la vista. -->
+    <AccordionPanel :value="group.id">
+        <!-- as-child: el botón que colapsa y "Quitar medida" van lado a lado
+		     (un botón no puede ir dentro de otro). -->
+        <AccordionHeader as-child v-slot="{ active, a11yAttrs, onClick }">
+            <div class="flex items-center justify-between gap-3 px-5 sm:px-6 py-4">
+                <!-- Mismo criterio que el encabezado de cada medida en InventoryTable.vue:
+				     la medida sola no basta (puede repetirse con otro PEI/ETT/precio). -->
+                <h2 class="min-w-0 flex-1 text-sm">
+                    <button
+                        type="button"
+                        v-bind="a11yAttrs"
+                        @click="onClick"
+                        class="w-full flex items-center gap-2 text-left rounded cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                    >
+                        <i
+                            class="ti ti-chevron-down text-sm text-text-muted shrink-0 transition-transform"
+                            :class="{ '-rotate-90': !active }"
+                            aria-hidden="true"
+                        ></i>
+                        <span class="flex flex-wrap items-center gap-2">
+                            <span class="font-medium text-text">
+                                {{ group.spec.size || `Medida nueva ${index + 1}` }}
+                            </span>
+                            <span
+                                v-if="group.spec.pei"
+                                class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
+                            >PEI {{ group.spec.pei }}</span
+                            >
+                            <span
+                                v-if="group.spec.ett"
+                                class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
+                            >ETT {{ group.spec.ett }}</span
+                            >
+                            <span
+                                v-if="group.spec.price_per_box !== null && group.spec.price_per_box !== ''"
+                                class="font-semibold text-primary tabular-nums"
+                            >{{ formatCurrency(group.spec.price_per_box) }}/{{ soldByPiece ? "pieza" : "caja" }}</span
+                            >
+                            <span class="text-xs text-text-muted">
+                                · {{ group.colorRows.length }}
+                                {{ group.colorRows.length === 1 ? "color" : "colores" }}
+                            </span>
+                        </span>
+                    </button>
+                </h2>
+                <!-- Solo medidas sin variantes guardadas: quitar una guardada sería
+				     borrar variantes, fuera del alcance de este form. -->
+                <button
+                    v-if="removable"
+                    type="button"
+                    @click="emit('remove')"
+                    class="text-xs text-text-muted hover:text-danger underline rounded transition-colors cursor-pointer shrink-0 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
-                <span
-                    v-if="group.spec.ett"
-                    class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
-                >ETT {{ group.spec.ett }}</span
-                >
-                <span
-                    v-if="group.spec.price_per_box !== null && group.spec.price_per_box !== ''"
-                    class="font-semibold text-primary tabular-nums"
-                >{{ formatCurrency(group.spec.price_per_box) }}/{{ soldByPiece ? "pieza" : "caja" }}</span
-                >
-                <span class="text-xs text-text-muted">
-                    · {{ group.colorRows.length }}
-                    {{ group.colorRows.length === 1 ? "color" : "colores" }}
-                </span>
-            </h2>
-            <!-- Solo medidas sin variantes guardadas: quitar una guardada sería
-			     borrar variantes, fuera del alcance de este form. -->
-            <button
-                v-if="removable"
-                type="button"
-                @click="emit('remove')"
-                class="text-xs text-text-muted hover:text-danger underline rounded transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-            >
-                Quitar medida
-            </button>
-        </div>
+                    Quitar medida
+                </button>
+            </div>
+        </AccordionHeader>
 
-        <!-- Grupo 1 — Medida y especificaciones técnicas. PEI/ETT no aplican
+        <AccordionContent>
+            <div class="px-5 sm:px-6 pb-5 sm:pb-6">
+                <!-- Grupo 1 — Medida y especificaciones técnicas. PEI/ETT no aplican
 		     a pisos por pieza (el backend los rechaza). -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="space-y-1.5">
-                <FieldLabel :html-for="`size-${group.id}`" text="Medida" required />
-                <InputTextCustom
-                    :id="`size-${group.id}`"
-                    v-model="group.spec.size"
-                    :error="group.specErrors.size"
-                    placeholder="Ej. 60X120"
-                    @input="group.specErrors.size = ''"
-                />
-                <p v-if="group.specErrors.size" class="text-danger text-[12px] mt-1.5">
-                    {{ group.specErrors.size }}
-                </p>
-            </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="space-y-1.5">
+                        <FieldLabel :html-for="`size-${group.id}`" text="Medida" required />
+                        <InputTextCustom
+                            :id="`size-${group.id}`"
+                            v-model="group.spec.size"
+                            :error="group.specErrors.size"
+                            placeholder="Ej. 60X120"
+                            @input="group.specErrors.size = ''"
+                        />
+                        <p v-if="group.specErrors.size" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.size }}
+                        </p>
+                    </div>
 
-            <div v-if="!soldByPiece" class="space-y-1.5">
-                <FieldLabel :html-for="`pei-${group.id}`" text="PEI" />
-                <SelectCustom
-                    :id="`pei-${group.id}`"
-                    v-model="group.spec.pei"
-                    :options="PEI_OPTIONS"
-                    keep-unknown-value
-                    :error="group.specErrors.pei"
-                    placeholder="Selecciona un PEI"
-                    @change="group.specErrors.pei = ''"
-                />
-                <p v-if="group.specErrors.pei" class="text-danger text-[12px] mt-1.5">
-                    {{ group.specErrors.pei }}
-                </p>
-            </div>
+                    <div v-if="!soldByPiece" class="space-y-1.5">
+                        <FieldLabel :html-for="`pei-${group.id}`" text="PEI" />
+                        <SelectCustom
+                            :id="`pei-${group.id}`"
+                            v-model="group.spec.pei"
+                            :options="PEI_OPTIONS"
+                            keep-unknown-value
+                            :error="group.specErrors.pei"
+                            placeholder="Selecciona un PEI"
+                            @change="group.specErrors.pei = ''"
+                        />
+                        <p v-if="group.specErrors.pei" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.pei }}
+                        </p>
+                    </div>
 
-            <div v-if="!soldByPiece" class="space-y-1.5">
-                <FieldLabel :html-for="`ett-${group.id}`" text="ETT" />
-                <InputTextCustom
-                    :id="`ett-${group.id}`"
-                    v-model="group.spec.ett"
-                    :error="group.specErrors.ett"
-                    placeholder="Ej. 1"
-                    @input="group.specErrors.ett = ''"
-                />
-                <p v-if="group.specErrors.ett" class="text-danger text-[12px] mt-1.5">
-                    {{ group.specErrors.ett }}
-                </p>
-            </div>
-        </div>
+                    <div v-if="!soldByPiece" class="space-y-1.5">
+                        <FieldLabel :html-for="`ett-${group.id}`" text="ETT" />
+                        <InputTextCustom
+                            :id="`ett-${group.id}`"
+                            v-model="group.spec.ett"
+                            :error="group.specErrors.ett"
+                            placeholder="Ej. 1"
+                            @input="group.specErrors.ett = ''"
+                        />
+                        <p v-if="group.specErrors.ett" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.ett }}
+                        </p>
+                    </div>
+                </div>
 
-        <!-- Grupo 3 — Precio. Pisos por pieza: un solo precio, el de la pieza,
+                <!-- Grupo 3 — Precio. Pisos por pieza: un solo precio, el de la pieza,
 		     que viaja como price_per_box (no llevan precio por m²). -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 border-t border-border pt-4">
-            <div class="space-y-1.5">
-                <FieldLabel
-                    :html-for="`price_per_box-${group.id}`"
-                    :text="soldByPiece ? 'Precio por pieza' : 'Precio por caja'"
-                    required
-                />
-                <InputNumberCustom
-                    :id="`price_per_box-${group.id}`"
-                    v-model="group.spec.price_per_box"
-                    :error="group.specErrors.price_per_box"
-                    :min="0"
-                    placeholder="$0.00"
-                    @input="group.specErrors.price_per_box = ''"
-                    mode="currency"
-                    currency="MXN"
-                />
-                <p v-if="group.specErrors.price_per_box" class="text-danger text-[12px] mt-1.5">
-                    {{ group.specErrors.price_per_box }}
-                </p>
-            </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 border-t border-border pt-4">
+                    <div class="space-y-1.5">
+                        <FieldLabel
+                            :html-for="`price_per_box-${group.id}`"
+                            :text="soldByPiece ? 'Precio por pieza' : 'Precio por caja'"
+                            required
+                        />
+                        <InputNumberCustom
+                            :id="`price_per_box-${group.id}`"
+                            v-model="group.spec.price_per_box"
+                            :error="group.specErrors.price_per_box"
+                            :min="0"
+                            placeholder="$0.00"
+                            @input="group.specErrors.price_per_box = ''"
+                            mode="currency"
+                            currency="MXN"
+                        />
+                        <p v-if="group.specErrors.price_per_box" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.price_per_box }}
+                        </p>
+                    </div>
 
-            <div v-if="!soldByPiece" class="space-y-1.5">
-                <FieldLabel :html-for="`price_per_m2-${group.id}`" text="Precio por m²" required />
-                <InputNumberCustom
-                    :id="`price_per_m2-${group.id}`"
-                    v-model="group.spec.price_per_m2"
-                    :error="group.specErrors.price_per_m2"
-                    :min="0"
-                    placeholder="$0.00"
-                    @input="group.specErrors.price_per_m2 = ''"
-                    mode="currency"
-                    currency="MXN"
-                />
-                <p v-if="group.specErrors.price_per_m2" class="text-danger text-[12px] mt-1.5">
-                    {{ group.specErrors.price_per_m2 }}
-                </p>
-            </div>
-        </div>
+                    <div v-if="!soldByPiece" class="space-y-1.5">
+                        <FieldLabel :html-for="`price_per_m2-${group.id}`" text="Precio por m²" required />
+                        <InputNumberCustom
+                            :id="`price_per_m2-${group.id}`"
+                            v-model="group.spec.price_per_m2"
+                            :error="group.specErrors.price_per_m2"
+                            :min="0"
+                            placeholder="$0.00"
+                            @input="group.specErrors.price_per_m2 = ''"
+                            mode="currency"
+                            currency="MXN"
+                        />
+                        <p v-if="group.specErrors.price_per_m2" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.price_per_m2 }}
+                        </p>
+                    </div>
+                </div>
 
-        <!-- Grupo 2 — Datos por caja. No aplica a pisos por pieza: piezas, m²,
+                <!-- Grupo 2 — Datos por caja. No aplica a pisos por pieza: piezas, m²,
 		     kilos y cajas por tarima son empaque/logística de caja. -->
-        <div v-if="!soldByPiece" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-            <div class="space-y-1.5">
-                <FieldLabel :html-for="`pieces_per_box-${group.id}`" text="Piezas por caja" required />
-                <InputNumberCustom
-                    :id="`pieces_per_box-${group.id}`"
-                    v-model="group.spec.pieces_per_box"
-                    :error="group.specErrors.pieces_per_box"
-                    :min="0"
-                    placeholder="0"
-                    @input="group.specErrors.pieces_per_box = ''"
-                    :max-fraction-digits="0"
-                />
-                <p v-if="group.specErrors.pieces_per_box" class="text-danger text-[12px] mt-1.5">
-                    {{ group.specErrors.pieces_per_box }}
-                </p>
-            </div>
+                <div v-if="!soldByPiece" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                    <div class="space-y-1.5">
+                        <FieldLabel :html-for="`pieces_per_box-${group.id}`" text="Piezas por caja" required />
+                        <InputNumberCustom
+                            :id="`pieces_per_box-${group.id}`"
+                            v-model="group.spec.pieces_per_box"
+                            :error="group.specErrors.pieces_per_box"
+                            :min="0"
+                            placeholder="0"
+                            @input="group.specErrors.pieces_per_box = ''"
+                            :max-fraction-digits="0"
+                        />
+                        <p v-if="group.specErrors.pieces_per_box" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.pieces_per_box }}
+                        </p>
+                    </div>
 
-            <div class="space-y-1.5">
-                <FieldLabel :html-for="`kilos_per_box-${group.id}`" text="Kilos por caja" />
-                <InputNumberCustom
-                    :id="`kilos_per_box-${group.id}`"
-                    v-model="group.spec.kilos_per_box"
-                    :error="group.specErrors.kilos_per_box"
-                    :min="0"
-                    placeholder="0.00"
-                    @input="group.specErrors.kilos_per_box = ''"
-                    :max-fraction-digits="2"
-                />
-                <p v-if="group.specErrors.kilos_per_box" class="text-danger text-[12px] mt-1.5">
-                    {{ group.specErrors.kilos_per_box }}
-                </p>
-            </div>
+                    <div class="space-y-1.5">
+                        <FieldLabel :html-for="`kilos_per_box-${group.id}`" text="Kilos por caja" />
+                        <InputNumberCustom
+                            :id="`kilos_per_box-${group.id}`"
+                            v-model="group.spec.kilos_per_box"
+                            :error="group.specErrors.kilos_per_box"
+                            :min="0"
+                            placeholder="0.00"
+                            @input="group.specErrors.kilos_per_box = ''"
+                            :max-fraction-digits="2"
+                        />
+                        <p v-if="group.specErrors.kilos_per_box" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.kilos_per_box }}
+                        </p>
+                    </div>
 
-            <div class="space-y-1.5">
-                <FieldLabel :html-for="`m2_per_box-${group.id}`" text="m² por caja" required />
-                <InputNumberCustom
-                    :id="`m2_per_box-${group.id}`"
-                    v-model="group.spec.m2_per_box"
-                    :error="group.specErrors.m2_per_box"
-                    :min="0"
-                    placeholder="0.00"
-                    @input="group.specErrors.m2_per_box = ''"
-                    :max-fraction-digits="2"
-                />
-                <p v-if="group.specErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
-                    {{ group.specErrors.m2_per_box }}
-                </p>
-            </div>
+                    <div class="space-y-1.5">
+                        <FieldLabel :html-for="`m2_per_box-${group.id}`" text="m² por caja" required />
+                        <InputNumberCustom
+                            :id="`m2_per_box-${group.id}`"
+                            v-model="group.spec.m2_per_box"
+                            :error="group.specErrors.m2_per_box"
+                            :min="0"
+                            placeholder="0.00"
+                            @input="group.specErrors.m2_per_box = ''"
+                            :max-fraction-digits="2"
+                        />
+                        <p v-if="group.specErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.m2_per_box }}
+                        </p>
+                    </div>
 
-            <div class="space-y-1.5">
-                <FieldLabel :html-for="`boxes_per_pallet-${group.id}`" text="Cajas por tarima" />
-                <InputNumberCustom
-                    :id="`boxes_per_pallet-${group.id}`"
-                    v-model="group.spec.boxes_per_pallet"
-                    :error="group.specErrors.boxes_per_pallet"
-                    :min="0"
-                    placeholder="0"
-                    @input="group.specErrors.boxes_per_pallet = ''"
-                    :max-fraction-digits="0"
-                />
-                <p v-if="group.specErrors.boxes_per_pallet" class="text-danger text-[12px] mt-1.5">
-                    {{ group.specErrors.boxes_per_pallet }}
-                </p>
-            </div>
-        </div>
+                    <div class="space-y-1.5">
+                        <FieldLabel :html-for="`boxes_per_pallet-${group.id}`" text="Cajas por tarima" />
+                        <InputNumberCustom
+                            :id="`boxes_per_pallet-${group.id}`"
+                            v-model="group.spec.boxes_per_pallet"
+                            :error="group.specErrors.boxes_per_pallet"
+                            :min="0"
+                            placeholder="0"
+                            @input="group.specErrors.boxes_per_pallet = ''"
+                            :max-fraction-digits="0"
+                        />
+                        <p v-if="group.specErrors.boxes_per_pallet" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.boxes_per_pallet }}
+                        </p>
+                    </div>
+                </div>
 
-        <!-- Grupo 4 — Dato interno del negocio, separado del resto (no viene de la hoja del proveedor) -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
-            <div class="space-y-1.5">
-                <FieldLabel
-                    :html-for="`commission_category_id-${group.id}`"
-                    text="Categoría de comisión"
-                />
-                <SelectCustom
-                    :id="`commission_category_id-${group.id}`"
-                    v-model="group.spec.commission_category_id"
-                    :options="commissionOptions"
-                    option-label="label"
-                    :loading="catalogs.loading"
-                    :error="group.specErrors.commission_category_id"
-                    placeholder="Sin categoría"
-                    allow-empty
-                    @change="group.specErrors.commission_category_id = ''"
-                />
-                <p
-                    v-if="group.specErrors.commission_category_id"
-                    class="text-danger text-[12px] mt-1.5"
-                >
-                    {{ group.specErrors.commission_category_id }}
-                </p>
-            </div>
-        </div>
+                <!-- Grupo 4 — Dato interno del negocio, separado del resto (no viene de la hoja del proveedor) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+                    <div class="space-y-1.5">
+                        <FieldLabel
+                            :html-for="`commission_category_id-${group.id}`"
+                            text="Categoría de comisión"
+                        />
+                        <SelectCustom
+                            :id="`commission_category_id-${group.id}`"
+                            v-model="group.spec.commission_category_id"
+                            :options="commissionOptions"
+                            option-label="label"
+                            :loading="catalogs.loading"
+                            :error="group.specErrors.commission_category_id"
+                            placeholder="Sin categoría"
+                            allow-empty
+                            @change="group.specErrors.commission_category_id = ''"
+                        />
+                        <p
+                            v-if="group.specErrors.commission_category_id"
+                            class="text-danger text-[12px] mt-1.5"
+                        >
+                            {{ group.specErrors.commission_category_id }}
+                        </p>
+                    </div>
+                </div>
 
-        <!-- Colores — lista repetible: cada fila se convierte en su propia variante -->
-        <VariantColorsTable
-            v-model:rows="group.colorRows"
-            :stock-unit="stockUnit"
-            :deleting-row-id="deletingRowId"
-            @remove="(row) => emit('remove-color', row)"
-        />
-    </div>
+                <!-- Colores — lista repetible: cada fila se convierte en su propia variante -->
+                <VariantColorsTable
+                    v-model:rows="group.colorRows"
+                    :stock-unit="stockUnit"
+                    :deleting-row-id="deletingRowId"
+                    @remove="(row) => emit('remove-color', row)"
+                />
+            </div>
+        </AccordionContent>
+    </AccordionPanel>
 </template>
 
 <script setup>
 import { computed } from "vue";
+import AccordionPanel from "primevue/accordionpanel";
+import AccordionHeader from "primevue/accordionheader";
+import AccordionContent from "primevue/accordioncontent";
 import { useCatalogsStore } from "@/stores/catalogs";
 import SelectCustom from "@/components/widgets/SelectCustom.vue";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
@@ -246,7 +273,7 @@ import { PEI_OPTIONS } from "@/lib/productForm";
 import { commissionLabel } from "@/lib/commissionCategories";
 import VariantColorsTable from "./VariantColorsTable.vue";
 
-// Tarjeta de una medida en ProductFormView: su ficha técnica (`group.spec`) y sus
+// Panel de una medida en el acordeón de ProductFormView: su ficha técnica (`group.spec`) y sus
 // colores. `group` es el objeto reactivo de la vista (ver createVariantGroup en
 // lib/productForm.js); los campos se editan sobre él directamente.
 const group = defineModel("group", { type: Object, required: true });
