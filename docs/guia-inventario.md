@@ -149,6 +149,7 @@ Arriba de la tabla hay herramientas para encontrar productos rápido:
 - **Categoría**: muestra solo los productos de una categoría.
 - **Proveedor** (solo en pisos): muestra solo los pisos de un proveedor. La lista solo incluye proveedores que tienen pisos registrados.
 - **Unidad de venta** (solo en pisos): muestra solo los pisos que se venden por m² o solo los que se venden por pieza.
+- **Mayoreo** (solo en otros productos): con **Con mayoreo** muestra solo los productos que tienen precio de mayoreo. En la tabla, esos productos muestran su precio de mayoreo en gris debajo del precio normal (*"Mayoreo $85.00"*).
 - **Limpiar filtros**: aparece cuando hay algún filtro activo y los quita todos de una vez.
 
 Para saber qué pisos necesitan resurtido no hace falta filtrar: la etiqueta roja **"N con stock bajo"** aparece en el producto y en la medida (ver [Avisos de stock bajo](#avisos-de-stock-bajo)).
@@ -299,3 +300,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-17 | **Nuevo piso / Editar piso**: las medidas se abren y cierran desde su encabezado, una a la vez, para no perder de vista qué medida y color se editan en celular o tablet. La medida nueva se abre sola y, si falta un dato en una medida cerrada, se abre al guardar. |
 | 2026-10-17 | **Catálogo de pisos**: nuevos filtros **Proveedor** y **Unidad de venta**. Se quitó **Solo stock bajo**: la etiqueta roja ya señala dónde falta stock. |
 | 2026-10-17 | **Dashboard**: una alerta de stock bajo abre el catálogo en ese producto (desplegado y resaltado) sin filtrarlo, y **Ver todo** despliega la lista completa en el mismo recuadro. |
+| 2026-10-17 | **Otros productos**: nuevo filtro **Con mayoreo** para ver solo los productos con precio de mayoreo, y la tabla muestra ese precio debajo del precio normal. |

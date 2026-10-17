@@ -44,6 +44,16 @@
             />
         </div>
 
+        <!-- Solo en Otros productos: los pisos no tienen precio de mayoreo. -->
+        <div v-if="showWholesaleFilter" class="w-full sm:w-56">
+            <SelectCustom
+                v-model="selectedWholesale"
+                :options="WHOLESALE_OPTIONS"
+                placeholder="Mayoreo: todos"
+                allow-empty
+            />
+        </div>
+
         <button
             v-if="hasActiveFilters"
             type="button"
@@ -79,7 +89,14 @@ defineProps({
         type: Array,
         default: null,
     },
+    showWholesaleFilter: {
+        type: Boolean,
+        default: false,
+    },
 });
+
+// Los selectores no llevan etiqueta visible: cada opción dice a qué se refiere.
+const WHOLESALE_OPTIONS = [{ id: "yes", name: "Con mayoreo" }];
 
 const emit = defineEmits(["clear-filters"]);
 
@@ -87,12 +104,15 @@ const searchQuery = defineModel("searchQuery", { type: String, default: "" });
 const selectedCategory = defineModel("selectedCategory", { type: String, default: "" });
 const selectedSupplier = defineModel("selectedSupplier", { type: [String, Number], default: "" });
 const selectedUnitType = defineModel("selectedUnitType", { type: [String, Number], default: "" });
+// "" (todos) | "yes"
+const selectedWholesale = defineModel("selectedWholesale", { type: String, default: "" });
 
 const hasActiveFilters = computed(
     () =>
         searchQuery.value !== "" ||
         selectedCategory.value !== "" ||
         selectedSupplier.value !== "" ||
-        selectedUnitType.value !== "",
+        selectedUnitType.value !== "" ||
+        selectedWholesale.value !== "",
 );
 </script>
