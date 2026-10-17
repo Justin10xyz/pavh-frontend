@@ -221,6 +221,25 @@ A diferencia de los pisos, el código de estos productos **se captura a mano** e
 
 El código también sirve para buscar el producto en el inventario, en cotizaciones y en ventas.
 
+### Precio de mayoreo
+
+Además de su **Precio** normal (menudeo), un producto puede tener un **precio de mayoreo** opcional:
+
+- En el formulario, da clic en **+ Agregar precio de mayoreo**, debajo de **Precio**. Aparece el campo **Precio de mayoreo**.
+- Al editar un producto que ya tiene precio de mayoreo, el campo aparece abierto con su valor.
+- Para quitarlo, deja el campo vacío y guarda. El producto vuelve a tener un solo precio.
+
+El mayoreo **no se aplica solo** por la cantidad: lo decide el vendedor en cada producto de la cotización o la venta.
+
+- En las líneas de un producto con mayoreo aparece la casilla **Mayoreo** debajo del precio. Sin marcar, se cobra a menudeo. Debajo se ve el precio del otro tipo como referencia (por ejemplo, *"Mayoreo: $150.00"*).
+- Los productos sin precio de mayoreo se ven igual que siempre, sin casilla.
+- En **cotizaciones**, el precio sigue sin poder editarse: la casilla solo elige qué precio se usa.
+- En **ventas**, al marcar o desmarcar la casilla el precio se llena con el del tipo elegido, y todavía lo puedes cambiar a mano.
+- Al **convertir una cotización a venta**, cada producto conserva el tipo con el que se cotizó, con el precio que tenga hoy. Antes de registrar todavía puedes cambiar la casilla.
+- Si a un producto le quitaron el precio de mayoreo después de cotizarlo a mayoreo, la cotización ya no se puede convertir a venta y aparece un aviso con el producto. Al editar esa cotización, la línea vuelve a menudeo.
+
+En el detalle de la cotización o de la venta y en su PDF, los productos cobrados a mayoreo llevan la etiqueta **Mayoreo** junto al precio unitario.
+
 ### Capturar un producto con el teclado
 
 Funciona igual que en los pisos (ver [Capturar un piso con el teclado](#capturar-un-piso-con-el-teclado)):
@@ -263,3 +282,5 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Nuevo piso / Editar piso**: los botones muestran un contorno dorado cuando el cursor está en ellos, y las ventanas de confirmación ya se pueden contestar con Enter o Esc. |
 | 2026-10-16 | **Nuevo / Editar producto general**: la misma captura con teclado que en los pisos (cursor inicial en Categoría, Enter para avanzar, Ctrl + S para guardar y salto al campo con error). |
 | 2026-10-16 | **Nuevo piso / Editar piso**: si al guardar el sistema rechaza un dato, el cursor salta a ese campo. |
+| 2026-10-16 | **Otros productos**: nuevo **precio de mayoreo** opcional, que se agrega con **+ Agregar precio de mayoreo** en el formulario. |
+| 2026-10-16 | **Cotizaciones y ventas**: en productos con mayoreo, la casilla **Mayoreo** elige el precio de cada línea. El detalle y el PDF marcan esas líneas con la etiqueta **Mayoreo**. |
