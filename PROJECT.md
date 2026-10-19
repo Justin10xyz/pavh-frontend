@@ -471,7 +471,7 @@ El cliente renombró la marca visible de "PAVH" a **INNOVA** (logo: casita con m
 
 **Punto de Venta:**
 
-- **Confirmar con el cliente** (venta por caja completa): (1) si también se venden piezas sueltas de una caja abierta de un piso que se vende por m² — hoy esos pisos solo admiten cajas completas, y piezas sueltas cambiarían el modelo de línea. No confundir con la venta por pieza ya implementada, que es para pisos cuya unidad de venta es la pieza (mosaicos/decorados); (2) que el precio se maneja por m² y se cobra por caja completa (`price_per_box = price_per_m2 × m2_per_box`), como asumió la corrección
+- ~~Confirmar con el cliente (venta por caja completa)~~ ✅ (2026-10-17) — confirmado: nunca venden piezas sueltas de una caja abierta, siempre caja completa; el modelo actual ya refleja esto, no se requiere ningún cambio de código
 - Guardar los "m² requeridos" de una línea (`requested_m2`): hoy son solo ayuda de captura y se pierden al guardar, así que al editar una cotización o convertirla a venta solo quedan las cajas. Hace falta si se quiere que la cotización muestre "pidió 18 m² → 13 cajas"
 - Datos previos a la corrección de venta por caja: la migración llenó `boxes = ceil(m² / m2_per_box)` pero no reescribió `quantity` ni montos (documentos ya emitidos), así que esas líneas se ven como "4 cajas / 5 m²". Una línea cuya variante no tenía `m2_per_box` quedó con `boxes` null: se muestra solo en m², y si es de una cotización en Borrador hay que capturarle las cajas al editarla o convertirla. Solo afecta datos de desarrollo (no hay producción todavía)
 - Paginación del listado de ventas: `GET /api/sales` devuelve todo el periodo sin paginar; con "Todas" va a crecer sin límite. No urge todavía (el filtro por periodo acota los casos de uso diarios)
