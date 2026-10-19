@@ -2,12 +2,17 @@
     <section aria-labelledby="low-stock-heading" :aria-busy="loading" class="bg-surface border border-border rounded-md">
         <div class="flex items-center justify-between px-5 py-3 border-b border-border">
             <h2 id="low-stock-heading" class="text-sm font-medium text-text">Stock bajo</h2>
-            <router-link
-                :to="{ name: 'inventory', query: { stockBajo: '1' } }"
-                class="text-xs text-text-muted hover:text-text focus:outline-none focus-visible:underline transition-colors"
+            <!-- El catálogo ya no filtra por stock bajo: la lista completa se
+			     despliega aquí mismo. -->
+            <button
+                v-if="hiddenCount > 0 && !loading"
+                type="button"
+                :aria-expanded="showAll"
+                class="text-xs text-text-muted hover:text-text cursor-pointer focus:outline-none focus-visible:underline transition-colors"
+                @click="showAll = !showAll"
             >
-                Ver todo
-            </router-link>
+                {{ showAll ? "Ver menos" : "Ver todo" }}
+            </button>
         </div>
 
         <p v-if="error && !loading" class="px-5 py-6 text-sm text-danger text-center">
@@ -36,10 +41,10 @@
         </p>
         <ul v-else class="divide-y divide-border">
             <li v-for="variant in visibleVariants" :key="variant.id">
-                <!-- Abre Inventario filtrado al producto (no su form de edición): ahí
-				     están el ajuste de stock y el historial de movimientos. -->
+                <!-- Abre Inventario con el producto expandido (no su form de edición):
+				     ahí están el ajuste de stock y el historial de movimientos. -->
                 <router-link
-                    :to="{ name: 'inventory', query: { stockBajo: '1', buscar: variant.product.name } }"
+                    :to="{ name: 'inventory', query: { producto: String(variant.product.id) } }"
                     class="group flex items-center justify-between gap-4 px-5 py-3 hover:bg-bg focus:outline-none focus-visible:bg-bg transition-colors"
                 >
                     <span class="min-w-0">
@@ -63,7 +68,7 @@
                     </span>
                 </router-link>
             </li>
-            <li v-if="hiddenCount > 0" class="px-5 py-2.5 text-xs text-text-muted">
+            <li v-if="hiddenCount > 0 && !showAll" class="px-5 py-2.5 text-xs text-text-muted">
                 Y {{ hiddenCount }} más con stock bajo.
             </li>
         </ul>
@@ -71,7 +76,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const MAX_ROWS = 5
 
@@ -92,12 +97,13 @@ const props = defineProps({
 })
 
 // Lista corta: primero las más críticas (menos cajas en stock); el resto se
-// consulta en Inventario vía "Ver todo".
-const visibleVariants = computed(() =>
-    [...props.variants]
-        .sort((a, b) => a.stock_boxes - b.stock_boxes)
-        .slice(0, MAX_ROWS)
-)
+// despliega con "Ver todo".
+const showAll = ref(false)
+
+const visibleVariants = computed(() => {
+    const sorted = [...props.variants].sort((a, b) => a.stock_boxes - b.stock_boxes)
+    return showAll.value ? sorted : sorted.slice(0, MAX_ROWS)
+})
 
 function boxesLabel(count) {
     return `${count} ${Number(count) === 1 ? 'caja' : 'cajas'}`

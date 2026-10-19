@@ -19,18 +19,24 @@
                     </button>
                 </div>
 
+                <!-- Nombre arriba; el estado en su propia línea, con el mismo badge
+				     que la columna Estado del catálogo. -->
                 <div class="text-sm text-text mb-4">
-                    <span v-if="subtitle" class="text-text-muted">{{ subtitle }} · </span>
-                    <template v-if="isTracked">
-                        Stock actual: <span class="font-medium">{{ stock }} {{ stockUnit }}</span>
-                    </template>
-                    <template v-else>
-                        <span class="font-medium">Sin control de stock</span>
-                        <span class="block text-xs text-text-muted mt-1">
-                            La cantidad que ingreses será el stock inicial; a partir de ahí se podrá
-                            agregar o quitar.
+                    <p v-if="subtitle" class="mb-1.5">{{ subtitle }}</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <StockStatusBadge
+                            v-if="!isTracked || lowStock !== null"
+                            :tracked="isTracked"
+                            :low-stock="!!lowStock"
+                        />
+                        <span v-if="isTracked">
+                            Stock actual: <span class="font-medium">{{ stock }} {{ stockUnit }}</span>
                         </span>
-                    </template>
+                    </div>
+                    <span v-if="!isTracked" class="block text-xs text-text-muted mt-1.5">
+                        La cantidad que ingreses será el stock inicial; a partir de ahí se podrá
+                        agregar o quitar.
+                    </span>
                 </div>
 
                 <!-- Sin tracking solo se permite `add`: el backend rechaza `subtract` (422). -->
@@ -146,6 +152,7 @@ import { useConfirm } from "primevue/useconfirm";
 import axios from "@/lib/axios";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
+import StockStatusBadge from "./StockStatusBadge.vue";
 
 // No sabe de qué tipo de producto es el stock (variante, producto simple): recibe
 // el endpoint PATCH y lo que debe mostrar, y emite la respuesta del backend para
@@ -157,8 +164,11 @@ const props = defineProps({
     stock: { type: Number, default: null },
     stockUnit: { type: String, default: "" },
     quantityLabel: { type: String, default: "Cantidad" },
-    // Contexto opcional antes del stock actual (ej. el color de la variante).
+    // Contexto opcional arriba del estado (ej. el color de la variante).
     subtitle: { type: String, default: "" },
+    // `low_stock` de la variante. null = sin stock mínimo (productos simples):
+    // con stock controlado no lleva badge, igual que en su tabla.
+    lowStock: { type: Boolean, default: null },
 });
 
 const visible = defineModel("visible", { type: Boolean, default: false });

@@ -169,6 +169,9 @@
                                         </td>
                                         <td class="text-right text-text hidden sm:table-cell">
                                             {{ formatCurrency(item.unit_price) }}
+                                            <div v-if="item.price_type === 'wholesale'" class="mt-0.5">
+                                                <WholesaleBadge />
+                                            </div>
                                         </td>
                                     </template>
                                     <template v-else>
@@ -245,6 +248,7 @@
 import { computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useSalesStore } from "@/stores/sales";
+import WholesaleBadge from "@/components/widgets/badges/WholesaleBadge.vue";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";

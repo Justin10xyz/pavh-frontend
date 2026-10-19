@@ -37,8 +37,11 @@
             <InventoryFilters
                 v-model:searchQuery="searchQuery"
                 v-model:selectedCategory="selectedCategory"
-                v-model:lowStockOnly="lowStockOnly"
+                v-model:selectedSupplier="selectedSupplier"
+                v-model:selectedUnitType="selectedUnitType"
                 :categoryOptions="categoryOptions"
+                :supplier-options="supplierOptions"
+                :unit-type-options="catalogs.unitTypes"
                 @clear-filters="clearFilters"
             />
 
@@ -57,7 +60,7 @@
                 v-else
                 :products="filteredProducts"
                 :visibleVariantsByProduct="visibleVariantsByProduct"
-                :initially-expanded="expandOnArrival"
+                :focus-product-id="focusProductId"
                 @edit-product="editProduct"
                 @open-stock-dialog="openStockDialog"
                 @open-movements-dialog="openMovementsDialog"
@@ -72,6 +75,7 @@
         :stock-unit="stockDialogUnit.short"
         :quantity-label="`Cantidad (${stockDialogUnit.label})`"
         :subtitle="stockDialogVariant?.color"
+        :low-stock="stockDialogVariant?.low_stock ?? false"
         @stock-updated="onVariantStockUpdated"
     />
 
@@ -88,6 +92,7 @@
 import { onMounted, ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useInventoryStore } from "@/stores/inventory";
+import { useCatalogsStore } from "@/stores/catalogs";
 import { variantStockUnit } from "@/lib/unitTypes";
 
 import InventoryFilters from "./components/InventoryFilters.vue";
@@ -99,9 +104,11 @@ import SimpleProductsSection from "./components/SimpleProductsSection.vue";
 const route = useRoute();
 const router = useRouter();
 const inventory = useInventoryStore();
+const catalogs = useCatalogsStore();
 
 onMounted(() => {
     if (!inventory.initialized) inventory.fetchProducts();
+    if (!catalogs.initialized) catalogs.fetchCatalogs();
 });
 
 // La sección activa vive en la URL (?seccion=otros) para que, al volver de
@@ -157,34 +164,31 @@ function openMovementsDialog(variant, product) {
 }
 
 // Filters logic
-// Búsqueda y "solo stock bajo" viven en la URL (?buscar=…&stockBajo=1) para que
-// el Dashboard pueda abrir el catálogo ya filtrado. Se leen al montar y se
-// escriben con router.replace; un computed sobre route.query perdería letras al
-// teclear rápido.
+// La búsqueda vive en la URL (?buscar=…) para que se conserve al volver del form
+// de producto. Se lee al montar y se escribe con router.replace; un computed
+// sobre route.query perdería letras al teclear rápido.
 const searchQuery = ref(typeof route.query.buscar === "string" ? route.query.buscar : "");
 const selectedCategory = ref("");
-const lowStockOnly = ref(route.query.stockBajo === "1");
+const selectedSupplier = ref("");
+const selectedUnitType = ref("");
+
+// Llegar con ?producto=<id> (fila de Stock bajo del Dashboard) abre ese
+// producto ya expandido y lo trae a la vista, para ajustar stock sin buscarlo.
+// Solo esa vez: al tocar cualquier filtro se apaga (y sale de la URL), para
+// que la tabla no lo vuelva a expandir si se remonta.
+const focusProductId = ref(typeof route.query.producto === "string" ? Number(route.query.producto) : null);
 
 function floorsFilterQuery() {
     return {
         ...(searchQuery.value ? { buscar: searchQuery.value } : {}),
-        ...(lowStockOnly.value ? { stockBajo: "1" } : {}),
+        ...(focusProductId.value ? { producto: String(focusProductId.value) } : {}),
     };
 }
 
-// Llegar con ?buscar=…&stockBajo=1 (fila de Stock bajo del Dashboard) abre ya
-// expandido lo que quede visible, para ajustar stock sin dos clics más. Solo
-// esa vez: al tocar cualquier filtro se apaga, para que la tabla no vuelva a
-// expandir todo si se remonta (ej. tras un filtro sin resultados).
-const expandOnArrival = ref(searchQuery.value !== "" && lowStockOnly.value);
-
-// Solo aplican a Catálogo de pisos; en "Otros productos" la URL es solo la sección.
-watch([searchQuery, lowStockOnly], () => {
+watch([searchQuery, selectedCategory, selectedSupplier, selectedUnitType], () => {
+    focusProductId.value = null;
+    // Solo aplican a Catálogo de pisos; en "Otros productos" la URL es solo la sección.
     if (activeSection.value === "floors") router.replace({ query: floorsFilterQuery() });
-});
-
-watch([searchQuery, selectedCategory, lowStockOnly], () => {
-    expandOnArrival.value = false;
 });
 
 // Guardar/cancelar en el form de producto regresa al listado con el mismo
@@ -202,12 +206,20 @@ watch(
 function clearFilters() {
     searchQuery.value = "";
     selectedCategory.value = "";
-    lowStockOnly.value = false;
+    selectedSupplier.value = "";
+    selectedUnitType.value = "";
 }
 
 const categoryOptions = computed(() => {
     const set = new Set(inventory.products.map((p) => p.category).filter(Boolean));
     return Array.from(set).sort();
+});
+
+// Solo proveedores con pisos registrados: los demás (ej. solo de "Otros
+// productos") dejarían la tabla vacía. En el orden del catálogo.
+const supplierOptions = computed(() => {
+    const ids = new Set(inventory.products.map((p) => p.supplier_id));
+    return catalogs.suppliers.filter((supplier) => ids.has(supplier.id));
 });
 
 function normalize(str) {
@@ -224,10 +236,6 @@ const visibleVariantsByProduct = computed(() => {
 
     for (const product of inventory.products) {
         let variants = product.variants;
-
-        if (lowStockOnly.value) {
-            variants = variants.filter((v) => v.low_stock);
-        }
 
         if (q) {
             const productMatches = normalize(product.name).includes(q);
@@ -247,6 +255,8 @@ const visibleVariantsByProduct = computed(() => {
 const filteredProducts = computed(() => {
     return inventory.products.filter((product) => {
         if (selectedCategory.value && product.category !== selectedCategory.value) return false;
+        if (selectedSupplier.value && product.supplier_id !== selectedSupplier.value) return false;
+        if (selectedUnitType.value && product.unit_type_id !== selectedUnitType.value) return false;
         const variants = visibleVariantsByProduct.value.get(product.id) ?? [];
         return variants.length > 0;
     });

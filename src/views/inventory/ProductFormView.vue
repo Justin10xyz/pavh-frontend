@@ -55,19 +55,24 @@
                 :has-saved-variants="hasSavedVariants"
             />
 
-            <!-- Sección 2 — Una tarjeta por medida: su ficha técnica + sus colores -->
-            <VariantGroupCard
-                v-for="(group, index) in variantGroups"
-                :key="group.id"
-                v-model:group="variantGroups[index]"
-                :index="index"
-                :sold-by-piece="soldByPiece"
-                :stock-unit="stockUnit"
-                :removable="canRemoveGroup(group)"
-                :deleting-row-id="deletingRowId"
-                @remove="removeVariantGroup(group.id)"
-                @remove-color="(row) => removeColorRow(group, row.id)"
-            />
+            <!-- Sección 2 — Un panel por medida: su ficha técnica + sus colores. Una
+			     sola abierta a la vez para no perder de vista qué medida se edita. -->
+            <Accordion v-model:value="openGroupId" class="variant-groups">
+                <VariantGroupCard
+                    v-for="(group, index) in variantGroups"
+                    :key="group.id"
+                    v-model:group="variantGroups[index]"
+                    :index="index"
+                    :sold-by-piece="soldByPiece"
+                    :stock-unit="stockUnit"
+                    :removable="canRemoveGroup(group)"
+                    :removal-hint="needsSavedColorsRemoved(group)"
+                    :deleting-row-id="deletingRowId"
+                    :delete-error="deleteError"
+                    @remove="removeVariantGroup(group.id)"
+                    @remove-color="(row) => removeColorRow(group, row.id)"
+                />
+            </Accordion>
 
             <button
                 type="button"
@@ -110,7 +115,7 @@
             <template #container="{ message, acceptCallback, rejectCallback }">
                 <div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
                     <h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
-                    <p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+                    <p class="text-sm text-text-muted mb-5 whitespace-pre-line">{{ message.message }}</p>
                     <div class="flex items-center justify-end gap-3">
                         <!-- Foco inicial en Cancelar (ver StockChangesConfirmDialog): en una
 						     acción que no se puede deshacer, Enter no debe eliminar. -->
@@ -139,6 +144,7 @@
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import Accordion from "primevue/accordion";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import axios from "@/lib/axios";
@@ -152,6 +158,7 @@ import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import {
     buildVariantPayload,
     createVariantGroup,
+    groupHasErrors,
     pendingStockChanges,
     validateVariantGroups,
     variantGroupsFromProduct,
@@ -215,6 +222,9 @@ const stockUnit = computed(() => variantStockUnit(selectedUnitTypeName.value));
 
 const variantGroups = ref([createVariantGroup()]);
 
+// Medida abierta en el acordeón (su `id`); null si el usuario las colapsó todas.
+const openGroupId = ref(variantGroups.value[0].id);
+
 // Solo en edición hay filas con `variantId`. Con variantes guardadas la Unidad
 // no se puede cambiar (el backend lo rechaza), así que el selector se bloquea.
 const hasSavedVariants = computed(() =>
@@ -224,6 +234,7 @@ const hasSavedVariants = computed(() =>
 function addVariantGroup() {
     const group = createVariantGroup();
     variantGroups.value.push(group);
+    openGroupId.value = group.id;
     focusField(`size-${group.id}`);
 }
 
@@ -233,12 +244,20 @@ function canRemoveGroup(group) {
     return variantGroups.value.length > 1 && group.colorRows.every((row) => !row.variantId);
 }
 
+// Lo único que impide quitarla son sus colores guardados (con una sola medida no
+// hay nada que explicar: el producto siempre conserva al menos una).
+function needsSavedColorsRemoved(group) {
+    return variantGroups.value.length > 1 && group.colorRows.some((row) => row.variantId);
+}
+
 function removeVariantGroup(groupId) {
     const group = variantGroups.value.find((g) => g.id === groupId);
     if (!group || !canRemoveGroup(group)) return;
     const index = variantGroups.value.indexOf(group);
     variantGroups.value = variantGroups.value.filter((g) => g.id !== groupId);
-    focusField(`size-${variantGroups.value[Math.max(index - 1, 0)].id}`);
+    const next = variantGroups.value[Math.max(index - 1, 0)];
+    openGroupId.value = next.id;
+    focusField(`size-${next.id}`);
 }
 
 // El foco pasa al color de la fila que quedó en su lugar (o a la anterior si
@@ -251,6 +270,8 @@ function removeRowAndFocus(group, rowId) {
 }
 
 const deletingRowId = ref(null);
+// { rowId, message } del último DELETE rechazado con 422; se muestra bajo esa fila.
+const deleteError = ref(null);
 
 // Filas sin `variantId` son nuevas en esta sesión (o el flujo de creación, donde
 // ninguna fila lo tiene) — se quitan del array local sin tocar el backend. Filas con
@@ -270,7 +291,7 @@ function removeColorRow(group, rowId) {
 
     confirm.require({
         header: "Eliminar variante",
-        message: `¿Eliminar el color "${row.color}"? Esta acción no se puede deshacer.`,
+        message: `¿Eliminar el color "${row.color}"? Esta acción no se puede deshacer.\nEste color se eliminará de inmediato, aunque no hayas guardado los demás cambios del formulario.`,
         accept: () => deleteVariantRow(group, row),
     });
 }
@@ -278,13 +299,19 @@ function removeColorRow(group, rowId) {
 async function deleteVariantRow(group, row) {
     deletingRowId.value = row.id;
     generalError.value = null;
+    deleteError.value = null;
 
     try {
         await axios.delete(`/api/product-variants/${row.variantId}`);
         removeRowAndFocus(group, row.id);
     } catch (err) {
+        // 422 de negocio sin `errors` (ej. última variante del producto): corresponde
+        // a la fila que se intentó eliminar, así que va bajo ella, no al error general.
         if (err.response?.status === 422) {
-            generalError.value = err.response.data.message;
+            deleteError.value = {
+                rowId: row.id,
+                message: err.response.data.message || "No se pudo eliminar este color.",
+            };
         } else {
             generalError.value = "No se pudo eliminar la variante. Intenta de nuevo.";
         }
@@ -302,6 +329,7 @@ function populateFormFromProduct(product) {
 
     const groups = variantGroupsFromProduct(product);
     if (groups.length) variantGroups.value = groups;
+    openGroupId.value = variantGroups.value[0].id;
 }
 
 async function fetchProduct() {
@@ -383,6 +411,10 @@ async function applyStockChanges(changes) {
 
 const handleSubmit = async () => {
     if (!validateForm()) {
+        // Un campo dentro de una medida colapsada no se puede enfocar: se abre la
+        // primera medida con errores (las anteriores no tienen ninguno).
+        const invalidGroup = variantGroups.value.find(groupHasErrors);
+        if (invalidGroup) openGroupId.value = invalidGroup.id;
         focusFirstInvalidField(formRef.value);
         return;
     }
@@ -399,6 +431,7 @@ const handleSubmit = async () => {
     }
 
     generalError.value = null;
+    deleteError.value = null;
     submitting.value = true;
     let productId = isEditMode.value ? route.params.id : null;
     let productSaved = false;
@@ -472,4 +505,21 @@ function handleCancel() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Accordion unstyled: cada panel se ve como las demás tarjetas del form. */
+.variant-groups {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+.variant-groups :deep([data-pc-name="accordionpanel"]) {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 0.375rem;
+}
+/* Abierta: una línea sutil separa el encabezado de la ficha. */
+.variant-groups :deep([data-pc-name="accordioncontent"]) {
+	border-top: 1px solid var(--color-border);
+	padding-top: 1.25rem;
+}
+</style>

@@ -10,9 +10,10 @@
             <InventoryFilters
                 v-model:searchQuery="searchQuery"
                 v-model:selectedCategory="selectedCategory"
+                v-model:selectedWholesale="selectedWholesale"
                 :categoryOptions="categoryOptions"
+                show-wholesale-filter
                 search-placeholder="Buscar por nombre o código…"
-                :show-low-stock-filter="false"
                 @clear-filters="clearFilters"
             />
 
@@ -69,6 +70,10 @@
                             <span class="font-semibold text-primary tabular-nums">{{
                                 formatCurrency(data.price)
                             }}</span>
+                            <!-- Debajo y no en otra columna: no ensancha la tabla en móvil. -->
+                            <span v-if="hasWholesalePrice(data)" class="block text-xs text-text-muted tabular-nums"
+                            >Mayoreo {{ formatCurrency(data.price_wholesale) }}</span
+                            >
                         </template>
                     </Column>
 
@@ -210,10 +215,17 @@ function openMovementsDialog(product) {
 // Filtros — estado propio, independiente del catálogo de pisos.
 const searchQuery = ref("");
 const selectedCategory = ref("");
+const selectedWholesale = ref("");
 
 function clearFilters() {
     searchQuery.value = "";
     selectedCategory.value = "";
+    selectedWholesale.value = "";
+}
+
+// `price_wholesale === null` = el producto no se vende a mayoreo.
+function hasWholesalePrice(product) {
+    return product.price_wholesale !== null && product.price_wholesale !== undefined;
 }
 
 // Solo las categorías que de verdad tienen productos aquí, igual que en pisos.
@@ -234,6 +246,7 @@ const filteredProducts = computed(() => {
     return simpleProducts.simpleProducts.filter((product) => {
         if (selectedCategory.value && categoryName(product) !== selectedCategory.value)
             return false;
+        if (selectedWholesale.value === "yes" && !hasWholesalePrice(product)) return false;
         if (q && !normalize(product.name).includes(q) && !normalize(product.code).includes(q))
             return false;
         return true;

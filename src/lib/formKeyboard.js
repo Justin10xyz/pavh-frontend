@@ -6,7 +6,8 @@ import { nextTick } from "vue";
 // `@keydown="advanceOnEnter"`.
 
 // Inputs de texto/número y el elemento enfocable de los Select de PrimeVue
-// (`role="combobox"`). Los ocultos con v-if no están en el DOM.
+// (`role="combobox"`). Los ocultos con v-if no están en el DOM; los ocultos con
+// v-show (ej. una medida colapsada en el acordeón) se descartan al buscar.
 const FIELD_SELECTOR = [
     'input:not([type="hidden"]):not([type="checkbox"]):not(:disabled)',
     '[role="combobox"]:not([aria-disabled="true"])',
@@ -19,7 +20,9 @@ function isEnter(event) {
 }
 
 function focusNextField(form, current) {
-    const fields = [...form.querySelectorAll(FIELD_SELECTOR)];
+    const fields = [...form.querySelectorAll(FIELD_SELECTOR)].filter(
+        (field) => field === current || field.checkVisibility(),
+    );
     const next = fields[fields.indexOf(current) + 1];
     if (!next) return;
     next.focus();

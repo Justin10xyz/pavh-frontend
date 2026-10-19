@@ -100,6 +100,29 @@ El ícono de **lápiz** en la fila del producto abre el formulario de edición. 
 
 Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), el motivo aparece en un aviso rojo arriba del formulario.
 
+**Eliminar un color ya guardado** (la **X** de su fila) pide confirmación y lo borra **en ese momento**: no espera a **Guardar cambios**, así que aunque después salgas con **Cancelar**, el color ya no regresa. Un producto no puede quedarse sin colores: si intentas eliminar el último que tiene guardado, el motivo aparece en rojo debajo de ese color.
+
+Cada medida necesita **al menos un color**: cuando una medida tiene uno solo, su **X** aparece apagada y, al pasar el cursor encima, dice *"Cada medida necesita al menos un color"*. Para cambiar ese color, edita su nombre en lugar de quitarlo, o agrega otro primero.
+
+Una medida que ya tiene colores guardados no muestra **Quitar medida**. Al abrirla, una nota bajo su encabezado explica cómo quitarla: primero se eliminan sus colores guardados con la **X** de cada uno y, como siempre debe quedar un color, hay que agregar uno nuevo antes de eliminar el último. Cuando ya no le quedan colores guardados, aparece **Quitar medida**.
+
+### Una medida abierta a la vez
+
+En el formulario del piso, cada medida es un bloque que se abre y se cierra dando clic en su encabezado (la medida, el PEI, el ETT, el precio por caja y cuántos colores tiene). Solo una medida está abierta a la vez: al abrir otra, la anterior se cierra. Así, en el celular o la tablet siempre se sabe qué medida se está editando.
+
+- Al editar un piso, la **primera medida** aparece abierta y las demás cerradas.
+- Con **+ Agregar medida**, la medida nueva se abre sola.
+- Si al guardar falta un dato en una medida cerrada, esa medida se abre para mostrar el campo marcado en rojo.
+
+### Capturar el PEI
+
+El PEI se elige en dos pasos:
+
+1. En **PEI**, elige el nivel (de **I** a **V**).
+2. Si el proveedor lo publica como rango (por ejemplo *III/IV*), elige el otro nivel en **Rango con**, que aparece junto al PEI. Solo ofrece los niveles vecinos: con **I** solo **II**, con **V** solo **IV**, y con los demás el de abajo y el de arriba. Si no es rango, déjalo en **Sin rango**.
+
+No importa en qué orden se elijan: el rango siempre se guarda de menor a mayor (*III* con *II* queda como *II/III*). Al volver a abrir el piso, **PEI** muestra el nivel menor y **Rango con** el mayor. Si cambias el nivel en **PEI**, el rango se borra y hay que volver a elegirlo.
+
 ### Pisos que se venden por pieza
 
 Algunos pisos, como mosaicos o decorados, no se venden por caja ni por m², sino **por pieza**. Para registrarlos, en el formulario del piso elige **pieza** en la lista **Unidad**. El formulario cambia:
@@ -127,6 +150,7 @@ El formulario del piso se puede llenar completo sin usar el mouse:
 - Al quitar un color o una medida, el cursor se queda en el color o la medida de al lado, para seguir capturando.
 - Para guardar sin buscar el botón: **Ctrl + S** o **Ctrl + Enter** desde cualquier campo (en Mac, **⌘ + S** o **⌘ + Enter**). El atajo aparece como recordatorio junto al botón **Guardar**.
 - Si al guardar falta algún dato, el cursor salta al primer campo marcado en rojo.
+- Con **Tab** también se llega al encabezado de cada medida: **Enter** o **Espacio** la abre o la cierra, y las **flechas ↑ ↓** pasan al encabezado de la medida anterior o siguiente. Enter en el último campo de una medida no salta a una medida cerrada.
 - Con **Tab** también se llega a los botones (**+**, **Quitar medida**, la **X** de cada color, **+ Agregar color**…). El botón donde está el cursor se marca con un contorno dorado y se presiona con **Enter** o **Espacio**.
 - En las ventanas de confirmación el cursor ya está en un botón. Al **confirmar cambios de stock**, Enter guarda; al **eliminar un color**, Enter cancela (para no borrar por accidente) y hay que pasar con Tab a **Eliminar**. **Esc** cierra la ventana sin hacer nada.
 
@@ -138,10 +162,14 @@ Arriba de la tabla hay herramientas para encontrar productos rápido:
 
 - **Buscador**: en pisos busca por nombre de línea, color o código; en otros productos, por nombre o código. No importan los acentos ni las mayúsculas. Si buscas un color o un código, solo se muestran los colores que coinciden.
 - **Categoría**: muestra solo los productos de una categoría.
-- **Solo stock bajo** (solo en pisos): muestra únicamente los colores que necesitan resurtido.
+- **Proveedor** (solo en pisos): muestra solo los pisos de un proveedor. La lista solo incluye proveedores que tienen pisos registrados.
+- **Unidad de venta** (solo en pisos): muestra solo los pisos que se venden por m² o solo los que se venden por pieza.
+- **Mayoreo** (solo en otros productos): con **Con mayoreo** muestra solo los productos que tienen precio de mayoreo. En la tabla, esos productos muestran su precio de mayoreo en gris debajo del precio normal (*"Mayoreo $85.00"*).
 - **Limpiar filtros**: aparece cuando hay algún filtro activo y los quita todos de una vez.
 
-> Desde el **Dashboard**, al dar clic en una alerta de stock bajo, el catálogo se abre ya filtrado y desplegado en el producto que necesita atención.
+Para saber qué pisos necesitan resurtido no hace falta filtrar: la etiqueta roja **"N con stock bajo"** aparece en el producto y en la medida (ver [Avisos de stock bajo](#avisos-de-stock-bajo)).
+
+> Desde el **Dashboard**, al dar clic en una alerta de stock bajo, el catálogo se abre en el producto que necesita atención: ya desplegado, con sus medidas con stock bajo abiertas y marcado con un fondo dorado claro. **Ver todo** muestra ahí mismo la lista completa de alertas.
 
 ---
 
@@ -221,6 +249,25 @@ A diferencia de los pisos, el código de estos productos **se captura a mano** e
 
 El código también sirve para buscar el producto en el inventario, en cotizaciones y en ventas.
 
+### Precio de mayoreo
+
+Además de su **Precio** normal (menudeo), un producto puede tener un **precio de mayoreo** opcional:
+
+- En el formulario, da clic en **+ Agregar precio de mayoreo**, debajo de **Precio**. Aparece el campo **Precio de mayoreo**.
+- Al editar un producto que ya tiene precio de mayoreo, el campo aparece abierto con su valor.
+- Para quitarlo, deja el campo vacío y guarda. El producto vuelve a tener un solo precio.
+
+El mayoreo **no se aplica solo** por la cantidad: lo decide el vendedor en cada producto de la cotización o la venta.
+
+- En las líneas de un producto con mayoreo aparece la casilla **Mayoreo** debajo del precio. Sin marcar, se cobra a menudeo. Debajo se ve el precio del otro tipo como referencia (por ejemplo, *"Mayoreo: $150.00"*).
+- Los productos sin precio de mayoreo se ven igual que siempre, sin casilla.
+- En **cotizaciones**, el precio sigue sin poder editarse: la casilla solo elige qué precio se usa.
+- En **ventas**, al marcar o desmarcar la casilla el precio se llena con el del tipo elegido, y todavía lo puedes cambiar a mano.
+- Al **convertir una cotización a venta**, cada producto conserva el tipo con el que se cotizó, con el precio que tenga hoy. Antes de registrar todavía puedes cambiar la casilla.
+- Si a un producto le quitaron el precio de mayoreo después de cotizarlo a mayoreo, la cotización ya no se puede convertir a venta y aparece un aviso con el producto. Al editar esa cotización, la línea vuelve a menudeo.
+
+En el detalle de la cotización o de la venta y en su PDF, los productos cobrados a mayoreo llevan la etiqueta **Mayoreo** junto al precio unitario.
+
 ### Capturar un producto con el teclado
 
 Funciona igual que en los pisos (ver [Capturar un piso con el teclado](#capturar-un-piso-con-el-teclado)):
@@ -263,3 +310,17 @@ Mejoras que se van agregando al módulo:
 | 2026-10-16 | **Nuevo piso / Editar piso**: los botones muestran un contorno dorado cuando el cursor está en ellos, y las ventanas de confirmación ya se pueden contestar con Enter o Esc. |
 | 2026-10-16 | **Nuevo / Editar producto general**: la misma captura con teclado que en los pisos (cursor inicial en Categoría, Enter para avanzar, Ctrl + S para guardar y salto al campo con error). |
 | 2026-10-16 | **Nuevo piso / Editar piso**: si al guardar el sistema rechaza un dato, el cursor salta a ese campo. |
+| 2026-10-16 | **Otros productos**: nuevo **precio de mayoreo** opcional, que se agrega con **+ Agregar precio de mayoreo** en el formulario. |
+| 2026-10-16 | **Cotizaciones y ventas**: en productos con mayoreo, la casilla **Mayoreo** elige el precio de cada línea. El detalle y el PDF marcan esas líneas con la etiqueta **Mayoreo**. |
+| 2026-10-17 | **Nuevo piso / Editar piso**: las medidas se abren y cierran desde su encabezado, una a la vez, para no perder de vista qué medida y color se editan en celular o tablet. La medida nueva se abre sola y, si falta un dato en una medida cerrada, se abre al guardar. |
+| 2026-10-17 | **Catálogo de pisos**: nuevos filtros **Proveedor** y **Unidad de venta**. Se quitó **Solo stock bajo**: la etiqueta roja ya señala dónde falta stock. |
+| 2026-10-17 | **Dashboard**: una alerta de stock bajo abre el catálogo en ese producto (desplegado y resaltado) sin filtrarlo, y **Ver todo** despliega la lista completa en el mismo recuadro. |
+| 2026-10-17 | **Otros productos**: nuevo filtro **Con mayoreo** para ver solo los productos con precio de mayoreo, y la tabla muestra ese precio debajo del precio normal. |
+| 2026-10-17 | **Ajustar stock / Activar seguimiento**: la ventana muestra el nombre del color o producto arriba y, en su propia línea, la misma etiqueta de estado del catálogo (**OK**, **Stock bajo** o **Sin control**). |
+| 2026-10-17 | **Nuevo piso / Editar piso**: la lista de **PEI** incluye los rangos que publica el proveedor (**I/II**, **II/III**, **III/IV**, **IV/V**) además de I a V. Los PEI que estaban capturados en números (por ejemplo *3/4*) se pasaron a romano (*III/IV*). |
+| 2026-10-17 | **Catálogo de pisos**: todas las medidas se muestran con **X** mayúscula (por ejemplo *60X60* en lugar de *60x60*). Los códigos de los productos no cambiaron. |
+| 2026-10-17 | **Nuevo piso / Editar piso**: la medida se guarda siempre sin espacios y con **X** mayúscula, aunque se escriba *60x60* o *60 x 60*. |
+| 2026-10-17 | **Nuevo piso / Editar piso**: el PEI se elige en dos pasos: el nivel en **PEI** y, si es rango, el otro nivel en **Rango con** (ver [Capturar el PEI](#capturar-el-pei)). |
+| 2026-10-17 | **Editar piso**: la confirmación al eliminar un color aclara que se borra en ese momento, sin esperar a Guardar cambios. Si no se puede eliminar (es el último color del producto), el motivo aparece debajo de ese color en lugar de arriba del formulario. |
+| 2026-10-17 | **Nuevo piso / Editar piso**: la **X** apagada del único color de una medida ahora explica, al pasar el cursor, que cada medida necesita al menos un color. |
+| 2026-10-17 | **Editar piso**: las medidas con colores guardados explican, al abrirlas, cómo quitarlas (eliminar primero sus colores guardados). |

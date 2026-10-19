@@ -5,7 +5,7 @@
             dataKey="id"
             :expandedRows="expandedRows"
             class="data-table inventory-table"
-            :row-class="() => 'cursor-pointer'"
+            :row-class="rowClass"
             @row-click="onRowClick"
         >
             <Column header="Producto">
@@ -24,14 +24,16 @@
                             </svg>
                         </button>
                         <div class="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
-                            <span class="font-semibold text-primary text-sm">{{ data.name }}</span>
+                            <span :id="`inventory-product-${data.id}`" class="font-semibold text-primary text-sm">{{
+                                data.name
+                            }}</span>
                             <span
                                 class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
                             >
                                 {{ data.category }} · {{ data.supplier }} · {{ data.unit_type }}
                             </span>
-                            <!-- Aviso visible sin expandir: con "Solo stock bajo" activo, evita
-							     abrir producto y medida para saber dónde está el faltante. -->
+                            <!-- Aviso visible sin expandir: evita abrir producto y medida
+							     para saber dónde está el faltante. -->
                             <span
                                 v-if="lowStockCount(visibleVariantsByProduct.get(data.id)) > 0"
                                 class="low-stock-badge"
@@ -99,7 +101,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { nextTick, onMounted, ref } from "vue";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { groupVariants } from "@/lib/groupVariants";
@@ -116,11 +118,11 @@ const props = defineProps({
         type: Map,
         required: true,
     },
-    // Al montar, abre todos los productos recibidos y sus medidas (ej. al llegar
-    // desde una alerta de stock bajo del Dashboard, ya filtrado a un producto).
-    initiallyExpanded: {
-        type: Boolean,
-        default: false,
+    // Al montar, abre este producto y sus medidas con stock bajo, lo resalta y
+    // lo trae a la vista (ej. al llegar desde una alerta de stock bajo del Dashboard).
+    focusProductId: {
+        type: Number,
+        default: null,
     },
 });
 
@@ -134,6 +136,10 @@ const emit = defineEmits(["edit-product", "open-stock-dialog", "open-movements-d
 const expandedRows = ref({});
 const openRows = ref({});
 const expandedGroups = ref({});
+
+function rowClass(product) {
+    return ["cursor-pointer", { "bg-accent/5": product.id === props.focusProductId }];
+}
 
 // Clic en cualquier parte de la fila abre/cierra sus variantes. Los botones
 // (flecha, editar) ya tienen su propia acción, así que se ignoran aquí.
@@ -173,16 +179,23 @@ function isGroupExpanded(productId, groupKey) {
     return !!expandedGroups.value[groupExpansionKey(productId, groupKey)];
 }
 
-onMounted(() => {
-    if (!props.initiallyExpanded) return;
+onMounted(async () => {
+    const product = props.products.find((p) => p.id === props.focusProductId);
+    if (!product) return;
 
-    for (const product of props.products) {
-        expandedRows.value[product.id] = true;
-        openRows.value[product.id] = true;
-        for (const group of groupVariants(props.visibleVariantsByProduct.get(product.id) ?? [])) {
+    expandedRows.value[product.id] = true;
+    openRows.value[product.id] = true;
+    for (const group of groupVariants(props.visibleVariantsByProduct.get(product.id) ?? [])) {
+        if (group.variants.some((variant) => variant.low_stock)) {
             expandedGroups.value[groupExpansionKey(product.id, group.key)] = true;
         }
     }
+
+    await nextTick();
+    document
+        .getElementById(`inventory-product-${product.id}`)
+        ?.closest("tr")
+        ?.scrollIntoView({ block: "center" });
 });
 </script>
 
