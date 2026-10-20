@@ -39,18 +39,30 @@
                             >
                                 {{ quote.status }}
                             </span>
+                            <!-- Independiente del status: una cotización pagada sigue en Borrador. -->
+                            <span
+                                v-if="quote.paid_at"
+                                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border bg-sky-100 border-sky-200 text-sky-700 font-semibold"
+                            >
+                                <i class="ti ti-check text-sm leading-none" aria-hidden="true"></i>
+                                Pagado
+                            </span>
                         </div>
                         <p class="text-sm text-text-muted mt-0.5">
                             Creada el {{ formatDateTime(quote.created_at) }}
+                        </p>
+                        <p v-if="quote.paid_at" class="text-sm text-text-muted">
+                            Pagada el {{ formatDateTime(quote.paid_at) }}
                         </p>
                     </div>
                 </div>
 
                 <div class="flex flex-col items-end gap-1.5">
                     <div class="flex flex-wrap items-center justify-end gap-3">
-                        <!-- Editar/Cancelar/Convertir solo existen en Borrador: en un estado
-						     terminal se ocultan en vez de quedar deshabilitados (el tooltip
-						     que explicaba por qué no se ve en touch ni en un botón disabled). -->
+                        <!-- Editar/Cancelar/Convertir/Marcar como pagado solo existen en
+						     Borrador sin pagar: en otro caso se ocultan en vez de quedar
+						     deshabilitados (el tooltip que explicaba por qué no se ve en
+						     touch ni en un botón disabled). -->
                         <template v-if="isEditable">
                             <!-- Destructiva: separada del resto para no quedar junto a "Editar" -->
                             <button
@@ -99,17 +111,29 @@
                                 pdfBusy ? "Generando PDF…" : "Descargar PDF"
                             }}</span>
                         </button>
-                        <button
-                            v-if="isEditable"
-                            type="button"
-                            @click="convertToSale"
-                            class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
-                        >
-                            Convertir a venta
-                        </button>
+                        <!-- Venta (POS) queda como flujo secundario: la acción principal
+						     del Presupuesto es marcarlo como pagado. -->
+                        <template v-if="isEditable">
+                            <button
+                                type="button"
+                                @click="convertToSale"
+                                class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                            >
+                                Convertir a venta
+                            </button>
+                            <button
+                                type="button"
+                                :disabled="markingPaid"
+                                @click="requestMarkPaid"
+                                class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
+                            >
+                                {{ markingPaid ? "Marcando…" : "Marcar como pagado" }}
+                            </button>
+                        </template>
                     </div>
                     <p v-if="pdfError" class="text-danger text-xs">{{ pdfError }}</p>
                     <p v-if="cancelError" class="text-danger text-xs">{{ cancelError }}</p>
+                    <p v-if="markPaidError" role="alert" class="text-danger text-xs">{{ markPaidError }}</p>
                 </div>
             </div>
 
@@ -309,9 +333,13 @@
                 <div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
                     <h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
                     <p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+                    <!-- Un solo diálogo para cancelar y marcar como pagado: el botón
+					     de confirmar sale de `acceptLabel` y `tone` (danger|primary).
+					     Ambas acciones son irreversibles, así que el foco cae en Volver. -->
                     <div class="flex items-center justify-end gap-3">
                         <button
                             type="button"
+                            autofocus
                             @click="rejectCallback"
                             class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
                         >
@@ -320,9 +348,10 @@
                         <button
                             type="button"
                             @click="acceptCallback"
-                            class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                            class="text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                            :class="message.tone === 'primary' ? 'bg-primary hover:bg-primary-dark' : 'bg-danger hover:bg-danger/90'"
                         >
-                            Cancelar cotización
+                            {{ message.acceptLabel }}
                         </button>
                     </div>
                 </div>
@@ -337,6 +366,9 @@ import { useRoute, useRouter } from "vue-router";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
 import { useQuotesStore } from "@/stores/quotes";
+import { useInventoryStore } from "@/stores/inventory";
+import { useSimpleProductsStore } from "@/stores/simpleProducts";
+import { simpleProductStockAfterSale, variantStockAfterSale } from "@/lib/saleForm";
 import WholesaleBadge from "@/components/widgets/badges/WholesaleBadge.vue";
 import { statusClasses } from "@/lib/quoteStatus";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
@@ -350,11 +382,15 @@ import { paymentTermsLabel } from "@/lib/quotePayment";
 const route = useRoute();
 const router = useRouter();
 const quotes = useQuotesStore();
+const inventory = useInventoryStore();
+const simpleProducts = useSimpleProductsStore();
 const confirm = useConfirm();
 const notify = useNotify();
 
 const cancelling = ref(false);
 const cancelError = ref(null);
+const markingPaid = ref(false);
+const markPaidError = ref(null);
 
 // Evita mostrar por un instante una cotización distinta si el store aún
 // trae la de una visita anterior.
@@ -383,12 +419,15 @@ watch(
     (id) => {
         resetPdf();
         cancelError.value = null;
+        markPaidError.value = null;
         if (id) quotes.fetchQuote(id);
     },
     { immediate: true },
 );
 
-const isEditable = computed(() => quote.value?.status === "Borrador");
+// Pagada sigue en Borrador, pero el backend ya bloquea editar, cancelar y
+// convertir a venta (y volver a marcarla): mismo guard aquí, solo como UX.
+const isEditable = computed(() => quote.value?.status === "Borrador" && !quote.value.paid_at);
 
 // Pisos por pieza: la unidad viene con la variante (product_variant.product.unit_type).
 function isPieceLine(item) {
@@ -413,8 +452,65 @@ function requestCancel() {
     confirm.require({
         header: "Cancelar cotización",
         message: `¿Cancelar la cotización ${quote.value.folio}? Ya no se podrá editar ni convertir a venta. Esta acción no se puede deshacer.`,
+        acceptLabel: "Cancelar cotización",
+        tone: "danger",
         accept: cancelQuote,
     });
+}
+
+function requestMarkPaid() {
+    confirm.require({
+        header: "Marcar como pagado",
+        message: `¿Confirmar el pago de ${quote.value.folio}? Se descontará del inventario el stock de sus productos y ya no se podrá editar, cancelar ni convertir a venta. Esta acción no se puede deshacer.`,
+        acceptLabel: "Marcar como pagado",
+        tone: "primary",
+        accept: markPaid,
+    });
+}
+
+async function markPaid() {
+    markingPaid.value = true;
+    markPaidError.value = null;
+
+    try {
+        const paid = await quotes.markQuotePaid(quote.value.id);
+        syncStock(paid.items ?? []);
+        notify.success("Presupuesto marcado como pagado", paid.folio);
+    } catch (err) {
+        console.error(err);
+        // 422 de negocio (ya pagada, producto dado de baja, variante sin cajas,
+        // stock insuficiente): sin campo al cual asociarlo, va como error general.
+        markPaidError.value =
+            err.response?.status === 422
+                ? err.response.data.message
+                : "No se pudo marcar como pagado. Intenta de nuevo.";
+    } finally {
+        markingPaid.value = false;
+    }
+}
+
+// El backend descontó stock: se refleja en los stores cacheados (si ya se
+// cargaron) con el mismo cálculo que usa POS al registrar una venta, para que
+// Inventario y los avisos de stock no muestren el stock anterior. `quantity`
+// llega como string decimal; el helper de simples la suma como número.
+function syncStock(items) {
+    const stockItems = items.map((item) => ({
+        product_variant_id: item.product_variant_id,
+        boxes: item.boxes,
+        simple_product_id: item.simple_product_id,
+        quantity: Number(item.quantity),
+    }));
+
+    if (inventory.initialized) {
+        for (const { variantId, ...stock } of variantStockAfterSale(stockItems, inventory.products)) {
+            inventory.updateVariantStock(variantId, stock);
+        }
+    }
+    if (simpleProducts.initialized) {
+        for (const { productId, ...stock } of simpleProductStockAfterSale(stockItems, simpleProducts.simpleProducts)) {
+            simpleProducts.updateSimpleProductStock(productId, stock);
+        }
+    }
 }
 
 async function cancelQuote() {
