@@ -264,9 +264,39 @@
                                 <span class="text-text-muted">Subtotal</span>
                                 <span class="text-text">{{ formatCurrency(quote.subtotal) }}</span>
                             </div>
+                            <!-- Mismo criterio que el PDF de Presupuesto: descuento, envío y
+							     anticipo solo si > 0; total, saldo y forma de pago siempre. -->
+                            <div v-if="Number(quote.discount) > 0" class="flex items-center justify-between text-sm">
+                                <span class="text-text-muted">Descuento</span>
+                                <span class="text-text">-{{ formatCurrency(quote.discount) }}</span>
+                            </div>
+                            <div v-if="Number(quote.shipping_cost) > 0" class="flex items-center justify-between text-sm">
+                                <span class="text-text-muted">Costo de envío</span>
+                                <span class="text-text">{{ formatCurrency(quote.shipping_cost) }}</span>
+                            </div>
                             <div class="flex items-center justify-between text-sm font-medium">
                                 <span class="text-text">Total</span>
                                 <span class="text-text">{{ formatCurrency(quote.total) }}</span>
+                            </div>
+                            <div v-if="Number(quote.down_payment) > 0" class="flex items-center justify-between text-sm">
+                                <span class="text-text-muted">Anticipo</span>
+                                <span class="text-text">-{{ formatCurrency(quote.down_payment) }}</span>
+                            </div>
+                            <!-- Puede ser negativo a propósito (anticipo mayor al total): con su signo. -->
+                            <div class="flex items-center justify-between text-sm font-medium pt-1.5 border-t border-border">
+                                <span class="text-text">Saldo</span>
+                                <span class="text-text">{{ formatCurrency(quote.balance) }}</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 text-sm">
+                                <span class="text-text-muted">Forma de pago</span>
+                                <span class="text-text text-right">{{ paymentTermsLabel(quote.payment_terms) }}</span>
+                            </div>
+                            <div
+                                v-if="quote.payment_terms === 'credit' && quote.credit_due_date"
+                                class="flex items-center justify-between gap-3 text-sm"
+                            >
+                                <span class="text-text-muted">Vence</span>
+                                <span class="text-text text-right">{{ formatDateOnly(quote.credit_due_date) }}</span>
                             </div>
                         </div>
                     </div>
@@ -314,7 +344,8 @@ import { useNotify } from "@/composables/useNotify";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
 import { isSoldByPiece } from "@/lib/unitTypes";
-import { formatDateTime } from "@/lib/dates";
+import { formatDateOnly, formatDateTime } from "@/lib/dates";
+import { paymentTermsLabel } from "@/lib/quotePayment";
 
 const route = useRoute();
 const router = useRouter();
