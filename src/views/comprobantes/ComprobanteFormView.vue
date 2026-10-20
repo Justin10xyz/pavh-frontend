@@ -28,7 +28,15 @@
             </router-link>
         </div>
 
-        <form v-else-if="conversion" @submit.prevent="handleSubmit" class="space-y-4">
+        <!-- Enter en la fecha no envía: generar es irreversible (uno por presupuesto)
+		     y la fecha es el único input, así que el envío implícito del navegador
+		     lo dispararía al confirmar el día. Se genera solo con el botón. -->
+        <form
+            v-else-if="conversion"
+            @submit.prevent="handleSubmit"
+            @keydown="advanceOnEnter"
+            class="space-y-4"
+        >
             <!-- Sección 1 — Datos generales: el cliente viene de la cotización
 			     (solo lectura); la fecha es lo único que se elige aquí. -->
             <div class="bg-surface border border-border rounded-md p-5 sm:p-6">
@@ -99,14 +107,14 @@
                 <button
                     type="button"
                     @click="handleCancel"
-                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
                     :disabled="submitting"
-                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
+                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                 >
                     {{ submitting ? 'Generando…' : 'Generar comprobante' }}
                 </button>
@@ -149,6 +157,7 @@ import axios from '@/lib/axios'
 import { useComprobantesStore } from '@/stores/comprobantes'
 import { useQuotesStore } from '@/stores/quotes'
 import { useNotify } from '@/composables/useNotify'
+import { advanceOnEnter } from '@/lib/formKeyboard'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
 import DocumentItemsTable from '@/components/widgets/tables/DocumentItemsTable.vue'

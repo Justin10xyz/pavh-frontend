@@ -36,11 +36,12 @@
                         <p class="text-sm text-text-muted mt-0.5 flex items-center gap-1">
                             Fecha: {{ formatDateOnly(comprobante.date) }}
                             <button
+                                ref="dateButtonRef"
                                 type="button"
                                 @click="openDateDialog"
                                 aria-label="Cambiar fecha"
                                 title="Cambiar fecha"
-                                class="inline-flex items-center p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                                class="inline-flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                             >
                                 <i class="ti ti-pencil text-sm" aria-hidden="true"></i>
                             </button>
@@ -58,7 +59,7 @@
                             @click="sharePdf"
                             aria-label="Compartir"
                             title="Compartir"
-                            class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+                            class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         >
                             <i class="ti ti-share text-base" aria-hidden="true"></i>
                             <span class="hidden sm:inline">Compartir</span>
@@ -69,7 +70,7 @@
                             @click="downloadPdf"
                             aria-label="Descargar PDF"
                             title="Descargar PDF"
-                            class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:bg-primary/50 disabled:cursor-not-allowed"
+                            class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-3 sm:px-4 rounded-md transition-colors select-none cursor-pointer inline-flex items-center gap-2 disabled:bg-primary/50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                         >
                             <i class="ti ti-download text-base" aria-hidden="true"></i>
                             <span class="hidden sm:inline">{{
@@ -100,6 +101,13 @@
                                     class="block w-fit text-text-muted text-sm hover:text-text hover:underline"
                                 >
                                     {{ comprobante.customer.phone }}
+                                </a>
+                                <a
+                                    v-if="comprobante.customer.email"
+                                    :href="`mailto:${comprobante.customer.email}`"
+                                    class="block w-fit text-text-muted text-sm hover:text-text hover:underline"
+                                >
+                                    {{ comprobante.customer.email }}
                                 </a>
                             </dd>
                             <dd v-else class="text-text-muted">Sin cliente</dd>
@@ -155,6 +163,7 @@
             modal
             :pt="{ mask: { class: 'bg-primary/50' } }"
             @show="focusDateInput"
+            @hide="returnFocusToDateButton"
         >
             <template #container="{ closeCallback }">
                 <form @submit.prevent="saveDate" class="bg-surface border border-border rounded-md p-4 sm:p-5 w-90 max-w-[90vw]">
@@ -163,7 +172,7 @@
                         <button
                             type="button"
                             @click="closeCallback"
-                            class="text-text-muted hover:text-text transition-colors cursor-pointer"
+                            class="text-text-muted hover:text-text transition-colors cursor-pointer rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                             aria-label="Cerrar"
                         >
                             <i class="ti ti-x text-base" aria-hidden="true"></i>
@@ -186,14 +195,14 @@
                         <button
                             type="button"
                             @click="closeCallback"
-                            class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                            class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             :disabled="savingDate"
-                            class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
+                            class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                         >
                             {{ savingDate ? 'Guardando…' : 'Guardar' }}
                         </button>
@@ -276,6 +285,14 @@ function openDateDialog() {
 // Con la plantilla #container PrimeVue no enfoca nada dentro del diálogo.
 function focusDateInput() {
     document.getElementById("comprobante_date")?.focus();
+}
+
+// Al cerrar (Guardar, Cancelar, Esc o la X) el foco vuelve al lápiz que lo
+// abrió, en vez de caer al <body>.
+const dateButtonRef = ref(null);
+
+function returnFocusToDateButton() {
+    dateButtonRef.value?.focus();
 }
 
 async function saveDate() {
