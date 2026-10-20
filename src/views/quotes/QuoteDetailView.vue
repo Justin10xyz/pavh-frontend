@@ -227,30 +227,36 @@
                         <div class="w-full max-w-xs space-y-1.5">
                             <div class="flex items-center justify-between text-sm">
                                 <span class="text-text-muted">Subtotal</span>
-                                <span class="text-text">{{ formatCurrency(quote.subtotal) }}</span>
+                                <span class="text-text tabular-nums">{{ formatCurrency(quote.subtotal) }}</span>
                             </div>
+                            <!-- El PDF ya no anota el mayoreo: aquí se recuerda junto al subtotal
+							     (mismo aviso que el preview del formulario). -->
+                            <p v-if="wholesaleCount > 0" class="text-xs text-text-muted">
+                                Incluye precio de mayoreo en {{ wholesaleCount }}
+                                {{ wholesaleCount === 1 ? "producto" : "productos" }}.
+                            </p>
                             <!-- Mismo criterio que el PDF de Presupuesto: descuento, envío y
 							     anticipo solo si > 0; total, saldo y forma de pago siempre. -->
                             <div v-if="Number(quote.discount) > 0" class="flex items-center justify-between text-sm">
                                 <span class="text-text-muted">Descuento</span>
-                                <span class="text-text">-{{ formatCurrency(quote.discount) }}</span>
+                                <span class="text-text tabular-nums">-{{ formatCurrency(quote.discount) }}</span>
                             </div>
                             <div v-if="Number(quote.shipping_cost) > 0" class="flex items-center justify-between text-sm">
                                 <span class="text-text-muted">Costo de envío</span>
-                                <span class="text-text">{{ formatCurrency(quote.shipping_cost) }}</span>
+                                <span class="text-text tabular-nums">{{ formatCurrency(quote.shipping_cost) }}</span>
                             </div>
                             <div class="flex items-center justify-between text-sm font-medium">
                                 <span class="text-text">Total</span>
-                                <span class="text-text">{{ formatCurrency(quote.total) }}</span>
+                                <span class="text-text tabular-nums">{{ formatCurrency(quote.total) }}</span>
                             </div>
                             <div v-if="Number(quote.down_payment) > 0" class="flex items-center justify-between text-sm">
                                 <span class="text-text-muted">Anticipo</span>
-                                <span class="text-text">-{{ formatCurrency(quote.down_payment) }}</span>
+                                <span class="text-text tabular-nums">-{{ formatCurrency(quote.down_payment) }}</span>
                             </div>
                             <!-- Puede ser negativo a propósito (anticipo mayor al total): con su signo. -->
                             <div class="flex items-center justify-between text-sm font-medium pt-1.5 border-t border-border">
                                 <span class="text-text">Saldo</span>
-                                <span class="text-text">{{ formatCurrency(quote.balance) }}</span>
+                                <span class="text-text tabular-nums">{{ formatCurrency(quote.balance) }}</span>
                             </div>
                             <div class="flex items-center justify-between gap-3 text-sm">
                                 <span class="text-text-muted">Forma de pago</span>
@@ -261,7 +267,7 @@
                                 class="flex items-center justify-between gap-3 text-sm"
                             >
                                 <span class="text-text-muted">Vence</span>
-                                <span class="text-text text-right">{{ formatDateOnly(quote.credit_due_date) }}</span>
+                                <span class="text-text text-right whitespace-nowrap">{{ formatDateOnly(quote.credit_due_date) }}</span>
                             </div>
                         </div>
                     </div>
@@ -367,6 +373,11 @@ watch(
 // Pagada sigue en Borrador, pero el backend ya bloquea editar, cancelar y
 // convertir a venta (y volver a marcarla): mismo guard aquí, solo como UX.
 const isEditable = computed(() => quote.value?.status === "Borrador" && !quote.value.paid_at);
+
+// Líneas cobradas a precio de mayoreo (solo productos simples lo tienen).
+const wholesaleCount = computed(
+    () => (quote.value?.items ?? []).filter((item) => item.price_type === "wholesale").length,
+);
 
 // `comprobante` solo viene en GET /quotes/{id} (null si no se ha convertido).
 const canConvertToComprobante = computed(() => !!quote.value?.paid_at && !quote.value.comprobante);

@@ -8,8 +8,10 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_16rem] gap-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
-                <!-- Dos opciones: segmentado con radios nativos (teclado y lector de
-				     pantalla sin código extra) en vez de un Select. -->
+                <!-- Dos opciones: segmentado con radios nativos en vez de un Select.
+				     El lector anuncia "Forma de pago, grupo" (legend) y cada opción como
+				     radio con su posición; ←/→ cambian la opción y Tab entra solo al
+				     marcado. Sin aria-pressed: eso es de botones de alternar (QuickFilter). -->
                 <fieldset class="space-y-1.5">
                     <legend class="text-xs font-medium text-text-muted block mb-1.5">Forma de pago</legend>
                     <div class="grid grid-cols-2 gap-2">
@@ -28,6 +30,7 @@
                                 type="radio"
                                 name="payment_terms"
                                 :value="option.key"
+                                :aria-invalid="errors.payment_terms ? 'true' : undefined"
                                 class="sr-only"
                             />
                             {{ option.label }}
@@ -83,6 +86,12 @@
                     <span class="text-text-muted">Subtotal</span>
                     <span class="text-text tabular-nums">{{ formatCurrency(subtotal) }}</span>
                 </div>
+                <!-- El precio de mayoreo se elige en cada línea, lejos de aquí, y el
+				     PDF ya no lo anota: se recuerda que el subtotal ya lo incluye. -->
+                <p v-if="wholesaleCount > 0" class="text-xs text-text-muted">
+                    Incluye precio de mayoreo en {{ wholesaleCount }}
+                    {{ wholesaleCount === 1 ? "producto" : "productos" }}.
+                </p>
                 <div v-if="Number(form.discount) > 0" class="flex items-center justify-between text-sm">
                     <span class="text-text-muted">Descuento</span>
                     <span class="text-text tabular-nums">-{{ formatCurrency(form.discount) }}</span>
@@ -105,6 +114,18 @@
                     <span class="text-text">Saldo</span>
                     <span class="text-text tabular-nums">{{ formatCurrency(totals.balance) }}</span>
                 </div>
+                <!-- Mismo cierre que el detalle y el PDF: forma de pago y vencimiento -->
+                <div class="flex items-center justify-between gap-3 text-sm">
+                    <span class="text-text-muted">Forma de pago</span>
+                    <span class="text-text text-right">{{ paymentTermsLabel(form.payment_terms) }}</span>
+                </div>
+                <div
+                    v-if="form.payment_terms === 'credit' && form.credit_due_date"
+                    class="flex items-center justify-between gap-3 text-sm"
+                >
+                    <span class="text-text-muted">Vence</span>
+                    <span class="text-text text-right whitespace-nowrap">{{ formatDateOnly(form.credit_due_date) }}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -115,7 +136,8 @@ import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { PAYMENT_TERMS } from "@/lib/quotePayment";
+import { formatDateOnly } from "@/lib/dates";
+import { PAYMENT_TERMS, paymentTermsLabel } from "@/lib/quotePayment";
 
 // Sección "Pago" de QuoteFormView: forma de pago, vencimiento, montos y el
 // preview de totales. Edita los campos de pago sobre el mismo `form` de la
@@ -129,6 +151,8 @@ const errors = defineModel("errors", { type: Object, required: true });
 defineProps({
     subtotal: { type: Number, required: true },
     totals: { type: Object, required: true },
+    // Líneas de producto simple a precio de mayoreo (la vista las cuenta).
+    wholesaleCount: { type: Number, default: 0 },
 });
 
 const AMOUNT_FIELDS = [

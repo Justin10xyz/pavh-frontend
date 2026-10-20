@@ -29,7 +29,17 @@
             {{ loadError }}
         </p>
 
-        <form v-if="!loadingQuote && !loadError" @submit.prevent="handleSubmit" class="space-y-4">
+        <!-- Captura con teclado (ver lib/formKeyboard.js): Enter avanza de campo
+		     en vez de enviar a medio capturar. Solo la fase de burbuja: aquí no hay
+		     SelectCustom, y la de captura le ganaría el Enter a CustomerSearch y
+		     ProductAutocomplete (también role="combobox"), que ya lo resuelven solos. -->
+        <form
+            v-if="!loadingQuote && !loadError"
+            ref="formRef"
+            @submit.prevent="handleSubmit"
+            @keydown="advanceOnEnter"
+            class="space-y-4"
+        >
             <!-- Sección 1 — Datos generales -->
             <div class="bg-surface border border-border rounded-md p-5 sm:p-6">
                 <h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">
@@ -88,6 +98,7 @@
                 v-model:errors="errors"
                 :subtotal="subtotal"
                 :totals="totals"
+                :wholesale-count="wholesaleCount"
             />
 
             <!-- Junto a las acciones (no arriba del form): con varias líneas, el inicio
@@ -115,17 +126,19 @@
 
             <!-- Acciones -->
             <div class="flex items-center justify-end gap-3">
+                <SaveShortcutHint :modifier-label="modifierLabel" class="mr-auto" />
                 <button
                     type="button"
                     @click="handleCancel"
-                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
+                    :aria-keyshortcuts="ariaKeyshortcuts"
                     :disabled="submitting"
-                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                 >
                     {{ submitting ? "Guardando…" : "Guardar cotización" }}
                 </button>
@@ -176,6 +189,9 @@ import QuoteLinePrice from "@/views/quotes/components/QuoteLinePrice.vue";
 import QuotePaymentSection from "@/views/quotes/components/QuotePaymentSection.vue";
 import { discountExceedsSubtotal, paymentPayload, quoteTotals } from "@/lib/quotePayment";
 import { quoteItemToLine } from "@/lib/quoteForm";
+import { advanceOnEnter, focusFirstInvalidField } from "@/lib/formKeyboard";
+import { useSaveShortcut } from "@/composables/useSaveShortcut";
+import SaveShortcutHint from "@/components/widgets/labels/SaveShortcutHint.vue";
 import * as documentLines from "@/lib/documentLines";
 import { createEmptyLine, hasProduct, lineItemPayload, serializeLines } from "@/lib/documentLines";
 import { useNotify } from "@/composables/useNotify";
@@ -358,8 +374,17 @@ const totals = computed(() =>
     }),
 );
 
+// Líneas de producto simple a precio de mayoreo: el PDF ya no lo anota, así que
+// el resumen de totales lo recuerda junto al subtotal.
+const wholesaleCount = computed(
+    () => lines.value.filter((row) => row.simpleProduct && linePriceType(row) === "wholesale").length,
+);
+
 const submitting = ref(false);
 const generalError = ref(null);
+
+const formRef = ref(null);
+const { modifierLabel, ariaKeyshortcuts } = useSaveShortcut(formRef, () => !submitting.value);
 // Fallo de fetchQuote en modo edición: oculta el form (no se debe poder
 // enviar uno vacío sobre una cotización que no cargó). generalError queda
 // solo para errores de submit, que no desmontan el form.
@@ -407,7 +432,7 @@ const handleSubmit = async () => {
     // Con crédito el backend exige el vencimiento (required_if).
     if (form.payment_terms === "credit" && !form.credit_due_date) {
         errors.credit_due_date = "Este campo es requerido";
-        document.getElementById("credit_due_date")?.focus();
+        focusFirstInvalidField(formRef.value);
         return;
     }
 
@@ -456,7 +481,7 @@ function applyServerErrors(data) {
     if (fields.length === 0) {
         if (!discountExceedsSubtotal(subtotal.value, form.discount)) return false;
         errors.discount = data.message;
-        document.getElementById("discount")?.focus();
+        focusFirstInvalidField(formRef.value);
         return true;
     }
 
@@ -464,8 +489,8 @@ function applyServerErrors(data) {
         if (field in errors) errors[field] = serverErrors[field][0];
     }
 
-    const firstField = fields.find((field) => field in errors);
-    if (firstField) document.getElementById(firstField)?.focus();
+    // Primero en pantalla (aria-invalid), no primero en el objeto de errores.
+    if (fields.some((field) => field in errors)) focusFirstInvalidField(formRef.value);
 
     return fields.every((field) => field in errors);
 }
