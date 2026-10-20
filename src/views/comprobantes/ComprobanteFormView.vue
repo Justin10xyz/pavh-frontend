@@ -59,54 +59,14 @@
                 </div>
             </div>
 
-            <!-- Sección 2 — Productos: copia tal cual de la cotización, sin edición -->
+            <!-- Sección 2 — Productos: copia tal cual de la cotización, sin edición.
+			     Misma tabla que el detalle de cotización y de comprobante. -->
             <div class="bg-surface border border-border rounded-md overflow-hidden">
                 <h2 class="text-xs font-medium uppercase tracking-wide text-text-muted px-5 sm:px-6 pt-5 sm:pt-6 mb-4">
                     Productos
                 </h2>
 
-                <div class="overflow-x-auto">
-                    <table class="items-table">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th class="text-right">Cantidad</th>
-                                <!-- Se oculta por debajo de sm: el importe ya basta -->
-                                <th class="text-right hidden sm:table-cell">Precio unitario</th>
-                                <th class="text-right">Importe</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="item in conversion.items" :key="item.id">
-                                <td>
-                                    <div class="font-medium text-text">{{ itemName(item) }}</div>
-                                    <div v-if="item.product_variant" class="text-text-muted text-xs">
-                                        {{ item.product_variant.color }} · {{ item.product_variant.size }}
-                                    </div>
-                                    <div v-if="item.price_type === 'wholesale'" class="mt-0.5">
-                                        <WholesaleBadge />
-                                    </div>
-                                </td>
-                                <td class="text-right text-text tabular-nums">
-                                    <template v-if="item.simple_product_id">{{ formatQuantity(item.quantity) }} uds.</template>
-                                    <template v-else-if="isPieceLine(item)">{{ item.boxes }} pzas</template>
-                                    <template v-else-if="item.boxes">
-                                        {{ item.boxes }} {{ item.boxes === 1 ? 'caja' : 'cajas' }}
-                                        <div class="text-text-muted text-xs">{{ formatQuantity(item.quantity) }} m²</div>
-                                    </template>
-                                    <template v-else>{{ formatQuantity(item.quantity) }} m²</template>
-                                </td>
-                                <td class="text-right text-text tabular-nums hidden sm:table-cell">
-                                    {{ formatCurrency(item.unit_price) }}<span
-                                        v-if="item.product_variant && !isPieceLine(item)"
-                                        class="text-text-muted text-xs"
-                                    >/m²</span>
-                                </td>
-                                <td class="text-right text-text tabular-nums">{{ formatCurrency(item.line_total) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <DocumentItemsTable :items="conversion.items" line-total-label="Importe" />
 
                 <!-- Totales: el comprobante solo guarda subtotal, total y total con
 				     letra (sin desglose de descuento/envío/anticipo). -->
@@ -191,10 +151,8 @@ import { useQuotesStore } from '@/stores/quotes'
 import { useNotify } from '@/composables/useNotify'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
-import WholesaleBadge from '@/components/widgets/badges/WholesaleBadge.vue'
+import DocumentItemsTable from '@/components/widgets/tables/DocumentItemsTable.vue'
 import { formatCurrency } from '@/lib/formatCurrency'
-import { formatQuantity } from '@/lib/formatQuantity'
-import { isSoldByPiece } from '@/lib/unitTypes'
 
 const route = useRoute()
 const router = useRouter()
@@ -244,15 +202,6 @@ async function loadConversion() {
     } finally {
         loadingConversion.value = false
     }
-}
-
-// Pisos por pieza: la unidad viene con la variante (product_variant.product.unit_type).
-function isPieceLine(item) {
-    return isSoldByPiece(item.product_variant?.product?.unit_type)
-}
-
-function itemName(item) {
-    return item.simple_product?.name ?? item.product_variant?.product?.name ?? '—'
 }
 
 const customerAddress = computed(() => {
@@ -352,40 +301,4 @@ watch(quoteId, () => {
 }, { immediate: true })
 </script>
 
-<style scoped>
-.items-table {
-	width: 100%;
-	border-collapse: collapse;
-}
-.items-table thead th {
-	font-size: 0.75rem;
-	font-weight: 500;
-	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	color: var(--color-text-muted);
-	background: var(--color-bg);
-	padding: 0.5rem 0.75rem;
-	border-top: 1px solid var(--color-border);
-	border-bottom: 1px solid var(--color-border);
-}
-.items-table thead th:not(.text-right) {
-	text-align: left;
-}
-.items-table tbody td {
-	padding: 0.5rem 0.75rem;
-	vertical-align: middle;
-	border-bottom: 1px solid var(--color-border);
-	font-size: 0.875rem;
-}
-.items-table tbody tr:last-child td {
-	border-bottom: none;
-}
-.items-table th:first-child,
-.items-table td:first-child {
-	padding-left: 1.5rem;
-}
-.items-table th:last-child,
-.items-table td:last-child {
-	padding-right: 1.5rem;
-}
-</style>
+<style scoped></style>
