@@ -79,7 +79,12 @@
                             <p v-if="boxPrice(row) !== null" class="sm:h-8.5 text-sm mt-2 tabular-nums">
                                 {{ formatCurrency(boxPrice(row)) }}/caja
                             </p>
-                            <p class="flex items-center text-xs text-text-muted tabular-nums">
+                            <!-- Secundario solo bajo el precio por caja; sin él (simple, por
+							     pieza, sin m² por caja) es el precio principal de la línea. -->
+                            <p
+                                class="flex items-center tabular-nums"
+                                :class="boxPrice(row) !== null ? 'text-xs text-text-muted' : 'sm:h-8.5 text-sm mt-2'"
+                            >
                                 {{
                                     !row.variant
                                         ? formatCurrency(simpleProductListPrice(row))
