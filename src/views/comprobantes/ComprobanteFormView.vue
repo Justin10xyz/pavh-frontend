@@ -3,13 +3,13 @@
         <div class="mb-4">
             <h1 class="font-serif text-xl text-primary">Convertir a comprobante</h1>
             <p v-if="quoteId" class="text-sm text-text-muted mt-0.5">
-                Revisa los datos copiados de la
-                <router-link :to="{ name: 'quotes.show', params: { id: quoteId } }" class="text-accent hover:underline">cotización de origen</router-link>
+                Revisa los datos copiados del
+                <router-link :to="{ name: 'quotes.show', params: { id: quoteId } }" class="text-accent hover:underline">presupuesto de origen</router-link>
                 y elige la fecha del comprobante.
             </p>
         </div>
 
-        <div v-if="loadingConversion" class="text-text-muted text-sm">Cargando cotización…</div>
+        <div v-if="loadingConversion" class="text-text-muted text-sm">Cargando presupuesto…</div>
 
         <!-- Error bloqueante de /to-comprobante (cotización sin pagar o que ya
 		     tiene comprobante): se oculta el form, no hay nada que se pueda generar. -->
@@ -24,7 +24,7 @@
                 :to="quoteId ? { name: 'quotes.show', params: { id: quoteId } } : { name: 'quotes' }"
                 class="inline-flex items-center bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none"
             >
-                {{ quoteId ? 'Volver a la cotización' : 'Ir a cotizaciones' }}
+                {{ quoteId ? 'Volver al presupuesto' : 'Ir a presupuestos' }}
             </router-link>
         </div>
 
@@ -197,8 +197,8 @@ async function loadConversion() {
         // 422 de Quote::comprobanteConversionBlockedMessage() (sin pagar o ya
         // con comprobante): el mensaje ya viene listo y se muestra tal cual.
         conversionError.value = err.response?.status === 404
-            ? 'La cotización no existe.'
-            : err.response?.data?.message || 'No se pudo cargar la cotización.'
+            ? 'El presupuesto no existe.'
+            : err.response?.data?.message || 'No se pudo cargar el presupuesto.'
     } finally {
         loadingConversion.value = false
     }
@@ -297,7 +297,7 @@ watch(quoteId, () => {
     savedSnapshot.value = serializeForm()
 
     if (quoteId.value) loadConversion()
-    else conversionError.value = 'Falta la cotización de origen. Genera el comprobante desde el detalle de una cotización pagada.'
+    else conversionError.value = 'Falta el presupuesto de origen. Genera el comprobante desde el detalle de un presupuesto pagado.'
 }, { immediate: true })
 </script>
 

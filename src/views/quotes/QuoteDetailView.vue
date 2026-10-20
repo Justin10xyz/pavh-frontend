@@ -1,7 +1,7 @@
 <template>
     <div class="p-2 max-w-5xl">
         <div v-if="quotes.currentQuoteLoading && !quote" class="text-text-muted text-sm">
-            Cargando cotización…
+            Cargando presupuesto…
         </div>
 
         <div v-else-if="quotes.currentQuoteError" class="space-y-4">
@@ -23,8 +23,8 @@
 					     Por debajo de lg solo la flecha. -->
                     <RouterLink
                         :to="{ name: 'quotes', query: quotes.listQuery }"
-                        aria-label="Volver a cotizaciones"
-                        title="Volver a cotizaciones"
+                        aria-label="Volver a presupuestos"
+                        title="Volver a presupuestos"
                         class="shrink-0 inline-flex items-center justify-center gap-1.5 h-8 w-8 lg:w-auto lg:px-3 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text text-sm font-medium rounded-md transition-colors select-none"
                     >
                         <i class="ti ti-arrow-left text-base" aria-hidden="true"></i>
@@ -71,7 +71,7 @@
                                 @click="requestCancel"
                                 class="bg-surface border border-danger/40 hover:bg-danger/10 text-danger font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
                             >
-                                {{ cancelling ? "Cancelando…" : "Cancelar cotización" }}
+                                {{ cancelling ? "Cancelando…" : "Cancelar presupuesto" }}
                             </button>
                             <span
                                 class="hidden sm:block w-px h-6 bg-border"
@@ -353,8 +353,8 @@ const {
     reset: resetPdf,
 } = useDocumentPdf({
     fetchPdf: quotes.fetchQuotePdf,
-    filePrefix: "Cotizacion",
-    titlePrefix: "Cotización",
+    filePrefix: "Presupuesto",
+    titlePrefix: "Presupuesto",
     id: () => route.params.id,
     document: quote,
 });
@@ -396,9 +396,9 @@ function convertToSale() {
 
 function requestCancel() {
     confirm.require({
-        header: "Cancelar cotización",
-        message: `¿Cancelar la cotización ${quote.value.folio}? Ya no se podrá editar ni convertir a venta. Esta acción no se puede deshacer.`,
-        acceptLabel: "Cancelar cotización",
+        header: "Cancelar presupuesto",
+        message: `¿Cancelar el presupuesto ${quote.value.folio}? Ya no se podrá editar ni convertir a venta. Esta acción no se puede deshacer.`,
+        acceptLabel: "Cancelar presupuesto",
         tone: "danger",
         accept: cancelQuote,
     });
@@ -465,13 +465,13 @@ async function cancelQuote() {
 
     try {
         const cancelled = await quotes.cancelQuote(quote.value.id);
-        notify.success(`Cotización ${cancelled.folio} cancelada`);
+        notify.success(`Presupuesto ${cancelled.folio} cancelado`);
     } catch (err) {
         console.error(err);
         cancelError.value =
             err.response?.status === 422
                 ? err.response.data.message
-                : "No se pudo cancelar la cotización. Intenta de nuevo.";
+                : "No se pudo cancelar el presupuesto. Intenta de nuevo.";
     } finally {
         cancelling.value = false;
     }

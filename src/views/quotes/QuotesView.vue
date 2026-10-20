@@ -1,16 +1,16 @@
 <template>
     <div class="p-2">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h1 class="font-serif text-xl text-primary">Cotizaciones</h1>
+            <h1 class="font-serif text-xl text-primary">Presupuestos</h1>
             <RouterLink
                 :to="{ name: 'quotes.create' }"
                 class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center select-none"
             >
-                Nueva cotización
+                Nuevo presupuesto
             </RouterLink>
         </div>
 
-        <div v-if="quotes.loading" class="text-text-muted text-sm">Cargando cotizaciones…</div>
+        <div v-if="quotes.loading" class="text-text-muted text-sm">Cargando presupuestos…</div>
         <div v-else-if="quotes.error" class="text-danger text-sm">{{ quotes.error }}</div>
 
         <template v-else>
@@ -48,8 +48,8 @@
             >
                 {{
                     quotes.quotes.length === 0
-                        ? "Aún no hay cotizaciones registradas."
-                        : "No se encontraron cotizaciones con esos filtros."
+                        ? "Aún no hay presupuestos registrados."
+                        : "No se encontraron presupuestos con esos filtros."
                 }}
             </div>
 
@@ -122,8 +122,8 @@
                             <RouterLink
                                 :to="{ name: 'quotes.show', params: { id: data.id } }"
                                 class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-                                aria-label="Ver cotización"
-                                title="Ver cotización"
+                                aria-label="Ver presupuesto"
+                                title="Ver presupuesto"
                             >
                                 <i class="ti ti-eye text-base"></i>
                             </RouterLink>

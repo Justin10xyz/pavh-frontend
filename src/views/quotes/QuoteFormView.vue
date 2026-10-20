@@ -3,11 +3,11 @@
         <div class="mb-4">
             <h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
             <p class="text-sm text-text-muted mt-0.5">
-                Selecciona los productos y captura las cantidades de la cotización.
+                Selecciona los productos y captura las cantidades del presupuesto.
             </p>
         </div>
 
-        <div v-if="loadingQuote" class="text-text-muted text-sm">Cargando cotización…</div>
+        <div v-if="loadingQuote" class="text-text-muted text-sm">Cargando presupuesto…</div>
 
         <p
             v-if="loadError"
@@ -58,7 +58,7 @@
                             id="notes"
                             v-model="form.notes"
                             rows="3"
-                            placeholder="Notas adicionales para esta cotización (opcional)"
+                            placeholder="Notas adicionales para este presupuesto (opcional)"
                         />
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                 <DocumentLinesTable
                     v-model:lines="lines"
                     :submit-attempted="submitAttempted"
-                    action="cotizar"
+                    action="agregar al presupuesto"
                     :line-subtotal="lineSubtotal"
                 >
                     <template #price="{ row }">
@@ -140,7 +140,7 @@
                     :disabled="submitting"
                     class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                 >
-                    {{ submitting ? "Guardando…" : "Guardar cotización" }}
+                    {{ submitting ? "Guardando…" : "Guardar presupuesto" }}
                 </button>
             </div>
         </form>
@@ -235,7 +235,7 @@ async function loadQuote() {
 
     const quote = quotes.currentQuote;
     if (quotes.currentQuoteError || !quote || String(quote.id) !== String(quoteId.value)) {
-        loadError.value = quotes.currentQuoteError || "No se pudo cargar la cotización.";
+        loadError.value = quotes.currentQuoteError || "No se pudo cargar el presupuesto.";
         return;
     }
 
@@ -318,7 +318,7 @@ onBeforeRouteLeave(() => {
     return new Promise((resolve) => {
         confirm.require({
             header: "Descartar cambios",
-            message: "Hay cambios sin guardar en esta cotización. Si sales ahora, se perderán.",
+            message: "Hay cambios sin guardar en este presupuesto. Si sales ahora, se perderán.",
             accept: () => resolve(true),
             reject: () => resolve(false),
             onHide: () => resolve(false),
@@ -351,7 +351,7 @@ function hasInsufficientStock(row) {
 // valida hasta convertirla en venta).
 function stockWarning(row) {
     return documentLines.stockShortageMessage(row, lineStock(row), isPieceLine(row), {
-        verb: "cotizan",
+        verb: "incluyen",
         consequence: "Consultar disponibilidad sobre pedido.",
     });
 }
@@ -400,7 +400,7 @@ function quantityError(row) {
 }
 
 function boxConversionError(row) {
-    return documentLines.boxConversionError(row, isPieceLine(row), "cotizar");
+    return documentLines.boxConversionError(row, isPieceLine(row), "agregar al presupuesto");
 }
 
 const handleSubmit = async () => {
@@ -449,13 +449,13 @@ const handleSubmit = async () => {
         if (isEdit.value) {
             const updated = await quotes.updateQuote(quoteId.value, payload);
             skipLeaveGuard = true;
-            notify.success(`Cotización ${updated.folio} actualizada`);
+            notify.success(`Presupuesto ${updated.folio} actualizado`);
             router.push({ name: "quotes.show", params: { id: quoteId.value } });
         } else {
             // Al detalle, no al listado: lo siguiente suele ser descargar o compartir el PDF.
             const created = await quotes.createQuote(payload);
             skipLeaveGuard = true;
-            notify.success(`Cotización ${created.folio} guardada`);
+            notify.success(`Presupuesto ${created.folio} guardado`);
             router.push({ name: "quotes.show", params: { id: created.id } });
         }
     } catch (err) {
@@ -463,7 +463,7 @@ const handleSubmit = async () => {
 
         console.error(err);
         generalError.value =
-            err.response?.data?.message || "No se pudo guardar la cotización. Intenta de nuevo.";
+            err.response?.data?.message || "No se pudo guardar el presupuesto. Intenta de nuevo.";
     } finally {
         submitting.value = false;
     }

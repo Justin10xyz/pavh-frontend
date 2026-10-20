@@ -71,7 +71,7 @@ const navLinks = [
     },
     { name: "Inventario", to: { name: "inventory" }, section: "inventory", icon: "ti-package" },
     {
-        name: "Cotizaciones",
+        name: "Presupuestos",
         to: { name: "quotes" },
         section: "quotes",
         icon: "ti-file-description",

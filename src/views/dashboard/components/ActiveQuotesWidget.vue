@@ -1,7 +1,7 @@
 <template>
     <section aria-labelledby="active-quotes-heading" :aria-busy="loading" class="bg-surface border border-border rounded-md">
         <div class="flex items-center justify-between px-5 py-3 border-b border-border">
-            <h2 id="active-quotes-heading" class="text-sm font-medium text-text">Cotizaciones activas</h2>
+            <h2 id="active-quotes-heading" class="text-sm font-medium text-text">Presupuestos activos</h2>
             <router-link
                 :to="{ name: 'quotes', query: { estado: 'Borrador' } }"
                 class="text-xs text-text-muted hover:text-text focus:outline-none focus-visible:underline transition-colors"
@@ -29,7 +29,7 @@
         </ul>
 
         <p v-else-if="quotes.length === 0" class="px-5 py-6 text-sm text-text-muted text-center">
-            No hay cotizaciones en borrador.
+            No hay presupuestos en borrador.
         </p>
         <ul v-else class="divide-y divide-border">
             <li v-for="quote in visibleQuotes" :key="quote.id">

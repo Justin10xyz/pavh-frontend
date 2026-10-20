@@ -75,7 +75,7 @@ function buildMessage(name, summary) {
     }
 
     const parts = []
-    if (summary.quotes_count > 0) parts.push(plural(summary.quotes_count, 'cotización', 'cotizaciones'))
+    if (summary.quotes_count > 0) parts.push(plural(summary.quotes_count, 'presupuesto', 'presupuestos'))
     if (summary.sales_count > 0) parts.push(plural(summary.sales_count, 'venta', 'ventas'))
 
     if (parts.length === 0) return question

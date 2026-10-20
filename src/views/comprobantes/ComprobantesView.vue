@@ -5,7 +5,7 @@
         <div class="mb-4">
             <h1 class="font-serif text-xl text-primary">Comprobantes</h1>
             <p class="text-sm text-text-muted mt-0.5">
-                Comprobantes fiscales simplificados generados desde cotizaciones pagadas.
+                Comprobantes fiscales simplificados generados desde presupuestos pagados.
             </p>
         </div>
 

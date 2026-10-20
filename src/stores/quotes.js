@@ -32,7 +32,7 @@ export const useQuotesStore = defineStore("quotes", () => {
             quotes.value = data.data;
             initialized.value = true;
         } catch (err) {
-            error.value = "No se pudieron cargar las cotizaciones.";
+            error.value = "No se pudieron cargar los presupuestos.";
             console.error(err);
         } finally {
             loading.value = false;
@@ -55,8 +55,8 @@ export const useQuotesStore = defineStore("quotes", () => {
         } catch (err) {
             currentQuoteError.value =
 				err.response?.status === 404
-				    ? "La cotización no existe."
-				    : "No se pudo cargar la cotización.";
+				    ? "El presupuesto no existe."
+				    : "No se pudo cargar el presupuesto.";
             console.error(err);
         } finally {
             currentQuoteLoading.value = false;

@@ -2,7 +2,7 @@
     <div class="p-2">
         <div class="mb-4">
             <h1 class="font-serif text-xl text-primary">Dashboard</h1>
-            <p class="text-sm text-text-muted mt-0.5">Resumen de ventas, inventario y cotizaciones.</p>
+            <p class="text-sm text-text-muted mt-0.5">Resumen de ventas, inventario y presupuestos.</p>
         </div>
 
         <SalesSummaryCards
