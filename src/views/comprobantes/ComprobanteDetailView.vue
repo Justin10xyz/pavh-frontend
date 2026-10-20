@@ -243,6 +243,13 @@ const {
     document: comprobante,
 });
 
+// Diálogo de fecha. String "YYYY-MM-DD" del input date. Antes del watch de
+// abajo: con `immediate` corre en setup y ya cierra el diálogo.
+const dateDialogVisible = ref(false);
+const dateForm = ref("");
+const dateError = ref("");
+const savingDate = ref(false);
+
 watch(
     () => route.params.id,
     (id) => {
@@ -259,12 +266,6 @@ const customerAddress = computed(() => {
     const cp = customer.postal_code ? `C.P. ${customer.postal_code}` : null;
     return [customer.address, customer.neighborhood, customer.city, cp].filter(Boolean).join(", ");
 });
-
-// Diálogo de fecha. String "YYYY-MM-DD" del input date.
-const dateDialogVisible = ref(false);
-const dateForm = ref("");
-const dateError = ref("");
-const savingDate = ref(false);
 
 function openDateDialog() {
     dateForm.value = comprobante.value.date;
