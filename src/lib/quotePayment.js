@@ -11,6 +11,23 @@ export function paymentTermsLabel(paymentTerms) {
     return PAYMENT_TERMS.find((option) => option.key === paymentTerms)?.label ?? 'Contado'
 }
 
+// Monto opcional tal como se envía: vacío → null, string decimal → número.
+function toAmount(value) {
+    return value === null || value === '' ? null : Number(value)
+}
+
+// Campos de pago del form tal como se envían; también entran a la foto de
+// cambios sin guardar. De contado el vencimiento va siempre en null.
+export function paymentPayload(form) {
+    return {
+        discount: toAmount(form.discount),
+        shipping_cost: toAmount(form.shipping_cost),
+        down_payment: toAmount(form.down_payment),
+        payment_terms: form.payment_terms,
+        credit_due_date: form.payment_terms === 'credit' ? form.credit_due_date || null : null,
+    }
+}
+
 function round2(value) {
     return Math.round(value * 100) / 100
 }
