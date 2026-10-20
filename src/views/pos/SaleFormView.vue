@@ -1,15 +1,15 @@
 <template>
     <div class="p-2 max-w-4xl">
         <div class="mb-4">
-            <h1 class="font-serif text-xl text-primary">{{ quoteId ? 'Convertir cotización a venta' : route.meta.title }}</h1>
+            <h1 class="font-serif text-xl text-primary">{{ quoteId ? 'Convertir presupuesto a venta' : route.meta.title }}</h1>
             <p v-if="quoteId" class="text-sm text-text-muted mt-0.5">
-                Revisa y ajusta los datos prellenados desde la
-                <router-link :to="{ name: 'quotes.show', params: { id: quoteId } }" class="text-accent hover:underline">cotización de origen</router-link>.
+                Revisa y ajusta los datos prellenados desde el
+                <router-link :to="{ name: 'quotes.show', params: { id: quoteId } }" class="text-accent hover:underline">presupuesto de origen</router-link>.
             </p>
             <p v-else class="text-sm text-text-muted mt-0.5">Selecciona los productos, captura cantidades y ajusta el precio de venta si aplica.</p>
         </div>
 
-        <div v-if="loadingConversion" class="text-text-muted text-sm">Cargando cotización…</div>
+        <div v-if="loadingConversion" class="text-text-muted text-sm">Cargando presupuesto…</div>
 
         <!-- Error bloqueante de /convert (cotización ya convertida, o variantes que
 		     ya no están en inventario): aquí sí
@@ -25,7 +25,7 @@
                 :to="{ name: 'quotes.show', params: { id: quoteId } }"
                 class="inline-flex items-center bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none"
             >
-                Volver a la cotización
+                Volver al presupuesto
             </router-link>
         </div>
 
@@ -172,6 +172,7 @@ import { formatCurrency } from '@/lib/formatCurrency'
 import { useLineProducts } from '@/composables/useLineProducts'
 import * as documentLines from '@/lib/documentLines'
 import { hasProduct, lineItemPayload, serializeLines } from '@/lib/documentLines'
+import { statusLabel } from '@/lib/quoteStatus'
 import {
     findVariant,
     missingProductsMessage,
@@ -276,8 +277,8 @@ async function loadConversion() {
         // 422 de QuoteController@convert (cotización ya convertida, o variantes
         // dadas de baja): el mensaje ya viene listo y se muestra tal cual.
         conversionError.value = err.response?.status === 404
-            ? 'La cotización no existe.'
-            : err.response?.data?.message || 'No se pudo cargar la cotización.'
+            ? 'El presupuesto no existe.'
+            : err.response?.data?.message || 'No se pudo cargar el presupuesto.'
     } finally {
         loadingConversion.value = false
     }
@@ -519,7 +520,7 @@ const handleSubmit = async () => {
         skipLeaveGuard = true
         notify.success(
             `Venta ${sale.folio} registrada`,
-            quoteId.value ? 'La cotización quedó como Convertida.' : undefined,
+            quoteId.value ? `El presupuesto quedó en estado ${statusLabel('Convertida')}.` : undefined,
         )
         router.push({ name: 'pos.sales.show', params: { id: sale.id } })
     } catch (err) {

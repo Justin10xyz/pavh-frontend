@@ -32,7 +32,7 @@ export const useQuotesStore = defineStore("quotes", () => {
             quotes.value = data.data;
             initialized.value = true;
         } catch (err) {
-            error.value = "No se pudieron cargar las cotizaciones.";
+            error.value = "No se pudieron cargar los presupuestos.";
             console.error(err);
         } finally {
             loading.value = false;
@@ -55,8 +55,8 @@ export const useQuotesStore = defineStore("quotes", () => {
         } catch (err) {
             currentQuoteError.value =
 				err.response?.status === 404
-				    ? "La cotización no existe."
-				    : "No se pudo cargar la cotización.";
+				    ? "El presupuesto no existe."
+				    : "No se pudo cargar el presupuesto.";
             console.error(err);
         } finally {
             currentQuoteLoading.value = false;
@@ -115,6 +115,33 @@ export const useQuotesStore = defineStore("quotes", () => {
         }
     }
 
+    // PATCH /api/quotes/{id}/mark-paid (sin payload) descuenta stock y llena
+    // paid_at/paid_by; responde 422 si no es pagable. Solo se copian esos dos
+    // campos in-place, mismo criterio que markQuoteConverted(): el status no
+    // cambia y la respuesta no eager-loadea items.productVariant.product.
+    async function markQuotePaid(id) {
+        const { data } = await axios.patch(`/api/quotes/${id}/mark-paid`);
+        const paid = { paid_at: data.data.paid_at, paid_by: data.data.paid_by };
+
+        const quote = quotes.value.find((q) => String(q.id) === String(id));
+        if (quote) Object.assign(quote, paid);
+
+        if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+            Object.assign(currentQuote.value, paid);
+        }
+
+        return data.data;
+    }
+
+    // La conversión ocurre en POST /api/comprobantes (ComprobanteFormView), cuya
+    // respuesta es el comprobante, no la cotización. Solo el detalle expone
+    // `comprobante` (id+folio, vía whenLoaded en show), así que el listado no se toca.
+    function markQuoteComprobante(id, comprobante) {
+        if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+            currentQuote.value.comprobante = comprobante;
+        }
+    }
+
     async function fetchQuotePdf(id) {
         const response = await axios.get(`/api/quotes/${id}/pdf`, { responseType: "blob" });
         return response.data;
@@ -131,6 +158,8 @@ export const useQuotesStore = defineStore("quotes", () => {
         updateQuote,
         cancelQuote,
         markQuoteConverted,
+        markQuotePaid,
+        markQuoteComprobante,
         currentQuote,
         currentQuoteLoading,
         currentQuoteError,

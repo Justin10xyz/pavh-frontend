@@ -21,7 +21,7 @@
 <script setup>
 const shortcuts = [
     { route: 'pos.sales.create', label: 'Nueva venta', icon: 'ti-shopping-cart' },
-    { route: 'quotes.create', label: 'Nueva cotización', icon: 'ti-file-text' },
+    { route: 'quotes.create', label: 'Nuevo presupuesto', icon: 'ti-file-text' },
     { route: 'inventory', label: 'Inventario', icon: 'ti-package' },
 ]
 </script>

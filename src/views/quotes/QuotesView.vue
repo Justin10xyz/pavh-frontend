@@ -1,16 +1,16 @@
 <template>
     <div class="p-2">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h1 class="font-serif text-xl text-primary">Cotizaciones</h1>
+            <h1 class="font-serif text-xl text-primary">Presupuestos</h1>
             <RouterLink
                 :to="{ name: 'quotes.create' }"
                 class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center select-none"
             >
-                Nueva cotización
+                Nuevo presupuesto
             </RouterLink>
         </div>
 
-        <div v-if="quotes.loading" class="text-text-muted text-sm">Cargando cotizaciones…</div>
+        <div v-if="quotes.loading" class="text-text-muted text-sm">Cargando presupuestos…</div>
         <div v-else-if="quotes.error" class="text-danger text-sm">{{ quotes.error }}</div>
 
         <template v-else>
@@ -48,8 +48,8 @@
             >
                 {{
                     quotes.quotes.length === 0
-                        ? "Aún no hay cotizaciones registradas."
-                        : "No se encontraron cotizaciones con esos filtros."
+                        ? "Aún no hay presupuestos registrados."
+                        : "No se encontraron presupuestos con esos filtros."
                 }}
             </div>
 
@@ -100,8 +100,17 @@
                                 class="text-xs px-2 py-0.5 rounded whitespace-nowrap"
                                 :class="statusClasses(data.status)"
                             >
-                                {{ data.status }}
+                                {{ statusLabel(data.status) }}
                             </span>
+                        </template>
+                    </Column>
+
+                    <!-- Pago independiente del status (un pagado sigue en Borrador).
+					     Columna angosta: solo el badge o un guion. -->
+                    <Column header="Pagado" body-class="w-px whitespace-nowrap">
+                        <template #body="{ data }">
+                            <QuotePaidBadge v-if="data.paid_at" />
+                            <span v-else class="text-text-muted">—</span>
                         </template>
                     </Column>
 
@@ -122,8 +131,8 @@
                             <RouterLink
                                 :to="{ name: 'quotes.show', params: { id: data.id } }"
                                 class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-                                aria-label="Ver cotización"
-                                title="Ver cotización"
+                                aria-label="Ver presupuesto"
+                                title="Ver presupuesto"
                             >
                                 <i class="ti ti-eye text-base"></i>
                             </RouterLink>
@@ -141,7 +150,8 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { useQuotesStore } from "@/stores/quotes";
 import { useRoute, useRouter } from "vue-router";
-import { QUOTE_STATUSES, statusClasses } from "@/lib/quoteStatus";
+import { QUOTE_STATUSES, statusClasses, statusLabel } from "@/lib/quoteStatus";
+import QuotePaidBadge from "@/views/quotes/components/QuotePaidBadge.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import QuickFilter from "@/components/widgets/filters/QuickFilter.vue";
@@ -194,11 +204,12 @@ watch(
     { immediate: true },
 );
 
+// `key` es el valor real (filtro y ?estado=); `label` solo el texto visible.
 const statusOptions = computed(() => [
-    { key: "all", label: "Todas", count: quotes.quotes.length },
+    { key: "all", label: "Todos", count: quotes.quotes.length },
     ...QUOTE_STATUSES.map((status) => ({
         key: status,
-        label: status,
+        label: statusLabel(status),
         count: quotes.quotes.filter((quote) => quote.status === status).length,
     })),
 ]);

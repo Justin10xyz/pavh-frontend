@@ -27,3 +27,16 @@ export function formatDate(value) {
 export function formatDateTime(value) {
     return value ? dateTimeFormatter.format(new Date(value)) : '—'
 }
+
+// Fecha sin hora ("YYYY-MM-DD", ej. credit_due_date). Se formatea en UTC: con
+// APP_TIMEZONE, new Date("2026-10-20") (medianoche UTC) caería el día anterior.
+const dateOnlyFormatter = new Intl.DateTimeFormat('es-MX', {
+    timeZone: 'UTC',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+})
+
+export function formatDateOnly(value) {
+    return value ? dateOnlyFormatter.format(new Date(value)) : '—'
+}

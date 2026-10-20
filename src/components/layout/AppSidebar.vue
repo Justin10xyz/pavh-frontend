@@ -71,10 +71,16 @@ const navLinks = [
     },
     { name: "Inventario", to: { name: "inventory" }, section: "inventory", icon: "ti-package" },
     {
-        name: "Cotizaciones",
+        name: "Presupuestos",
         to: { name: "quotes" },
         section: "quotes",
         icon: "ti-file-description",
+    },
+    {
+        name: "Comprobantes",
+        to: { name: "comprobantes.index" },
+        section: "comprobantes",
+        icon: "ti-receipt",
     },
     { name: "Punto de venta", to: { name: "pos" }, section: "pos", icon: "ti-shopping-cart" },
     { name: "Clientes", to: { name: "customers" }, section: "customers", icon: "ti-users" },

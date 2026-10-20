@@ -1,15 +1,18 @@
 import { nextTick } from "vue";
 
-// Captura sin mouse en los formularios de producto: Enter avanza al siguiente
+// Captura sin mouse en los formularios de producto y de cotización: Enter avanza al siguiente
 // campo (como Tab, pero sin pasar por botones) en vez de enviar el form. Los
 // handlers van en el <form>: `@keydown.capture="advanceSelectOnEnter"` y
 // `@keydown="advanceOnEnter"`.
 
 // Inputs de texto/número y el elemento enfocable de los Select de PrimeVue
 // (`role="combobox"`). Los ocultos con v-if no están en el DOM; los ocultos con
-// v-show (ej. una medida colapsada en el acordeón) se descartan al buscar.
+// v-show (ej. una medida colapsada en el acordeón) se descartan al buscar. De
+// un grupo de radios solo cuenta el marcado, igual que con Tab (ej. Forma de
+// pago en QuoteFormView): enfocar otro radio no lo selecciona.
 const FIELD_SELECTOR = [
-    'input:not([type="hidden"]):not([type="checkbox"]):not(:disabled)',
+    'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(:disabled)',
+    'input[type="radio"]:checked:not(:disabled)',
     '[role="combobox"]:not([aria-disabled="true"])',
 ].join(", ");
 
@@ -27,7 +30,7 @@ function focusNextField(form, current) {
     if (!next) return;
     next.focus();
     // Igual que DocumentLinesTable: el valor queda seleccionado para sobrescribirlo.
-    if (next instanceof HTMLInputElement) next.select();
+    if (next instanceof HTMLInputElement && next.type !== "radio") next.select();
 }
 
 // Fase de captura, antes que el Select: con la lista cerrada, Enter avanza en

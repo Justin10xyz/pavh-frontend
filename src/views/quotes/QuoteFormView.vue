@@ -3,11 +3,11 @@
         <div class="mb-4">
             <h1 class="font-serif text-xl text-primary">{{ route.meta.title }}</h1>
             <p class="text-sm text-text-muted mt-0.5">
-                Selecciona los productos y captura las cantidades de la cotización.
+                Selecciona los productos y captura las cantidades del presupuesto.
             </p>
         </div>
 
-        <div v-if="loadingQuote" class="text-text-muted text-sm">Cargando cotización…</div>
+        <div v-if="loadingQuote" class="text-text-muted text-sm">Cargando presupuesto…</div>
 
         <p
             v-if="loadError"
@@ -29,7 +29,17 @@
             {{ loadError }}
         </p>
 
-        <form v-if="!loadingQuote && !loadError" @submit.prevent="handleSubmit" class="space-y-4">
+        <!-- Captura con teclado (ver lib/formKeyboard.js): Enter avanza de campo
+		     en vez de enviar a medio capturar. Solo la fase de burbuja: aquí no hay
+		     SelectCustom, y la de captura le ganaría el Enter a CustomerSearch y
+		     ProductAutocomplete (también role="combobox"), que ya lo resuelven solos. -->
+        <form
+            v-if="!loadingQuote && !loadError"
+            ref="formRef"
+            @submit.prevent="handleSubmit"
+            @keydown="advanceOnEnter"
+            class="space-y-4"
+        >
             <!-- Sección 1 — Datos generales -->
             <div class="bg-surface border border-border rounded-md p-5 sm:p-6">
                 <h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">
@@ -48,7 +58,7 @@
                             id="notes"
                             v-model="form.notes"
                             rows="3"
-                            placeholder="Notas adicionales para esta cotización (opcional)"
+                            placeholder="Notas adicionales para este presupuesto (opcional)"
                         />
                     </div>
                 </div>
@@ -63,32 +73,11 @@
                 <DocumentLinesTable
                     v-model:lines="lines"
                     :submit-attempted="submitAttempted"
-                    action="cotizar"
+                    action="agregar al presupuesto"
                     :line-subtotal="lineSubtotal"
                 >
-                    <!-- Precio de lista, informativo: en cotización no se edita -->
                     <template #price="{ row }">
-                        <div class="space-y-1.5 sm:space-y-0">
-                            <span class="text-xs font-medium text-text-muted block sm:sr-only">
-                                {{
-                                    row.variant
-                                        ? `Precio unitario (${isPieceLine(row) ? "pieza" : "m²"})`
-                                        : "Precio unitario"
-                                }}
-                            </span>
-                            <p v-if="boxPrice(row) !== null" class="sm:h-8.5 text-sm mt-2 tabular-nums">
-                                {{ formatCurrency(boxPrice(row)) }}/caja
-                            </p>
-                            <p class="flex items-center text-xs text-text-muted tabular-nums">
-                                {{
-                                    !row.variant
-                                        ? formatCurrency(simpleProductListPrice(row))
-                                        : isPieceLine(row)
-                                            ? `${formatCurrency(row.variant.price_per_box)}/pieza`
-                                            : `${formatCurrency(row.variant.price_per_m2)}/m²`
-                                }}
-                            </p>
-                        </div>
+                        <QuoteLinePrice :row="row" />
                     </template>
 
                     <template #stock-alert="{ row }">
@@ -101,20 +90,16 @@
                         </p>
                     </template>
                 </DocumentLinesTable>
-
-                <div class="flex justify-end mt-5 pt-4 border-t border-border">
-                    <div class="w-full sm:w-64 space-y-1.5">
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-text-muted">Subtotal</span>
-                            <span class="text-text">{{ formatCurrency(subtotal) }}</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm font-medium">
-                            <span class="text-text">Total</span>
-                            <span class="text-text">{{ formatCurrency(total) }}</span>
-                        </div>
-                    </div>
-                </div>
             </div>
+
+            <!-- Sección 3 — Pago y totales -->
+            <QuotePaymentSection
+                v-model:form="form"
+                v-model:errors="errors"
+                :subtotal="subtotal"
+                :totals="totals"
+                :wholesale-count="wholesaleCount"
+            />
 
             <!-- Junto a las acciones (no arriba del form): con varias líneas, el inicio
 			     del form queda fuera de vista al presionar Guardar. -->
@@ -141,19 +126,21 @@
 
             <!-- Acciones -->
             <div class="flex items-center justify-end gap-3">
+                <SaveShortcutHint :modifier-label="modifierLabel" class="mr-auto" />
                 <button
                     type="button"
                     @click="handleCancel"
-                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
+                    :aria-keyshortcuts="ariaKeyshortcuts"
                     :disabled="submitting"
-                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                    class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                 >
-                    {{ submitting ? "Guardando…" : "Guardar cotización" }}
+                    {{ submitting ? "Guardando…" : "Guardar presupuesto" }}
                 </button>
             </div>
         </form>
@@ -186,7 +173,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import ConfirmDialog from "primevue/confirmdialog";
 import { useConfirm } from "primevue/useconfirm";
@@ -198,7 +185,13 @@ import CustomerSearch from "@/components/widgets/autocompletes/CustomerSearch.vu
 import DocumentLinesTable from "@/components/widgets/tables/DocumentLinesTable.vue";
 import TextareaCustom from "@/components/widgets/TextareaCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
-import { formatCurrency } from "@/lib/formatCurrency";
+import QuoteLinePrice from "@/views/quotes/components/QuoteLinePrice.vue";
+import QuotePaymentSection from "@/views/quotes/components/QuotePaymentSection.vue";
+import { discountExceedsSubtotal, paymentPayload, quoteTotals } from "@/lib/quotePayment";
+import { quoteItemToLine } from "@/lib/quoteForm";
+import { advanceOnEnter, focusFirstInvalidField } from "@/lib/formKeyboard";
+import { useSaveShortcut } from "@/composables/useSaveShortcut";
+import SaveShortcutHint from "@/components/widgets/labels/SaveShortcutHint.vue";
 import * as documentLines from "@/lib/documentLines";
 import { createEmptyLine, hasProduct, lineItemPayload, serializeLines } from "@/lib/documentLines";
 import { useNotify } from "@/composables/useNotify";
@@ -242,7 +235,7 @@ async function loadQuote() {
 
     const quote = quotes.currentQuote;
     if (quotes.currentQuoteError || !quote || String(quote.id) !== String(quoteId.value)) {
-        loadError.value = quotes.currentQuoteError || "No se pudo cargar la cotización.";
+        loadError.value = quotes.currentQuoteError || "No se pudo cargar el presupuesto.";
         return;
     }
 
@@ -255,25 +248,14 @@ async function loadQuote() {
 
     form.customer_id = quote.customer_id ?? "";
     form.notes = quote.notes ?? "";
+    // Los montos llegan como string decimal ("150.00"); InputNumberCustom los acepta así.
+    form.discount = quote.discount;
+    form.shipping_cost = quote.shipping_cost;
+    form.down_payment = quote.down_payment;
+    form.payment_terms = quote.payment_terms ?? "cash";
+    form.credit_due_date = quote.credit_due_date ?? "";
 
-    // Se mapea product.name → lineName para que la variante tenga la misma
-    // forma que las que emite ProductAutocomplete y el template no distinga entre modos.
-    // Cada item trae variante O producto simple (arco exclusivo del backend).
-    const loadedLines = (quote.items ?? []).map((item) => ({
-        ...createEmptyLine(),
-        variant: item.product_variant
-            ? {
-                ...item.product_variant,
-                type: "variant",
-                lineName: item.product_variant.product?.name,
-            }
-            : null,
-        simpleProduct: item.simple_product ? { ...item.simple_product, type: "simple" } : null,
-        // Variante: sus cajas (null en líneas previas al cambio a cajas sin
-        // m2_per_box; se piden al guardar). Los m² requeridos no se guardan.
-        quantity: item.product_variant_id ? item.boxes : Number(item.quantity),
-        priceType: item.price_type ?? "retail",
-    }));
+    const loadedLines = (quote.items ?? []).map(quoteItemToLine);
     lines.value = loadedLines.length > 0 ? loadedLines : [createEmptyLine()];
     savedSnapshot.value = serializeForm();
 }
@@ -281,7 +263,35 @@ async function loadQuote() {
 const form = reactive({
     customer_id: "",
     notes: "",
+    // Montos opcionales: null = no aplica (el backend los trata como 0).
+    discount: null,
+    shipping_cost: null,
+    down_payment: null,
+    payment_terms: "cash",
+    // String "YYYY-MM-DD" del input date; "" = sin fecha.
+    credit_due_date: "",
 });
+
+// Errores de los campos de pago (validación local de la fecha y 422 del backend).
+const errors = reactive({
+    discount: "",
+    shipping_cost: "",
+    down_payment: "",
+    payment_terms: "",
+    credit_due_date: "",
+});
+
+// De contado no hay vencimiento: se limpia aquí para no enviarlo (el backend
+// también lo limpia, pero no se depende solo de eso).
+watch(
+    () => form.payment_terms,
+    (terms) => {
+        if (terms === "cash") {
+            form.credit_due_date = "";
+            errors.credit_due_date = "";
+        }
+    },
+);
 
 const lines = ref([createEmptyLine()]);
 
@@ -292,6 +302,7 @@ function serializeForm() {
     return JSON.stringify({
         customer_id: form.customer_id || null,
         notes: form.notes || null,
+        ...paymentPayload(form),
         lines: serializeLines(lines.value),
     });
 }
@@ -307,7 +318,7 @@ onBeforeRouteLeave(() => {
     return new Promise((resolve) => {
         confirm.require({
             header: "Descartar cambios",
-            message: "Hay cambios sin guardar en esta cotización. Si sales ahora, se perderán.",
+            message: "Hay cambios sin guardar en este presupuesto. Si sales ahora, se perderán.",
             accept: () => resolve(true),
             reject: () => resolve(false),
             onHide: () => resolve(false),
@@ -340,20 +351,9 @@ function hasInsufficientStock(row) {
 // valida hasta convertirla en venta).
 function stockWarning(row) {
     return documentLines.stockShortageMessage(row, lineStock(row), isPieceLine(row), {
-        verb: "cotizan",
+        verb: "incluyen",
         consequence: "Consultar disponibilidad sobre pedido.",
     });
-}
-
-// En cotización el precio no se edita: todo se calcula al precio de lista (en
-// productos simples, el del tipo elegido; el backend lo resuelve igual).
-function simpleProductListPrice(row) {
-    return documentLines.simpleProductPrice(simpleProductFor(row), linePriceType(row));
-}
-
-// En cotización el precio no se edita: todo se calcula al precio de lista.
-function boxPrice(row) {
-    return documentLines.boxPrice(row, isPieceLine(row), row.variant?.price_per_m2);
 }
 
 function lineSubtotal(row) {
@@ -364,10 +364,27 @@ function lineSubtotal(row) {
 }
 
 const subtotal = computed(() => lines.value.reduce((sum, row) => sum + lineSubtotal(row), 0));
-const total = computed(() => subtotal.value); // sin impuestos por ahora, igual que el backend
+// Sin impuestos por ahora, igual que el backend.
+const totals = computed(() =>
+    quoteTotals({
+        subtotal: subtotal.value,
+        discount: form.discount,
+        shippingCost: form.shipping_cost,
+        downPayment: form.down_payment,
+    }),
+);
+
+// Líneas de producto simple a precio de mayoreo: el PDF ya no lo anota, así que
+// el resumen de totales lo recuerda junto al subtotal.
+const wholesaleCount = computed(
+    () => lines.value.filter((row) => row.simpleProduct && linePriceType(row) === "wholesale").length,
+);
 
 const submitting = ref(false);
 const generalError = ref(null);
+
+const formRef = ref(null);
+const { modifierLabel, ariaKeyshortcuts } = useSaveShortcut(formRef, () => !submitting.value);
 // Fallo de fetchQuote en modo edición: oculta el form (no se debe poder
 // enviar uno vacío sobre una cotización que no cargó). generalError queda
 // solo para errores de submit, que no desmontan el form.
@@ -383,11 +400,13 @@ function quantityError(row) {
 }
 
 function boxConversionError(row) {
-    return documentLines.boxConversionError(row, isPieceLine(row), "cotizar");
+    return documentLines.boxConversionError(row, isPieceLine(row), "agregar al presupuesto");
 }
 
 const handleSubmit = async () => {
     generalError.value = null;
+    // Un 422 anterior (ej. descuento) pudo dejar de aplicar al cambiar las líneas.
+    for (const field of Object.keys(errors)) errors[field] = "";
     submitAttempted.value = true;
 
     // Una línea con producto pero sin cantidad bloquea el guardado (antes se
@@ -410,35 +429,71 @@ const handleSubmit = async () => {
         return;
     }
 
+    // Con crédito el backend exige el vencimiento (required_if).
+    if (form.payment_terms === "credit" && !form.credit_due_date) {
+        errors.credit_due_date = "Este campo es requerido";
+        focusFirstInvalidField(formRef.value);
+        return;
+    }
+
     submitting.value = true;
 
     try {
         const payload = {
             customer_id: form.customer_id || null,
             notes: form.notes || null,
+            ...paymentPayload(form),
             items: validLines.map((l) => lineItemPayload(l, linePriceType(l))),
         };
 
         if (isEdit.value) {
             const updated = await quotes.updateQuote(quoteId.value, payload);
             skipLeaveGuard = true;
-            notify.success(`Cotización ${updated.folio} actualizada`);
+            notify.success(`Presupuesto ${updated.folio} actualizado`);
             router.push({ name: "quotes.show", params: { id: quoteId.value } });
         } else {
             // Al detalle, no al listado: lo siguiente suele ser descargar o compartir el PDF.
             const created = await quotes.createQuote(payload);
             skipLeaveGuard = true;
-            notify.success(`Cotización ${created.folio} guardada`);
+            notify.success(`Presupuesto ${created.folio} guardado`);
             router.push({ name: "quotes.show", params: { id: created.id } });
         }
     } catch (err) {
+        if (err.response?.status === 422 && applyServerErrors(err.response.data)) return;
+
         console.error(err);
         generalError.value =
-            err.response?.data?.message || "No se pudo guardar la cotización. Intenta de nuevo.";
+            err.response?.data?.message || "No se pudo guardar el presupuesto. Intenta de nuevo.";
     } finally {
         submitting.value = false;
     }
 };
+
+// Lleva al campo los errores 422 que corresponden a uno de pago. Devuelve true
+// si todos quedaron bajo su campo; si no, el `message` va al error general
+// (ej. errores de líneas, que no tienen campo propio aquí).
+function applyServerErrors(data) {
+    const serverErrors = data.errors ?? {};
+    const fields = Object.keys(serverErrors);
+
+    // El descuento mayor que el subtotal es un 422 de negocio sin `errors`
+    // (guard del controlador): con el mismo cálculo local se sabe que es suyo.
+    if (fields.length === 0) {
+        if (!discountExceedsSubtotal(subtotal.value, form.discount)) return false;
+        errors.discount = data.message;
+        focusFirstInvalidField(formRef.value);
+        return true;
+    }
+
+    for (const field of fields) {
+        if (field in errors) errors[field] = serverErrors[field][0];
+    }
+
+    // Primero en pantalla (aria-invalid), no primero en el objeto de errores.
+    if (fields.some((field) => field in errors)) focusFirstInvalidField(formRef.value);
+
+    return fields.every((field) => field in errors);
+}
 
 function handleCancel() {
     if (isEdit.value) router.push({ name: "quotes.show", params: { id: quoteId.value } });
