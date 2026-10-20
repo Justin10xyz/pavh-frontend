@@ -486,6 +486,14 @@ El cliente renombró la marca visible de "PAVH" a **INNOVA** (logo: casita con m
 - ~~Cancelación de cotización~~ ✅ — `PATCH /api/quotes/{id}/cancel` + botón con confirmación en el detalle
 - ~~Bug: cualquier error de submit en `QuoteFormView.vue` ocultaba todo el formulario~~ ✅ — separado en `loadError` (oculta el form) y `generalError` (solo submit)
 - ~~Bug: el listado cacheado no reflejaba "Convertida" tras convertir~~ ✅ — `quotes.markQuoteConverted()` desde `SaleFormView.vue`
+- **Presupuesto → Comprobante Fiscal Simplificado** (rediseño grande en curso, ver `claude/PLAN-COMPROBANTE-FISCAL.md` y `claude/GUIA-TECNICA-COMPROBANTE-FISCAL.md`):
+  backend y PDF de ambos documentos completos (Presupuesto rediseñado 2026-10-20
+  para hacer juego visual con el Comprobante). Falta un ajuste backend ya decidido
+  (`Quote::total` incluirá `shipping_cost`) y todo el frontend (formulario de
+  Presupuesto, marcar como pagado, conversión a Comprobante, listado/detalle,
+  Configuración). La reescritura completa de esta sección del módulo se difiere
+  hasta que el frontend también cierre, mismo criterio que el pase de UX/UI
+  transversal.
 
 **Clientes:**
 

@@ -17,4 +17,10 @@ export default [
         component: () => import('@/views/settings/SuppliersSettingsView.vue'),
         meta: { layout: 'AppLayout', section: 'settings', title: 'Proveedores', requiresAuth: true },
     },
+    {
+        path: '/configuracion/datos-negocio',
+        name: 'settings.businessSettings',
+        component: () => import('@/views/settings/BusinessSettingsView.vue'),
+        meta: { layout: 'AppLayout', section: 'settings', title: 'Datos del negocio', requiresAuth: true },
+    },
 ]
