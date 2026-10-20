@@ -27,15 +27,27 @@
             {{ businessSettings.error }}
         </p>
 
-        <form v-else @submit.prevent="handleSubmit" class="space-y-4">
+        <!-- Captura con teclado: mismo esquema que ProductFormView (ver lib/formKeyboard.js).
+		     `novalidate`: el backend no valida formato de correo, así que el navegador
+		     tampoco debe bloquear el envío con su globo nativo (mismo criterio que Login). -->
+        <form
+            v-else
+            ref="formRef"
+            novalidate
+            @submit.prevent="handleSubmit"
+            @keydown.capture="advanceSelectOnEnter"
+            @keydown="advanceOnEnter"
+            class="space-y-4"
+        >
             <!-- Una sola card con tres secciones: es un solo registro. -->
             <div class="bg-surface border border-border rounded-md p-5 sm:p-6 divide-y divide-border">
                 <section
                     v-for="section in sections"
-                    :key="section.title"
+                    :key="section.id"
+                    :aria-labelledby="`section-${section.id}`"
                     class="py-5 first:pt-0 last:pb-0"
                 >
-                    <h2 class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">{{ section.title }}</h2>
+                    <h2 :id="`section-${section.id}`" class="text-xs font-medium uppercase tracking-wide text-text-muted mb-4">{{ section.title }}</h2>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div
@@ -82,8 +94,10 @@
             <!-- Acciones. Todos los campos son opcionales: el botón solo se
 			     deshabilita mientras guarda. -->
             <div class="flex items-center justify-end gap-3">
+                <SaveShortcutHint :modifier-label="modifierLabel" class="mr-auto" />
                 <button
                     type="submit"
+                    :aria-keyshortcuts="ariaKeyshortcuts"
                     :disabled="submitting"
                     class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
                 >
@@ -121,7 +135,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
@@ -129,6 +143,9 @@ import { useBusinessSettingsStore } from '@/stores/businessSettings'
 import { useNotify } from '@/composables/useNotify'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 import FieldLabel from '@/components/widgets/labels/FieldLabel.vue'
+import SaveShortcutHint from '@/components/widgets/labels/SaveShortcutHint.vue'
+import { advanceOnEnter, advanceSelectOnEnter, focusFirstInvalidField } from '@/lib/formKeyboard'
+import { useSaveShortcut } from '@/composables/useSaveShortcut'
 
 const route = useRoute()
 const businessSettings = useBusinessSettingsStore()
@@ -139,6 +156,7 @@ const confirm = useConfirm()
 // ningún FieldLabel lleva `required` y no hay validación local.
 const sections = [
     {
+        id: 'fiscal',
         title: 'Datos fiscales',
         fields: [
             { key: 'place_of_issue', label: 'Lugar de expedición', placeholder: 'Ej. Monterrey, N.L.' },
@@ -148,6 +166,7 @@ const sections = [
         ],
     },
     {
+        id: 'address',
         title: 'Domicilio',
         fields: [
             { key: 'address', label: 'Domicilio', placeholder: 'Ej. Av. Constitución 1234', icon: 'ti-map-pin', wide: true },
@@ -157,6 +176,7 @@ const sections = [
         ],
     },
     {
+        id: 'contact',
         title: 'Contacto',
         fields: [
             { key: 'phone_primary', label: 'Teléfono principal', placeholder: 'Ej. 81 1234 5678', icon: 'ti-phone', type: 'tel' },
@@ -213,13 +233,23 @@ function handleBeforeUnload(event) {
 window.addEventListener('beforeunload', handleBeforeUnload)
 onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
 
+const formRef = ref(null)
+
+const { modifierLabel, ariaKeyshortcuts } = useSaveShortcut(formRef, () => !submitting.value)
+
 onMounted(loadSettings)
 
 async function loadSettings() {
     await businessSettings.fetchBusinessSettings()
     loading.value = false
 
-    if (businessSettings.settings) fillForm(businessSettings.settings)
+    if (!businessSettings.settings) return
+    fillForm(businessSettings.settings)
+
+    // La pantalla solo sirve para capturar estos datos: se puede empezar sin
+    // hacer clic. Espera al render, el form aparece al terminar la carga.
+    await nextTick()
+    document.getElementById(fieldKeys[0])?.focus()
 }
 
 function fillForm(settings) {
@@ -227,12 +257,17 @@ function fillForm(settings) {
     savedSnapshot.value = serializeForm()
 }
 
+// Devuelve si algún error quedó bajo su campo; si no (422 solo con `message`,
+// o con campos que este form no tiene), quien llama muestra el error general.
 function applyServerErrors(serverErrors) {
+    let applied = false
     for (const field of Object.keys(serverErrors)) {
         if (field in errors) {
             errors[field] = serverErrors[field][0]
+            applied = true
         }
     }
+    return applied
 }
 
 async function handleSubmit() {
@@ -247,8 +282,8 @@ async function handleSubmit() {
         fillForm(settings)
         notify.success('Datos del negocio guardados')
     } catch (err) {
-        if (err.response?.status === 422) {
-            applyServerErrors(err.response.data.errors ?? {})
+        if (err.response?.status === 422 && applyServerErrors(err.response.data.errors ?? {})) {
+            focusFirstInvalidField(formRef.value)
         } else {
             console.error(err)
             generalError.value = err.response?.data?.message || 'No se pudieron guardar los datos del negocio. Intenta de nuevo.'
