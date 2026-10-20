@@ -164,7 +164,7 @@
                             <Column header="Status">
                                 <template #body="{ data }">
                                     <span class="text-xs px-2 py-0.5 rounded" :class="statusClasses(data.status)">
-                                        {{ data.status }}
+                                        {{ statusLabel(data.status) }}
                                     </span>
                                 </template>
                             </Column>
@@ -271,7 +271,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import axios from '@/lib/axios'
 import { useCustomersStore } from '@/stores/customers'
 import { useCustomerDelete } from '@/composables/useCustomerDelete'
-import { statusClasses } from '@/lib/quoteStatus'
+import { statusClasses, statusLabel } from '@/lib/quoteStatus'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatDate, formatDateTime } from '@/lib/dates'
 

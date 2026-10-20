@@ -37,22 +37,15 @@
                                 class="text-xs px-2 py-0.5 rounded"
                                 :class="statusClasses(quote.status)"
                             >
-                                {{ quote.status }}
+                                {{ statusLabel(quote.status) }}
                             </span>
-                            <!-- Independiente del status: una cotización pagada sigue en Borrador. -->
-                            <span
-                                v-if="quote.paid_at"
-                                class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border bg-sky-100 border-sky-200 text-sky-700 font-semibold"
-                            >
-                                <i class="ti ti-check text-sm leading-none" aria-hidden="true"></i>
-                                Pagado
-                            </span>
+                            <QuotePaidBadge v-if="quote.paid_at" />
                         </div>
                         <p class="text-sm text-text-muted mt-0.5">
-                            Creada el {{ formatDateTime(quote.created_at) }}
+                            Creado el {{ formatDateTime(quote.created_at) }}
                         </p>
                         <p v-if="quote.paid_at" class="text-sm text-text-muted">
-                            Pagada el {{ formatDateTime(quote.paid_at) }}
+                            Pagado el {{ formatDateTime(quote.paid_at) }}
                         </p>
                     </div>
                 </div>
@@ -317,7 +310,8 @@ import { useInventoryStore } from "@/stores/inventory";
 import { useSimpleProductsStore } from "@/stores/simpleProducts";
 import { simpleProductStockAfterSale, variantStockAfterSale } from "@/lib/saleForm";
 import DocumentItemsTable from "@/components/widgets/tables/DocumentItemsTable.vue";
-import { statusClasses } from "@/lib/quoteStatus";
+import { statusClasses, statusLabel } from "@/lib/quoteStatus";
+import QuotePaidBadge from "@/views/quotes/components/QuotePaidBadge.vue";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
 import { useNotify } from "@/composables/useNotify";
 import { formatCurrency } from "@/lib/formatCurrency";

@@ -100,8 +100,17 @@
                                 class="text-xs px-2 py-0.5 rounded whitespace-nowrap"
                                 :class="statusClasses(data.status)"
                             >
-                                {{ data.status }}
+                                {{ statusLabel(data.status) }}
                             </span>
+                        </template>
+                    </Column>
+
+                    <!-- Pago independiente del status (un pagado sigue en Borrador).
+					     Columna angosta: solo el badge o un guion. -->
+                    <Column header="Pagado" body-class="w-px whitespace-nowrap">
+                        <template #body="{ data }">
+                            <QuotePaidBadge v-if="data.paid_at" />
+                            <span v-else class="text-text-muted">—</span>
                         </template>
                     </Column>
 
@@ -141,7 +150,8 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { useQuotesStore } from "@/stores/quotes";
 import { useRoute, useRouter } from "vue-router";
-import { QUOTE_STATUSES, statusClasses } from "@/lib/quoteStatus";
+import { QUOTE_STATUSES, statusClasses, statusLabel } from "@/lib/quoteStatus";
+import QuotePaidBadge from "@/views/quotes/components/QuotePaidBadge.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import QuickFilter from "@/components/widgets/filters/QuickFilter.vue";
@@ -194,11 +204,12 @@ watch(
     { immediate: true },
 );
 
+// `key` es el valor real (filtro y ?estado=); `label` solo el texto visible.
 const statusOptions = computed(() => [
-    { key: "all", label: "Todas", count: quotes.quotes.length },
+    { key: "all", label: "Todos", count: quotes.quotes.length },
     ...QUOTE_STATUSES.map((status) => ({
         key: status,
-        label: status,
+        label: statusLabel(status),
         count: quotes.quotes.filter((quote) => quote.status === status).length,
     })),
 ]);

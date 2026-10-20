@@ -172,6 +172,7 @@ import { formatCurrency } from '@/lib/formatCurrency'
 import { useLineProducts } from '@/composables/useLineProducts'
 import * as documentLines from '@/lib/documentLines'
 import { hasProduct, lineItemPayload, serializeLines } from '@/lib/documentLines'
+import { statusLabel } from '@/lib/quoteStatus'
 import {
     findVariant,
     missingProductsMessage,
@@ -519,7 +520,7 @@ const handleSubmit = async () => {
         skipLeaveGuard = true
         notify.success(
             `Venta ${sale.folio} registrada`,
-            quoteId.value ? 'El presupuesto quedó en estado Convertida.' : undefined,
+            quoteId.value ? `El presupuesto quedó en estado ${statusLabel('Convertida')}.` : undefined,
         )
         router.push({ name: 'pos.sales.show', params: { id: sale.id } })
     } catch (err) {
