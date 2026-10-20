@@ -130,6 +130,16 @@
                                 {{ markingPaid ? "Marcando…" : "Marcar como pagado" }}
                             </button>
                         </template>
+                        <!-- Pagada y sin comprobante: el guard real es
+						     Quote::comprobanteConversionBlockedMessage(). -->
+                        <button
+                            v-if="canConvertToComprobante"
+                            type="button"
+                            @click="convertToComprobante"
+                            class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
+                        >
+                            Convertir a comprobante
+                        </button>
                     </div>
                     <p v-if="pdfError" class="text-danger text-xs">{{ pdfError }}</p>
                     <p v-if="cancelError" class="text-danger text-xs">{{ cancelError }}</p>
@@ -179,6 +189,13 @@
                                     <i class="ti ti-arrow-up-right text-sm" aria-hidden="true"></i>
                                 </RouterLink>
                             </dd>
+                        </div>
+
+                        <!-- Texto plano por ahora: el detalle de comprobante todavía no
+						     existe; se vuelve RouterLink cuando exista su ruta. -->
+                        <div v-if="quote.comprobante" class="space-y-1">
+                            <dt class="text-xs font-medium text-text-muted">Convertido en comprobante</dt>
+                            <dd class="font-medium text-text">{{ quote.comprobante.folio }}</dd>
                         </div>
 
                         <div v-if="quote.notes" class="space-y-1 sm:col-span-2">
@@ -438,6 +455,13 @@ function isPieceLine(item) {
 // como se guardaron en la línea (no el m2_per_box actual de la variante).
 function boxPrice(item) {
     return Math.round(((Number(item.unit_price) * Number(item.quantity)) / item.boxes) * 100) / 100;
+}
+
+// `comprobante` solo viene en GET /quotes/{id} (null si no se ha convertido).
+const canConvertToComprobante = computed(() => !!quote.value?.paid_at && !quote.value.comprobante);
+
+function convertToComprobante() {
+    router.push({ name: "comprobantes.create", query: { quote_id: quote.value.id } });
 }
 
 function editQuote() {

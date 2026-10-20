@@ -133,6 +133,15 @@ export const useQuotesStore = defineStore("quotes", () => {
         return data.data;
     }
 
+    // La conversión ocurre en POST /api/comprobantes (ComprobanteFormView), cuya
+    // respuesta es el comprobante, no la cotización. Solo el detalle expone
+    // `comprobante` (id+folio, vía whenLoaded en show), así que el listado no se toca.
+    function markQuoteComprobante(id, comprobante) {
+        if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+            currentQuote.value.comprobante = comprobante;
+        }
+    }
+
     async function fetchQuotePdf(id) {
         const response = await axios.get(`/api/quotes/${id}/pdf`, { responseType: "blob" });
         return response.data;
@@ -150,6 +159,7 @@ export const useQuotesStore = defineStore("quotes", () => {
         cancelQuote,
         markQuoteConverted,
         markQuotePaid,
+        markQuoteComprobante,
         currentQuote,
         currentQuoteLoading,
         currentQuoteError,
