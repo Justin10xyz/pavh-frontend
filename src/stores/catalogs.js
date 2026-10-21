@@ -4,6 +4,7 @@ import axios from '@/lib/axios'
 
 export const useCatalogsStore = defineStore('catalogs', () => {
     const suppliers = ref([])
+    const floorStyles = ref([])
     const categories = ref([])
     const unitTypes = ref([])
     const commissionCategories = ref([])
@@ -18,14 +19,16 @@ export const useCatalogsStore = defineStore('catalogs', () => {
         error.value = null
 
         try {
-            const [suppliersRes, categoriesRes, unitTypesRes, commissionCategoriesRes] = await Promise.all([
+            const [suppliersRes, floorStylesRes, categoriesRes, unitTypesRes, commissionCategoriesRes] = await Promise.all([
                 axios.get('/api/suppliers'),
+                axios.get('/api/floor-styles'),
                 axios.get('/api/categories'),
                 axios.get('/api/unit-types'),
                 axios.get('/api/commission-categories'),
             ])
 
             suppliers.value = suppliersRes.data.data
+            floorStyles.value = floorStylesRes.data.data
             categories.value = categoriesRes.data.data
             unitTypes.value = unitTypesRes.data.data
             commissionCategories.value = commissionCategoriesRes.data.data
@@ -56,6 +59,24 @@ export const useCatalogsStore = defineStore('catalogs', () => {
         suppliers.value = suppliers.value.filter((s) => s.id !== id)
     }
 
+    // Mutación puntual: agrega el estilo de piso recién creado sin refetch completo.
+    // El backend lista estilos por id, así que el nuevo va al final.
+    function addFloorStyle(floorStyle) {
+        floorStyles.value.push(floorStyle)
+    }
+
+    // Mutación puntual: reemplaza en su lugar los datos del estilo editado,
+    // así los selects que ya lo muestran se actualizan sin refetch.
+    function updateFloorStyle(id, payload) {
+        const floorStyle = floorStyles.value.find((f) => f.id === id)
+        if (floorStyle) Object.assign(floorStyle, payload)
+    }
+
+    // Mutación puntual: quita el estilo eliminado (soft delete en el backend).
+    function removeFloorStyle(id) {
+        floorStyles.value = floorStyles.value.filter((f) => f.id !== id)
+    }
+
     // Mutación puntual: agrega la categoría recién creada sin refetch completo.
     // El backend lista categorías por id, así que la nueva va al final.
     function addCategory(category) {
@@ -76,6 +97,7 @@ export const useCatalogsStore = defineStore('catalogs', () => {
 
     return {
         suppliers,
+        floorStyles,
         categories,
         unitTypes,
         commissionCategories,
@@ -86,6 +108,9 @@ export const useCatalogsStore = defineStore('catalogs', () => {
         addSupplier,
         updateSupplier,
         removeSupplier,
+        addFloorStyle,
+        updateFloorStyle,
+        removeFloorStyle,
         addCategory,
         updateCategory,
         removeCategory,

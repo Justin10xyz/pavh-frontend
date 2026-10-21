@@ -35,6 +35,15 @@
             />
         </div>
 
+        <div v-if="floorStyleOptions" class="w-full sm:w-56">
+            <SelectCustom
+                v-model="selectedFloorStyle"
+                :options="floorStyleOptions"
+                placeholder="Todos los estilos"
+                allow-empty
+            />
+        </div>
+
         <div v-if="unitTypeOptions" class="w-full sm:w-44">
             <SelectCustom
                 v-model="selectedUnitType"
@@ -79,9 +88,13 @@ defineProps({
         type: String,
         default: "Buscar por línea, color o código…",
     },
-    // Catálogos { id, name } (proveedores, unidades de venta). Sin ellos, el
+    // Catálogos { id, name } (proveedores, estilos, unidades de venta). Sin ellos, el
     // selector no se muestra.
     supplierOptions: {
+        type: Array,
+        default: null,
+    },
+    floorStyleOptions: {
         type: Array,
         default: null,
     },
@@ -103,6 +116,7 @@ const emit = defineEmits(["clear-filters"]);
 const searchQuery = defineModel("searchQuery", { type: String, default: "" });
 const selectedCategory = defineModel("selectedCategory", { type: String, default: "" });
 const selectedSupplier = defineModel("selectedSupplier", { type: [String, Number], default: "" });
+const selectedFloorStyle = defineModel("selectedFloorStyle", { type: [String, Number], default: "" });
 const selectedUnitType = defineModel("selectedUnitType", { type: [String, Number], default: "" });
 // "" (todos) | "yes"
 const selectedWholesale = defineModel("selectedWholesale", { type: String, default: "" });
@@ -112,6 +126,7 @@ const hasActiveFilters = computed(
         searchQuery.value !== "" ||
         selectedCategory.value !== "" ||
         selectedSupplier.value !== "" ||
+        selectedFloorStyle.value !== "" ||
         selectedUnitType.value !== "" ||
         selectedWholesale.value !== "",
 );

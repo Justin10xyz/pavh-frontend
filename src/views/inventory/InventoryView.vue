@@ -38,9 +38,11 @@
                 v-model:searchQuery="searchQuery"
                 v-model:selectedCategory="selectedCategory"
                 v-model:selectedSupplier="selectedSupplier"
+                v-model:selectedFloorStyle="selectedFloorStyle"
                 v-model:selectedUnitType="selectedUnitType"
                 :categoryOptions="categoryOptions"
                 :supplier-options="supplierOptions"
+                :floor-style-options="floorStyleOptions"
                 :unit-type-options="catalogs.unitTypes"
                 @clear-filters="clearFilters"
             />
@@ -170,6 +172,7 @@ function openMovementsDialog(variant, product) {
 const searchQuery = ref(typeof route.query.buscar === "string" ? route.query.buscar : "");
 const selectedCategory = ref("");
 const selectedSupplier = ref("");
+const selectedFloorStyle = ref("");
 const selectedUnitType = ref("");
 
 // Llegar con ?producto=<id> (fila de Stock bajo del Dashboard) abre ese
@@ -185,7 +188,7 @@ function floorsFilterQuery() {
     };
 }
 
-watch([searchQuery, selectedCategory, selectedSupplier, selectedUnitType], () => {
+watch([searchQuery, selectedCategory, selectedSupplier, selectedFloorStyle, selectedUnitType], () => {
     focusProductId.value = null;
     // Solo aplican a Catálogo de pisos; en "Otros productos" la URL es solo la sección.
     if (activeSection.value === "floors") router.replace({ query: floorsFilterQuery() });
@@ -207,6 +210,7 @@ function clearFilters() {
     searchQuery.value = "";
     selectedCategory.value = "";
     selectedSupplier.value = "";
+    selectedFloorStyle.value = "";
     selectedUnitType.value = "";
 }
 
@@ -220,6 +224,12 @@ const categoryOptions = computed(() => {
 const supplierOptions = computed(() => {
     const ids = new Set(inventory.products.map((p) => p.supplier_id));
     return catalogs.suppliers.filter((supplier) => ids.has(supplier.id));
+});
+
+// Mismo criterio que proveedores: solo estilos asignados a algún piso.
+const floorStyleOptions = computed(() => {
+    const ids = new Set(inventory.products.map((p) => p.floor_style_id));
+    return catalogs.floorStyles.filter((floorStyle) => ids.has(floorStyle.id));
 });
 
 function normalize(str) {
@@ -256,6 +266,7 @@ const filteredProducts = computed(() => {
     return inventory.products.filter((product) => {
         if (selectedCategory.value && product.category !== selectedCategory.value) return false;
         if (selectedSupplier.value && product.supplier_id !== selectedSupplier.value) return false;
+        if (selectedFloorStyle.value && product.floor_style_id !== selectedFloorStyle.value) return false;
         if (selectedUnitType.value && product.unit_type_id !== selectedUnitType.value) return false;
         const variants = visibleVariantsByProduct.value.get(product.id) ?? [];
         return variants.length > 0;
