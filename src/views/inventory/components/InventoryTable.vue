@@ -30,7 +30,7 @@
                             <span
                                 class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
                             >
-                                {{ data.category }} · {{ data.supplier }} · {{ data.unit_type }}
+                                {{ data.category }} · {{ data.supplier }}<template v-if="data.floor_style"> · <i class="ti ti-texture align-[-1px]" aria-hidden="true"></i><span class="sr-only">Estilo:</span> {{ data.floor_style }}</template> · {{ data.unit_type }}
                             </span>
                             <!-- Aviso visible sin expandir: evita abrir producto y medida
 							     para saber dónde está el faltante. -->
