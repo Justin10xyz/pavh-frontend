@@ -199,6 +199,7 @@ async function focusField(id) {
 
 const form = reactive({
     supplier_id: "",
+    floor_style_id: "",
     category_id: "",
     unit_type_id: "",
     name: "",
@@ -207,6 +208,7 @@ const form = reactive({
 
 const errors = reactive({
     supplier_id: "",
+    floor_style_id: "",
     category_id: "",
     unit_type_id: "",
     name: "",
@@ -322,6 +324,7 @@ async function deleteVariantRow(group, row) {
 
 function populateFormFromProduct(product) {
     form.supplier_id = product.supplier_id;
+    form.floor_style_id = product.floor_style_id ?? "";
     form.category_id = product.category_id;
     form.unit_type_id = product.unit_type_id;
     form.name = product.name;
@@ -439,6 +442,8 @@ const handleSubmit = async () => {
     try {
         const productPayload = {
             supplier_id: form.supplier_id,
+            // Opcional: "" (Sin estilo) se manda como null para quitarlo en edición.
+            floor_style_id: form.floor_style_id || null,
             category_id: form.category_id,
             unit_type_id: form.unit_type_id,
             name: form.name,

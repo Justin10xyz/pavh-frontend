@@ -17,4 +17,10 @@ export default [
         component: () => import('@/views/settings/SuppliersSettingsView.vue'),
         meta: { layout: 'AppLayout', section: 'settings', title: 'Proveedores', requiresAuth: true },
     },
+    {
+        path: '/configuracion/estilos',
+        name: 'settings.floorStyles',
+        component: () => import('@/views/settings/FloorStylesSettingsView.vue'),
+        meta: { layout: 'AppLayout', section: 'settings', title: 'Estilos de piso', requiresAuth: true },
+    },
 ]
