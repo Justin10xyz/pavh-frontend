@@ -35,6 +35,11 @@
                             >ETT {{ group.spec.ett }}</span
                             >
                             <span
+                                v-if="formatFaceCount(group.spec.face_count)"
+                                class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
+                            >{{ formatFaceCount(group.spec.face_count) }}</span
+                            >
+                            <span
                                 v-if="group.spec.price_per_box !== null && group.spec.price_per_box !== ''"
                                 class="font-semibold text-primary tabular-nums"
                             >{{ formatCurrency(group.spec.price_per_box) }}/{{ soldByPiece ? "pieza" : "caja" }}</span
@@ -70,8 +75,8 @@
         <AccordionContent>
             <div class="px-5 sm:px-6 pb-5 sm:pb-6">
                 <!-- Grupo 1 — Medida y especificaciones técnicas. PEI/ETT no aplican
-		     a pisos por pieza (el backend los rechaza). -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+		     a pisos por pieza (el backend los rechaza); Caras sí. -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="space-y-1.5">
                         <FieldLabel :html-for="`size-${group.id}`" text="Medida" required />
                         <InputTextCustom
@@ -131,6 +136,23 @@
                         />
                         <p v-if="group.specErrors.ett" class="text-danger text-[12px] mt-1.5">
                             {{ group.specErrors.ett }}
+                        </p>
+                    </div>
+
+                    <!-- Patrones distintos en la caja; 0 = muy parejo, sin variación. -->
+                    <div class="space-y-1.5">
+                        <FieldLabel :html-for="`face_count-${group.id}`" text="Caras" />
+                        <InputNumberCustom
+                            :id="`face_count-${group.id}`"
+                            v-model="group.spec.face_count"
+                            :error="group.specErrors.face_count"
+                            :min="0"
+                            placeholder="Ej. 4"
+                            @input="group.specErrors.face_count = ''"
+                            :max-fraction-digits="0"
+                        />
+                        <p v-if="group.specErrors.face_count" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.face_count }}
                         </p>
                     </div>
                 </div>
@@ -219,9 +241,9 @@
                             v-model="group.spec.m2_per_box"
                             :error="group.specErrors.m2_per_box"
                             :min="0"
-                            placeholder="0.00"
+                            placeholder="0.000"
                             @input="group.specErrors.m2_per_box = ''"
-                            :max-fraction-digits="2"
+                            :max-fraction-digits="3"
                         />
                         <p v-if="group.specErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
                             {{ group.specErrors.m2_per_box }}
@@ -297,6 +319,7 @@ import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { PEI_LEVELS, composePei, peiNeighbors, splitPei } from "@/lib/productForm";
+import { formatFaceCount } from "@/lib/variantSpecs";
 import { commissionLabel } from "@/lib/commissionCategories";
 import VariantColorsTable from "./VariantColorsTable.vue";
 
@@ -307,7 +330,7 @@ const group = defineModel("group", { type: Object, required: true });
 
 defineProps({
     index: { type: Number, required: true },
-    // Pisos por pieza: oculta PEI/ETT, precio por m² y datos por caja.
+    // Pisos por pieza: oculta PEI/ETT, precio por m² y datos por caja (Caras se queda).
     soldByPiece: { type: Boolean, default: false },
     // { short, label } de variantStockUnit(): cajas o piezas.
     stockUnit: { type: Object, required: true },
