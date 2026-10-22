@@ -156,6 +156,7 @@ import SaveShortcutHint from "@/components/widgets/labels/SaveShortcutHint.vue";
 import { useSaveShortcut } from "@/composables/useSaveShortcut";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import {
+    applyVariantServerErrors,
     buildVariantPayload,
     createVariantGroup,
     groupHasErrors,
@@ -372,6 +373,9 @@ const validateForm = () => {
 
 const submitting = ref(false);
 const generalError = ref(null);
+// Producto ya creado en un intento anterior que falló en las variantes: el
+// reintento lo actualiza en lugar de crear otro.
+const createdProductId = ref(null);
 
 const { modifierLabel, ariaKeyshortcuts } = useSaveShortcut(formRef, () => !submitting.value && !loadingProduct.value);
 
@@ -436,7 +440,7 @@ const handleSubmit = async () => {
     generalError.value = null;
     deleteError.value = null;
     submitting.value = true;
-    let productId = isEditMode.value ? route.params.id : null;
+    let productId = isEditMode.value ? route.params.id : createdProductId.value;
     let productSaved = false;
 
     try {
@@ -450,11 +454,12 @@ const handleSubmit = async () => {
             purchase_unit: form.purchase_unit,
         };
 
-        if (isEditMode.value) {
+        if (productId) {
             await axios.put(`/api/products/${productId}`, productPayload);
         } else {
             const { data } = await axios.post("/api/products", productPayload);
             productId = data.data.id;
+            createdProductId.value = productId;
         }
         productSaved = true;
 
@@ -465,9 +470,25 @@ const handleSubmit = async () => {
             variantGroups.value.flatMap((group) =>
                 group.colorRows.map((row) => {
                     const payload = buildVariantPayload(productId, group, row, soldByPiece.value);
-                    return row.variantId
+                    const request = row.variantId
                         ? axios.put(`/api/product-variants/${row.variantId}`, payload)
                         : axios.post("/api/product-variants", payload);
+                    // El 422 se marca bajo el campo de su grupo/fila; el error sigue
+                    // hacia el catch de abajo.
+                    return request.then(
+                        ({ data }) => {
+                            // Si otra variante falla, el reintento hace PUT de esta en
+                            // lugar de duplicarla, y su stock inicial no cuenta como ajuste.
+                            row.variantId = data.data.id;
+                            row.originalStock = data.data.stock_boxes;
+                        },
+                        (err) => {
+                            if (err.response?.status === 422) {
+                                applyVariantServerErrors(group, row, err.response.data.errors ?? {});
+                            }
+                            throw err;
+                        },
+                    );
                 }),
             ),
         );
@@ -483,7 +504,14 @@ const handleSubmit = async () => {
 
         router.push({ name: "inventory", query: inventory.listQuery });
     } catch (err) {
-        if (productSaved) {
+        const invalidGroup = productSaved ? variantGroups.value.find(groupHasErrors) : null;
+        if (invalidGroup) {
+            // Igual que la validación local: abre la medida y enfoca el campo marcado.
+            generalError.value = "El producto se guardó, pero una o más variantes tienen datos inválidos. Revisa los campos marcados.";
+            openGroupId.value = invalidGroup.id;
+            await nextTick();
+            focusFirstInvalidField(formRef.value);
+        } else if (productSaved) {
             console.error(err);
             generalError.value = isEditMode.value
                 ? "El producto se actualizó correctamente, pero ocurrió un error al guardar una o más variantes. Revísalo desde el inventario."
