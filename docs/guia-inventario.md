@@ -324,3 +324,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-17 | **Editar piso**: la confirmación al eliminar un color aclara que se borra en ese momento, sin esperar a Guardar cambios. Si no se puede eliminar (es el último color del producto), el motivo aparece debajo de ese color en lugar de arriba del formulario. |
 | 2026-10-17 | **Nuevo piso / Editar piso**: la **X** apagada del único color de una medida ahora explica, al pasar el cursor, que cada medida necesita al menos un color. |
 | 2026-10-17 | **Editar piso**: las medidas con colores guardados explican, al abrirlas, cómo quitarlas (eliminar primero sus colores guardados). |
+| 2026-10-21 | **Nuevo piso / Editar piso**: **m² por caja** acepta hasta 3 decimales (por ejemplo *1.404*) en lugar de 2. |

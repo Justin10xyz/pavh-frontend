@@ -241,9 +241,9 @@
                             v-model="group.spec.m2_per_box"
                             :error="group.specErrors.m2_per_box"
                             :min="0"
-                            placeholder="0.00"
+                            placeholder="0.000"
                             @input="group.specErrors.m2_per_box = ''"
-                            :max-fraction-digits="2"
+                            :max-fraction-digits="3"
                         />
                         <p v-if="group.specErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
                             {{ group.specErrors.m2_per_box }}
