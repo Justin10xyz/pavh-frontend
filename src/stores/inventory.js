@@ -42,5 +42,13 @@ export const useInventoryStore = defineStore('inventory', () => {
         }
     }
 
-    return { products, loading, error, initialized, listQuery, fetchProducts, updateVariantStock }
+    // Quita variantes borradas (ej. una medida completa desde el form de producto) sin
+    // refetch. El id de la ruta llega como string, de ahí la comparación con String().
+    function removeVariants(productId, variantIds) {
+        const product = products.value.find((p) => String(p.id) === String(productId))
+        if (!product?.variants) return
+        product.variants = product.variants.filter((v) => !variantIds.includes(v.id))
+    }
+
+    return { products, loading, error, initialized, listQuery, fetchProducts, updateVariantStock, removeVariants }
 })

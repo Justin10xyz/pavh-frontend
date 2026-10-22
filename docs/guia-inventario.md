@@ -104,7 +104,7 @@ Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), 
 
 Cada medida necesita **al menos un color**: cuando una medida tiene uno solo, su **X** aparece apagada y, al pasar el cursor encima, dice *"Cada medida necesita al menos un color"*. Para cambiar ese color, edita su nombre en lugar de quitarlo, o agrega otro primero.
 
-Una medida que ya tiene colores guardados no muestra **Quitar medida**. Al abrirla, una nota bajo su encabezado explica cómo quitarla: primero se eliminan sus colores guardados con la **X** de cada uno y, como siempre debe quedar un color, hay que agregar uno nuevo antes de eliminar el último. Cuando ya no le quedan colores guardados, aparece **Quitar medida**.
+Una medida que ya tiene colores guardados muestra **Eliminar medida** en lugar de **Quitar medida**. Al presionarlo, un aviso dice cuántos colores se van a borrar (por ejemplo *"Esto eliminará los 4 colores de la medida 60X120"*). Al confirmar, la medida y todos sus colores se eliminan **en ese momento**, sin esperar a **Guardar cambios**, y desaparecen del formulario y del catálogo. Un piso siempre conserva al menos una medida: si es la única, no se elimina y el motivo aparece bajo el encabezado de la medida.
 
 ### Una medida abierta a la vez
 
@@ -325,3 +325,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-17 | **Nuevo piso / Editar piso**: la **X** apagada del único color de una medida ahora explica, al pasar el cursor, que cada medida necesita al menos un color. |
 | 2026-10-17 | **Editar piso**: las medidas con colores guardados explican, al abrirlas, cómo quitarlas (eliminar primero sus colores guardados). |
 | 2026-10-21 | **Nuevo piso / Editar piso**: **m² por caja** acepta hasta 3 decimales (por ejemplo *1.404*) en lugar de 2. |
+| 2026-10-21 | **Editar piso**: las medidas con colores guardados se pueden eliminar completas con **Eliminar medida**, sin borrar sus colores uno por uno. Si es la única medida del piso, no se elimina y el motivo aparece bajo la medida. |

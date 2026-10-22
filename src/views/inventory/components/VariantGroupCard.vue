@@ -51,8 +51,8 @@
                         </span>
                     </button>
                 </h2>
-                <!-- Solo medidas sin variantes guardadas: quitar una guardada sería
-				     borrar variantes, fuera del alcance de este form. -->
+                <!-- Solo medidas sin variantes guardadas: se quita del form sin tocar
+				     el backend. -->
                 <button
                     v-if="removable"
                     type="button"
@@ -61,13 +61,21 @@
                 >
                     Quitar medida
                 </button>
-                <!-- En lugar de "Quitar medida" (ver canRemoveGroup en la vista). Solo con
-				     el panel abierto, para no repetirlo en cada medida cerrada. basis-full:
-				     baja a su propia línea; pl-6 lo alinea con el texto, después del chevron. -->
-                <p v-if="active && removalHint" class="basis-full pl-6 text-xs text-text-muted">
-                    Para quitar esta medida, primero elimina sus colores guardados con la X
-                    de cada uno. Como siempre debe quedar un color, agrega uno nuevo antes
-                    de eliminar el último.
+                <!-- En lugar de "Quitar medida" cuando ya tiene colores guardados: borra
+				     todos sus colores en backend (la vista confirma antes). -->
+                <button
+                    v-else-if="deletable"
+                    type="button"
+                    :disabled="deletingGroup"
+                    @click="emit('delete-group')"
+                    class="text-xs text-text-muted hover:text-danger underline rounded transition-colors cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                >
+                    {{ deletingGroup ? "Eliminando…" : "Eliminar medida" }}
+                </button>
+                <!-- 422 del backend (ej. única medida del producto). basis-full: baja a su
+				     propia línea; pl-6 lo alinea con el texto, después del chevron. -->
+                <p v-if="groupDeleteError" role="alert" class="basis-full pl-6 text-danger text-xs">
+                    {{ groupDeleteError }}
                 </p>
             </div>
         </AccordionHeader>
@@ -336,13 +344,16 @@ defineProps({
     stockUnit: { type: Object, required: true },
     // Solo medidas sin variantes guardadas (lo decide la vista).
     removable: { type: Boolean, default: false },
-    // Medida con colores guardados (no removible por eso): muestra cómo quitarla.
-    removalHint: { type: Boolean, default: false },
+    // Medida con colores guardados: "Eliminar medida" los borra todos en backend.
+    deletable: { type: Boolean, default: false },
+    deletingGroup: { type: Boolean, default: false },
+    // Mensaje del DELETE de la medida rechazado con 422; va bajo el encabezado.
+    groupDeleteError: { type: String, default: null },
     deletingRowId: { type: String, default: null },
     deleteError: { type: Object, default: null },
 });
 
-const emit = defineEmits(["remove", "remove-color"]);
+const emit = defineEmits(["remove", "remove-color", "delete-group"]);
 
 const catalogs = useCatalogsStore();
 
