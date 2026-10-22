@@ -53,19 +53,31 @@
                 </template>
             </Column>
 
-            <!-- Editar abre el producto completo (todas sus medidas), así que vive
-			     en la fila del producto y no en cada grupo de medida. -->
+            <!-- Editar y eliminar actúan sobre el producto completo (todas sus medidas),
+			     así que viven en la fila del producto y no en cada grupo de medida. -->
             <Column header="" body-class="w-px">
                 <template #body="{ data }">
-                    <button
-                        type="button"
-                        @click="emit('edit-product', data.id)"
-                        class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-                        :aria-label="`Editar ${data.name}`"
-                        title="Editar producto"
-                    >
-                        <i class="ti ti-pencil text-base"></i>
-                    </button>
+                    <div class="flex items-center gap-1">
+                        <button
+                            type="button"
+                            @click="emit('edit-product', data.id)"
+                            class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+                            :aria-label="`Editar ${data.name}`"
+                            title="Editar producto"
+                        >
+                            <i class="ti ti-pencil text-base"></i>
+                        </button>
+                        <button
+                            type="button"
+                            @click="emit('delete-product', data)"
+                            :disabled="deletingProductId === data.id"
+                            class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-danger transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            :aria-label="`Eliminar ${data.name}`"
+                            :title="`Eliminar ${data.name}`"
+                        >
+                            <i class="ti ti-trash text-base" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </template>
             </Column>
 
@@ -124,11 +136,16 @@ const props = defineProps({
         type: Number,
         default: null,
     },
+    // Producto pidiendo su resumen o borrándose (useProductDelete): su basura se deshabilita.
+    deletingProductId: {
+        type: Number,
+        default: null,
+    },
 });
 
 // Los diálogos de stock reciben (variant, product): la variante no trae su
 // unidad de venta, que vive en el producto (unit_type).
-const emit = defineEmits(["edit-product", "open-stock-dialog", "open-movements-dialog"]);
+const emit = defineEmits(["edit-product", "delete-product", "open-stock-dialog", "open-movements-dialog"]);
 
 // `expandedRows` = filas que PrimeVue tiene montadas; `openRows` = filas que el
 // usuario dejó abiertas. Al cerrar, la fila sigue montada hasta que termina la
@@ -142,7 +159,7 @@ function rowClass(product) {
 }
 
 // Clic en cualquier parte de la fila abre/cierra sus variantes. Los botones
-// (flecha, editar) ya tienen su propia acción, así que se ignoran aquí.
+// (flecha, editar, eliminar) ya tienen su propia acción, así que se ignoran aquí.
 function onRowClick({ originalEvent, data }) {
     if (originalEvent.target.closest("button, a")) return;
     toggleRow(data.id);

@@ -50,5 +50,22 @@ export const useInventoryStore = defineStore('inventory', () => {
         product.variants = product.variants.filter((v) => !variantIds.includes(v.id))
     }
 
-    return { products, loading, error, initialized, listQuery, fetchProducts, updateVariantStock, removeVariants }
+    // Sin refetch, mismo motivo que updateVariantStock: no perder lo que el usuario
+    // tenía abierto en el catálogo.
+    async function deleteProduct(id) {
+        await axios.delete(`/api/products/${id}`)
+        products.value = products.value.filter((p) => String(p.id) !== String(id))
+    }
+
+    return {
+        products,
+        loading,
+        error,
+        initialized,
+        listQuery,
+        fetchProducts,
+        updateVariantStock,
+        removeVariants,
+        deleteProduct,
+    }
 })

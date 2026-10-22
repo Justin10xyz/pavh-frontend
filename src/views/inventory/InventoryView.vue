@@ -34,6 +34,20 @@
         <div v-else-if="inventory.error" class="text-danger text-sm">{{ inventory.error }}</div>
 
         <template v-else>
+            <p
+                v-if="deleteError"
+                class="text-danger text-sm mb-4 flex items-center gap-1.5 bg-danger/10 border border-danger/20 rounded-md px-3 py-2"
+            >
+                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                </svg>
+                {{ deleteError }}
+            </p>
+
             <InventoryFilters
                 v-model:searchQuery="searchQuery"
                 v-model:selectedCategory="selectedCategory"
@@ -63,7 +77,9 @@
                 :products="filteredProducts"
                 :visibleVariantsByProduct="visibleVariantsByProduct"
                 :focus-product-id="focusProductId"
+                :deleting-product-id="busyId"
                 @edit-product="editProduct"
+                @delete-product="requestDelete"
                 @open-stock-dialog="openStockDialog"
                 @open-movements-dialog="openMovementsDialog"
             />
@@ -88,12 +104,43 @@
         :stock-unit="movementsDialogUnit.short"
         :subtitle="movementsDialogVariant?.color"
     />
+
+    <!-- Sin grupo: el de StockAdjustDialog usa el suyo, así que no se cruzan. -->
+    <ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
+        <template #container="{ message, acceptCallback, rejectCallback }">
+            <div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+                <h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
+                <p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
+                <div class="flex items-center justify-end gap-3">
+                    <!-- Foco inicial en Cancelar: en una acción que no se puede
+					     deshacer, Enter no debe eliminar. -->
+                    <button
+                        type="button"
+                        autofocus
+                        @click="rejectCallback"
+                        class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="button"
+                        @click="acceptCallback"
+                        class="bg-danger hover:bg-danger/90 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1"
+                    >
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </template>
+    </ConfirmDialog>
 </template>
 
 <script setup>
 import { onMounted, ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import ConfirmDialog from "primevue/confirmdialog";
 import { useInventoryStore } from "@/stores/inventory";
+import { useProductDelete } from "@/composables/useProductDelete";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { variantStockUnit } from "@/lib/unitTypes";
 
@@ -136,6 +183,9 @@ function selectSection(key) {
 function editProduct(productId) {
     router.push({ name: "products.edit", params: { id: productId } });
 }
+
+// La fila se quita in-place en inventory.deleteProduct(); no hay nada más que hacer.
+const { busyId, deleteError, requestDelete } = useProductDelete();
 
 const stockDialogOpen = ref(false);
 const stockDialogVariant = ref(null);
