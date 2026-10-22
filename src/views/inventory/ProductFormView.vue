@@ -66,10 +66,13 @@
                     :sold-by-piece="soldByPiece"
                     :stock-unit="stockUnit"
                     :removable="canRemoveGroup(group)"
-                    :removal-hint="needsSavedColorsRemoved(group)"
+                    :deletable="hasSavedColors(group)"
+                    :deleting-group="deletingGroupId === group.id"
+                    :group-delete-error="groupDeleteError?.groupId === group.id ? groupDeleteError.message : null"
                     :deleting-row-id="deletingRowId"
                     :delete-error="deleteError"
                     @remove="removeVariantGroup(group.id)"
+                    @delete-group="confirmDeleteVariantGroup(group)"
                     @remove-color="(row) => removeColorRow(group, row.id)"
                 />
             </Accordion>
@@ -247,20 +250,74 @@ function canRemoveGroup(group) {
     return variantGroups.value.length > 1 && group.colorRows.every((row) => !row.variantId);
 }
 
-// Lo único que impide quitarla son sus colores guardados (con una sola medida no
-// hay nada que explicar: el producto siempre conserva al menos una).
-function needsSavedColorsRemoved(group) {
-    return variantGroups.value.length > 1 && group.colorRows.some((row) => row.variantId);
+// Con colores guardados la medida se elimina en backend ("Eliminar medida"). Aunque
+// sea la única: el backend la rechaza con 422 y el mensaje se muestra en la medida.
+function hasSavedColors(group) {
+    return group.colorRows.some((row) => row.variantId);
 }
 
 function removeVariantGroup(groupId) {
     const group = variantGroups.value.find((g) => g.id === groupId);
     if (!group || !canRemoveGroup(group)) return;
+    dropVariantGroup(group);
+}
+
+// Quita la tarjeta del form; el foco pasa a la medida anterior (o a la nueva primera).
+function dropVariantGroup(group) {
     const index = variantGroups.value.indexOf(group);
-    variantGroups.value = variantGroups.value.filter((g) => g.id !== groupId);
+    variantGroups.value = variantGroups.value.filter((g) => g.id !== group.id);
+    if (!variantGroups.value.length) variantGroups.value.push(createVariantGroup());
     const next = variantGroups.value[Math.max(index - 1, 0)];
     openGroupId.value = next.id;
     focusField(`size-${next.id}`);
+}
+
+const deletingGroupId = ref(null);
+// { groupId, message } del último DELETE de medida rechazado con 422.
+const groupDeleteError = ref(null);
+
+// Acción separada del borrado color por color (que conserva el mínimo de un color):
+// borra de una vez todos los colores guardados de la medida.
+function confirmDeleteVariantGroup(group) {
+    const savedRows = group.colorRows.filter((row) => row.variantId);
+    if (!savedRows.length) return;
+
+    const count = savedRows.length;
+    const colors = count === 1 ? "el color" : `los ${count} colores`;
+    const size = group.spec.size ? ` ${group.spec.size}` : "";
+
+    confirm.require({
+        header: "Eliminar medida",
+        message: `Esto eliminará ${colors} de la medida${size}. Esta acción no se puede deshacer.\nLa medida se eliminará de inmediato, aunque no hayas guardado los demás cambios del formulario.`,
+        accept: () => deleteVariantGroup(group, savedRows),
+    });
+}
+
+async function deleteVariantGroup(group, savedRows) {
+    const productId = route.params.id;
+    const variantIds = savedRows.map((row) => row.variantId);
+
+    deletingGroupId.value = group.id;
+    generalError.value = null;
+    groupDeleteError.value = null;
+
+    try {
+        await axios.delete(`/api/products/${productId}/variants`, { data: { variant_ids: variantIds } });
+        inventory.removeVariants(productId, variantIds);
+        dropVariantGroup(group);
+    } catch (err) {
+        // 422 de negocio (ej. única medida del producto): va bajo el encabezado de la medida.
+        if (err.response?.status === 422) {
+            groupDeleteError.value = {
+                groupId: group.id,
+                message: err.response.data.message || "No se pudo eliminar esta medida.",
+            };
+        } else {
+            generalError.value = "No se pudo eliminar la medida. Intenta de nuevo.";
+        }
+    } finally {
+        deletingGroupId.value = null;
+    }
 }
 
 // El foco pasa al color de la fila que quedó en su lugar (o a la anterior si
@@ -439,6 +496,7 @@ const handleSubmit = async () => {
 
     generalError.value = null;
     deleteError.value = null;
+    groupDeleteError.value = null;
     submitting.value = true;
     let productId = isEditMode.value ? route.params.id : createdProductId.value;
     let productSaved = false;
