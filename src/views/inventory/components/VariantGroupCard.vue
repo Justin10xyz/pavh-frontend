@@ -318,7 +318,8 @@ import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { PEI_LEVELS, composePei, formatFaceCount, peiNeighbors, splitPei } from "@/lib/productForm";
+import { PEI_LEVELS, composePei, peiNeighbors, splitPei } from "@/lib/productForm";
+import { formatFaceCount } from "@/lib/variantSpecs";
 import { commissionLabel } from "@/lib/commissionCategories";
 import VariantColorsTable from "./VariantColorsTable.vue";
 

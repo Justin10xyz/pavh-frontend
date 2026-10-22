@@ -150,7 +150,7 @@
 import { computed } from "vue";
 import CommissionBadge from "@/components/widgets/badges/CommissionBadge.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { formatFaceCount } from "@/lib/productForm";
+import { formatFaceCount } from "@/lib/variantSpecs";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import { isTracked, lowStockCount, lowStockLabel } from "@/lib/variantStock";
 import { clearCollapseHeight, onCollapseEnter, onCollapseLeave } from "@/lib/collapseTransition";

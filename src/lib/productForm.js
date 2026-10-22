@@ -37,15 +37,6 @@ export function composePei(base, range) {
     return [base, range].sort((a, b) => PEI_LEVELS.indexOf(a) - PEI_LEVELS.indexOf(b)).join("/");
 }
 
-// Texto de Caras en encabezados de medida: 0 = la caja es pareja. Vacío/null
-// devuelve "" (no se muestra badge).
-export function formatFaceCount(faceCount) {
-    if (faceCount === null || faceCount === undefined || faceCount === "") return "";
-    const count = Number(faceCount);
-    if (count === 0) return "Sin variación";
-    return `${count} ${count === 1 ? "cara" : "caras"}`;
-}
-
 // Campos de variante que no aplican a pisos por pieza: no se muestran, no se
 // validan y no viajan en el payload (el backend rechaza los de m²/PEI/ETT).
 export const PIECE_EXCLUDED_VARIANT_FIELDS = [

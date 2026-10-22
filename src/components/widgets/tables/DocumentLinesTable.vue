@@ -82,7 +82,10 @@
                                 </p>
                                 <p class="text-xs text-text-muted flex items-center gap-2 min-w-0">
                                     <span class="truncate"
-                                    >{{ row.variant.color }} · {{ row.variant.size }}</span
+                                    >{{ row.variant.color }} · {{ row.variant.size
+                                    }}<template v-if="formatFaceCount(row.variant.face_count)">
+                                        · {{ formatFaceCount(row.variant.face_count) }}</template
+                                    ></span
                                     >
                                     <!-- Lo que le deja al vendedor: orienta cuánto descuento se puede dar -->
                                     <CommissionBadge
@@ -265,6 +268,7 @@ import CommissionBadge from "@/components/widgets/badges/CommissionBadge.vue";
 import { useLineProducts } from "@/composables/useLineProducts";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
+import { formatFaceCount } from "@/lib/variantSpecs";
 import * as documentLines from "@/lib/documentLines";
 import {
     applyRequestedM2,
