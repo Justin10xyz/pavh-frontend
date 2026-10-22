@@ -71,6 +71,39 @@
             </div>
 
             <div class="space-y-1.5">
+                <FieldLabel html-for="floor_style_id" text="Estilo de piso" />
+                <!-- Opcional: los pisos existentes no tienen estilo hasta que se
+				     editen. Mismo "+" que Proveedor (ver FloorStylesSettingsView). -->
+                <div class="flex gap-2">
+                    <div class="flex-1 min-w-0">
+                        <SelectCustom
+                            id="floor_style_id"
+                            v-model="form.floor_style_id"
+                            :options="catalogs.floorStyles"
+                            :loading="catalogs.loading"
+                            :error="errors.floor_style_id"
+                            placeholder="Sin estilo"
+                            allow-empty
+                            @change="errors.floor_style_id = ''"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        class="shrink-0 inline-flex items-center justify-center h-10 w-10 bg-surface border border-border hover:bg-bg text-text-muted hover:text-text rounded-md transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                        aria-label="Nuevo estilo de piso"
+                        title="Nuevo estilo de piso"
+                        :disabled="!catalogs.initialized"
+                        @click="floorStyleDialogVisible = true"
+                    >
+                        <i class="ti ti-plus text-base" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <p v-if="errors.floor_style_id" class="text-danger text-[12px] mt-1.5">
+                    {{ errors.floor_style_id }}
+                </p>
+            </div>
+
+            <div class="space-y-1.5">
                 <FieldLabel html-for="name" text="Nombre" required />
                 <InputTextCustom
                     id="name"
@@ -126,6 +159,12 @@
             @saved="onSupplierCreated"
         />
 
+        <FloorStyleFormDialog
+            v-model:visible="floorStyleDialogVisible"
+            from-product-form
+            @saved="onFloorStyleCreated"
+        />
+
         <CategoryFormDialog
             v-model:visible="categoryDialogVisible"
             fixed-product-form-type="variant"
@@ -142,6 +181,7 @@ import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import CategoryFormDialog from "@/components/widgets/dialogs/CategoryFormDialog.vue";
 import SupplierFormDialog from "@/components/widgets/dialogs/SupplierFormDialog.vue";
+import FloorStyleFormDialog from "@/components/widgets/dialogs/FloorStyleFormDialog.vue";
 
 // Sección "Datos del producto" de ProductFormView. `form` y `errors` son los
 // objetos reactivos de la vista: los campos se editan sobre ellos directamente.
@@ -166,6 +206,14 @@ const supplierDialogVisible = ref(false);
 function onSupplierCreated(supplier) {
     form.value.supplier_id = supplier.id;
     errors.value.supplier_id = "";
+}
+
+const floorStyleDialogVisible = ref(false);
+
+// El estilo recién creado queda seleccionado: es para lo que se abrió el diálogo.
+function onFloorStyleCreated(floorStyle) {
+    form.value.floor_style_id = floorStyle.id;
+    errors.value.floor_style_id = "";
 }
 
 const categoryDialogVisible = ref(false);

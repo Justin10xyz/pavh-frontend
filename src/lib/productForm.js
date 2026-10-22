@@ -79,6 +79,7 @@ const SPEC_FIELDS = [
     "size",
     "pei",
     "ett",
+    "face_count",
     "kilos_per_box",
     "boxes_per_pallet",
     "commission_category_id",
@@ -95,6 +96,7 @@ export function createVariantGroup({ spec = {}, colorRows = [createColorRow()] }
             size: "",
             pei: "",
             ett: "",
+            face_count: null,
             kilos_per_box: null,
             boxes_per_pallet: null,
             commission_category_id: "",
@@ -109,8 +111,8 @@ export function createVariantGroup({ spec = {}, colorRows = [createColorRow()] }
     };
 }
 
-// Agrupa las variantes con groupVariants.js (medida+PEI+ETT+categoría de comisión+
-// precio por caja). Los campos que no son parte de la llave (piezas, m², kg, cajas por
+// Agrupa las variantes con groupVariants.js (medida+PEI+ETT+caras+categoría de
+// comisión+precio por caja). Los campos que no son parte de la llave (piezas, m², kg, cajas por
 // tarima, precio por m²) se toman de la primera variante del grupo, igual que el
 // encabezado de cada medida en InventoryTable.vue. Sin variantes devuelve [].
 export function variantGroupsFromProduct(product) {
@@ -122,6 +124,7 @@ export function variantGroupsFromProduct(product) {
                 // El backend lo manda como entero; el input de ETT es de texto
                 // (igual que al capturarlo en un producto nuevo).
                 ett: group.ett === null ? "" : String(group.ett),
+                face_count: group.face_count ?? null,
                 kilos_per_box: group.kilos_per_box,
                 boxes_per_pallet: group.boxes_per_pallet,
                 commission_category_id: group.commission_category?.id ?? "",
@@ -195,6 +198,20 @@ export function groupHasErrors(group) {
     );
 }
 
+// 422 de POST/PUT /api/product-variants: cada error va bajo su campo, en la ficha
+// del grupo o en la fila del color. Devuelve si aplicó alguno.
+export function applyVariantServerErrors(group, row, serverErrors = {}) {
+    let applied = false;
+    for (const [field, messages] of Object.entries(serverErrors)) {
+        const target = field in group.specErrors ? group.specErrors : field in row.errors ? row.errors : null;
+        if (target) {
+            target[field] = messages[0];
+            applied = true;
+        }
+    }
+    return applied;
+}
+
 // Cada variante toma la ficha técnica de su propio grupo. `stock_boxes` solo va al
 // crear (stock inicial): en una variante existente el backend lo ignora en el
 // update, y el cambio viaja aparte como ajuste (ver pendingStockChanges).
@@ -206,6 +223,7 @@ export function buildVariantPayload(productId, group, row, soldByPiece) {
         size: spec.size,
         pei: spec.pei,
         ett: spec.ett,
+        face_count: spec.face_count,
         kilos_per_box: spec.kilos_per_box,
         boxes_per_pallet: spec.boxes_per_pallet,
         commission_category_id: spec.commission_category_id || null,
