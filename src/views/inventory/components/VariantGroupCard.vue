@@ -35,9 +35,9 @@
                             >ETT {{ group.spec.ett }}</span
                             >
                             <span
-                                v-if="group.spec.face_count !== null && group.spec.face_count !== ''"
+                                v-if="formatFaceCount(group.spec.face_count)"
                                 class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
-                            >{{ group.spec.face_count }} {{ Number(group.spec.face_count) === 1 ? "cara" : "caras" }}</span
+                            >{{ formatFaceCount(group.spec.face_count) }}</span
                             >
                             <span
                                 v-if="group.spec.price_per_box !== null && group.spec.price_per_box !== ''"
@@ -318,7 +318,7 @@ import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { PEI_LEVELS, composePei, peiNeighbors, splitPei } from "@/lib/productForm";
+import { PEI_LEVELS, composePei, formatFaceCount, peiNeighbors, splitPei } from "@/lib/productForm";
 import { commissionLabel } from "@/lib/commissionCategories";
 import VariantColorsTable from "./VariantColorsTable.vue";
 

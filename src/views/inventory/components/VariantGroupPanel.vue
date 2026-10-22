@@ -25,9 +25,9 @@
                             <span class="spec-badge">ETT {{ group.ett }}</span>
                         </template>
                         <!-- Caras sí aplica a pisos por pieza; sin dato no se muestra. -->
-                        <span v-if="group.face_count != null" class="spec-badge"
-                        >{{ group.face_count }} {{ group.face_count === 1 ? "cara" : "caras" }}</span
-                        >
+                        <span v-if="formatFaceCount(group.face_count)" class="spec-badge">{{
+                            formatFaceCount(group.face_count)
+                        }}</span>
                         <CommissionBadge v-if="group.commission_category" :category="group.commission_category" />
                     </span>
                     <span v-if="soldByPiece" class="flex items-center gap-2 whitespace-nowrap">
@@ -150,6 +150,7 @@
 import { computed } from "vue";
 import CommissionBadge from "@/components/widgets/badges/CommissionBadge.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatFaceCount } from "@/lib/productForm";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import { isTracked, lowStockCount, lowStockLabel } from "@/lib/variantStock";
 import { clearCollapseHeight, onCollapseEnter, onCollapseLeave } from "@/lib/collapseTransition";
