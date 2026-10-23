@@ -7,6 +7,7 @@ import inventoryRoutes from './inventory/inventory.routes.js'
 import quotesRoutes from './quotes/quotes.routes.js'
 import posRoutes from './pos/pos.routes.js'
 import comprobantesRoutes from './comprobantes/comprobantes.routes.js'
+import reportsRoutes from './reports/reports.routes.js'
 import customersRoutes from './customers/customers.routes.js'
 import settingsRoutes from './settings/settings.routes.js'
 import NotFoundView from '@/views/errors/NotFoundView.vue'
@@ -18,6 +19,7 @@ const routes = [
     ...quotesRoutes,
     ...posRoutes,
     ...comprobantesRoutes,
+    ...reportsRoutes,
     ...customersRoutes,
     ...settingsRoutes,
     // Catch-all: debe ir al final. requiresAuth para que una ruta inexistente
