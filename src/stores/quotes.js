@@ -18,9 +18,7 @@ export const useQuotesStore = defineStore("quotes", () => {
     const currentQuoteLoading = ref(false);
     const currentQuoteError = ref(null);
 
-    // QuoteController@index solo soporta `?with=items` (carga items.productVariant).
-    // `customer` y `quoteStatus.name` no requieren `with`: QuoteResource los
-    // accede siempre, así que Eloquent los lazy-loads y ya vienen en la respuesta.
+    // index acepta ?with=items,customer,quoteStatus,comprobante.
     async function fetchQuotes({ force = false } = {}) {
         if (initialized.value && !force) return;
 
@@ -28,7 +26,7 @@ export const useQuotesStore = defineStore("quotes", () => {
         error.value = null;
 
         try {
-            const { data } = await axios.get("/api/quotes?with=customer,quoteStatus");
+            const { data } = await axios.get("/api/quotes?with=customer,quoteStatus,comprobante");
             quotes.value = data.data;
             initialized.value = true;
         } catch (err) {
@@ -146,12 +144,15 @@ export const useQuotesStore = defineStore("quotes", () => {
     }
 
     // La conversión ocurre en POST /api/comprobantes (ComprobanteFormView), cuya
-    // respuesta es el comprobante, no la cotización. Solo el detalle expone
-    // `comprobante` (id+folio, vía whenLoaded en show), así que el listado no se toca.
+    // respuesta es el comprobante, no la cotización: se copia id+folio in-place
+    // en el detalle y en el listado, sin refetch.
     function markQuoteComprobante(id, comprobante) {
         if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
             currentQuote.value.comprobante = comprobante;
         }
+
+        const quote = quotes.value.find((q) => String(q.id) === String(id));
+        if (quote) quote.comprobante = comprobante;
     }
 
     async function fetchQuotePdf(id) {

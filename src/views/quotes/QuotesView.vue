@@ -96,12 +96,32 @@
 
                     <Column header="Estado">
                         <template #body="{ data }">
-                            <span
-                                class="text-xs px-2 py-0.5 rounded whitespace-nowrap"
-                                :class="statusClasses(data.status)"
-                            >
-                                {{ statusLabel(data.status) }}
-                            </span>
+                            <div class="flex flex-col items-start gap-1">
+                                <span
+                                    class="text-xs px-2 py-0.5 rounded whitespace-nowrap"
+                                    :class="statusClasses(data.status)"
+                                >
+                                    {{ statusLabel(data.status) }}
+                                </span>
+                                <!-- Solo en Pagada: `comprobante` viene de ?with=comprobante (null si no se ha generado). -->
+                                <template v-if="data.status === 'Pagada'">
+                                    <RouterLink
+                                        v-if="data.comprobante"
+                                        :to="{ name: 'comprobantes.show', params: { id: data.comprobante.id } }"
+                                        class="text-xs text-accent hover:underline inline-flex items-center gap-1 whitespace-nowrap"
+                                    >
+                                        <i class="ti ti-file-check text-sm" aria-hidden="true"></i>
+                                        {{ data.comprobante.folio }}
+                                    </RouterLink>
+                                    <span
+                                        v-else
+                                        class="text-xs text-amber-600 inline-flex items-center gap-1 whitespace-nowrap"
+                                    >
+                                        <i class="ti ti-file-alert text-sm" aria-hidden="true"></i>
+                                        Sin comprobante
+                                    </span>
+                                </template>
+                            </div>
                         </template>
                     </Column>
 
@@ -172,8 +192,20 @@ function normalize(str) {
 // conserva al volver del detalle con Atrás y se puede enlazar directo (ej.
 // "Ver todo" del widget de cotizaciones activas). Un valor desconocido en la
 // URL cae a "Todas". Se usa replace para no llenar el historial de filtros.
+//
+// "sin-comprobante" no es un status: son las Pagadas que aún no tienen
+// comprobante, la bandeja de trabajo del flujo Presupuesto → Comprobante.
+const PENDING_COMPROBANTE = "sin-comprobante";
+
+function isPendingComprobante(quote) {
+    return quote.status === "Pagada" && !quote.comprobante;
+}
+
 const statusFilter = computed({
-    get: () => (QUOTE_STATUSES.includes(route.query.estado) ? route.query.estado : "all"),
+    get: () =>
+        QUOTE_STATUSES.includes(route.query.estado) || route.query.estado === PENDING_COMPROBANTE
+            ? route.query.estado
+            : "all",
     set: (key) => {
         router.replace({
             query: { ...route.query, estado: key === "all" ? undefined : key },
@@ -202,14 +234,25 @@ const statusOptions = computed(() => [
         label: statusLabel(status),
         count: quotes.quotes.filter((quote) => quote.status === status).length,
     })),
+    {
+        key: PENDING_COMPROBANTE,
+        label: "Sin comprobante",
+        count: quotes.quotes.filter(isPendingComprobante).length,
+    },
 ]);
+
+function matchesStatusFilter(quote) {
+    if (statusFilter.value === "all") return true;
+    if (statusFilter.value === PENDING_COMPROBANTE) return isPendingComprobante(quote);
+    return quote.status === statusFilter.value;
+}
 
 const filteredQuotes = computed(() => {
     const q = normalize(searchQuery.value);
 
     return quotes.quotes.filter(
         (quote) =>
-            (statusFilter.value === "all" || quote.status === statusFilter.value) &&
+            matchesStatusFilter(quote) &&
             (!q || normalize(quote.folio).includes(q) || normalize(quote.customer?.name).includes(q)),
     );
 });
