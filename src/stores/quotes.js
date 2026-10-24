@@ -18,9 +18,7 @@ export const useQuotesStore = defineStore("quotes", () => {
     const currentQuoteLoading = ref(false);
     const currentQuoteError = ref(null);
 
-    // QuoteController@index solo soporta `?with=items` (carga items.productVariant).
-    // `customer` y `quoteStatus.name` no requieren `with`: QuoteResource los
-    // accede siempre, así que Eloquent los lazy-loads y ya vienen en la respuesta.
+    // index acepta ?with=items,customer,quoteStatus,comprobante.
     async function fetchQuotes({ force = false } = {}) {
         if (initialized.value && !force) return;
 
@@ -28,11 +26,11 @@ export const useQuotesStore = defineStore("quotes", () => {
         error.value = null;
 
         try {
-            const { data } = await axios.get("/api/quotes?with=customer,quoteStatus");
+            const { data } = await axios.get("/api/quotes?with=customer,quoteStatus,comprobante");
             quotes.value = data.data;
             initialized.value = true;
         } catch (err) {
-            error.value = "No se pudieron cargar las cotizaciones.";
+            error.value = "No se pudieron cargar los presupuestos.";
             console.error(err);
         } finally {
             loading.value = false;
@@ -55,8 +53,8 @@ export const useQuotesStore = defineStore("quotes", () => {
         } catch (err) {
             currentQuoteError.value =
 				err.response?.status === 404
-				    ? "La cotización no existe."
-				    : "No se pudo cargar la cotización.";
+				    ? "El presupuesto no existe."
+				    : "No se pudo cargar el presupuesto.";
             console.error(err);
         } finally {
             currentQuoteLoading.value = false;
@@ -102,6 +100,18 @@ export const useQuotesStore = defineStore("quotes", () => {
         return data.data;
     }
 
+    // DELETE /api/quotes/{id} (soft delete) responde 204, o 422 si está pagada o
+    // ya tiene venta/comprobante. Se quita del listado in-place, sin refetch.
+    async function deleteQuote(id) {
+        await axios.delete(`/api/quotes/${id}`);
+
+        quotes.value = quotes.value.filter((q) => String(q.id) !== String(id));
+
+        if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+            currentQuote.value = null;
+        }
+    }
+
     // La conversión ocurre en POST /api/sales con quote_id (SaleFormView), cuya
     // respuesta no trae el quote completo: solo {id, folio}. El backend la marca
     // "Convertida" en la misma transacción, así que un POST exitoso basta para
@@ -113,6 +123,36 @@ export const useQuotesStore = defineStore("quotes", () => {
         if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
             currentQuote.value.status = "Convertida";
         }
+    }
+
+    // PATCH /api/quotes/{id}/mark-paid (sin payload) descuenta stock, pasa el
+    // status a "Pagada" y llena paid_at/paid_by; responde 422 si no es pagable.
+    // Solo se copian esos tres campos in-place, mismo criterio que
+    // markQuoteConverted(): la respuesta no eager-loadea items.productVariant.product.
+    async function markQuotePaid(id) {
+        const { data } = await axios.patch(`/api/quotes/${id}/mark-paid`);
+        const paid = { status: data.data.status, paid_at: data.data.paid_at, paid_by: data.data.paid_by };
+
+        const quote = quotes.value.find((q) => String(q.id) === String(id));
+        if (quote) Object.assign(quote, paid);
+
+        if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+            Object.assign(currentQuote.value, paid);
+        }
+
+        return data.data;
+    }
+
+    // La conversión ocurre en POST /api/comprobantes (ComprobanteFormView), cuya
+    // respuesta es el comprobante, no la cotización: se copia id+folio in-place
+    // en el detalle y en el listado, sin refetch.
+    function markQuoteComprobante(id, comprobante) {
+        if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+            currentQuote.value.comprobante = comprobante;
+        }
+
+        const quote = quotes.value.find((q) => String(q.id) === String(id));
+        if (quote) quote.comprobante = comprobante;
     }
 
     async function fetchQuotePdf(id) {
@@ -130,7 +170,10 @@ export const useQuotesStore = defineStore("quotes", () => {
         createQuote,
         updateQuote,
         cancelQuote,
+        deleteQuote,
         markQuoteConverted,
+        markQuotePaid,
+        markQuoteComprobante,
         currentQuote,
         currentQuoteLoading,
         currentQuoteError,

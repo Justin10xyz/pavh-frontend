@@ -117,7 +117,7 @@
 						     "Convertida en venta" en QuoteDetailView) -->
                         <div v-if="sale.quote" class="space-y-1">
                             <dt class="text-xs font-medium text-text-muted">
-                                Convertida desde cotización
+                                Convertida desde presupuesto
                             </dt>
                             <dd>
                                 <RouterLink

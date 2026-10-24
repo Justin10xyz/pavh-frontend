@@ -120,15 +120,15 @@
                 <!-- Historial: cotizaciones -->
                 <div class="bg-surface border border-border rounded-md overflow-hidden">
                     <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 sm:px-6 pt-5 sm:pt-6 mb-4">
-                        <h2 class="text-xs font-medium uppercase tracking-wide text-text-muted">Cotizaciones</h2>
+                        <h2 class="text-xs font-medium uppercase tracking-wide text-text-muted">Presupuestos</h2>
                         <p v-if="quotes.length > 0" class="text-sm text-text-muted">
-                            {{ quotes.length }} {{ quotes.length === 1 ? 'cotización' : 'cotizaciones' }}
+                            {{ quotes.length }} {{ quotes.length === 1 ? 'presupuesto' : 'presupuestos' }}
                         </p>
                     </div>
 
-                    <p v-if="quotesLoading && quotes.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Cargando cotizaciones…</p>
+                    <p v-if="quotesLoading && quotes.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Cargando presupuestos…</p>
                     <p v-else-if="quotesError" class="text-danger text-sm px-5 sm:px-6 pb-5 sm:pb-6">{{ quotesError }}</p>
-                    <p v-else-if="quotes.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Este cliente no tiene cotizaciones.</p>
+                    <p v-else-if="quotes.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Este cliente no tiene presupuestos.</p>
 
                     <div v-else class="overflow-x-auto border-t border-border">
                         <DataTable
@@ -164,7 +164,7 @@
                             <Column header="Status">
                                 <template #body="{ data }">
                                     <span class="text-xs px-2 py-0.5 rounded" :class="statusClasses(data.status)">
-                                        {{ data.status }}
+                                        {{ statusLabel(data.status) }}
                                     </span>
                                 </template>
                             </Column>
@@ -271,7 +271,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import axios from '@/lib/axios'
 import { useCustomersStore } from '@/stores/customers'
 import { useCustomerDelete } from '@/composables/useCustomerDelete'
-import { statusClasses } from '@/lib/quoteStatus'
+import { statusClasses, statusLabel } from '@/lib/quoteStatus'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatDate, formatDateTime } from '@/lib/dates'
 
@@ -343,7 +343,7 @@ function fetchHistory(customerId) {
         items: quotes,
         loading: quotesLoading,
         error: quotesError,
-        message: 'No se pudieron cargar las cotizaciones del cliente.',
+        message: 'No se pudieron cargar los presupuestos del cliente.',
         // GET /api/quotes y GET /api/sales ya vienen ordenados por created_at
         // descendente (latest()).
         load: async () => {

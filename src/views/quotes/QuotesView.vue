@@ -1,16 +1,16 @@
 <template>
     <div class="p-2">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h1 class="font-serif text-xl text-primary">Cotizaciones</h1>
+            <h1 class="font-serif text-xl text-primary">Presupuestos</h1>
             <RouterLink
                 :to="{ name: 'quotes.create' }"
                 class="bg-primary hover:bg-primary-dark text-white font-medium text-sm h-10 px-4 rounded-md transition-colors inline-flex items-center select-none"
             >
-                Nueva cotización
+                Nuevo presupuesto
             </RouterLink>
         </div>
 
-        <div v-if="quotes.loading" class="text-text-muted text-sm">Cargando cotizaciones…</div>
+        <div v-if="quotes.loading" class="text-text-muted text-sm">Cargando presupuestos…</div>
         <div v-else-if="quotes.error" class="text-danger text-sm">{{ quotes.error }}</div>
 
         <template v-else>
@@ -48,8 +48,8 @@
             >
                 {{
                     quotes.quotes.length === 0
-                        ? "Aún no hay cotizaciones registradas."
-                        : "No se encontraron cotizaciones con esos filtros."
+                        ? "Aún no hay presupuestos registrados."
+                        : "No se encontraron presupuestos con esos filtros."
                 }}
             </div>
 
@@ -96,12 +96,32 @@
 
                     <Column header="Estado">
                         <template #body="{ data }">
-                            <span
-                                class="text-xs px-2 py-0.5 rounded whitespace-nowrap"
-                                :class="statusClasses(data.status)"
-                            >
-                                {{ data.status }}
-                            </span>
+                            <div class="flex flex-col items-start gap-1">
+                                <span
+                                    class="text-xs px-2 py-0.5 rounded whitespace-nowrap"
+                                    :class="statusClasses(data.status)"
+                                >
+                                    {{ statusLabel(data.status) }}
+                                </span>
+                                <!-- Solo en Pagada: `comprobante` viene de ?with=comprobante (null si no se ha generado). -->
+                                <template v-if="data.status === 'Pagada'">
+                                    <RouterLink
+                                        v-if="data.comprobante"
+                                        :to="{ name: 'comprobantes.show', params: { id: data.comprobante.id } }"
+                                        class="text-xs text-accent hover:underline inline-flex items-center gap-1 whitespace-nowrap"
+                                    >
+                                        <i class="ti ti-file-check text-sm" aria-hidden="true"></i>
+                                        {{ data.comprobante.folio }}
+                                    </RouterLink>
+                                    <span
+                                        v-else
+                                        class="text-xs text-amber-600 inline-flex items-center gap-1 whitespace-nowrap"
+                                    >
+                                        <i class="ti ti-file-alert text-sm" aria-hidden="true"></i>
+                                        Sin comprobante
+                                    </span>
+                                </template>
+                            </div>
                         </template>
                     </Column>
 
@@ -122,8 +142,8 @@
                             <RouterLink
                                 :to="{ name: 'quotes.show', params: { id: data.id } }"
                                 class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
-                                aria-label="Ver cotización"
-                                title="Ver cotización"
+                                aria-label="Ver presupuesto"
+                                title="Ver presupuesto"
                             >
                                 <i class="ti ti-eye text-base"></i>
                             </RouterLink>
@@ -141,7 +161,7 @@ import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { useQuotesStore } from "@/stores/quotes";
 import { useRoute, useRouter } from "vue-router";
-import { QUOTE_STATUSES, statusClasses } from "@/lib/quoteStatus";
+import { QUOTE_STATUSES, statusClasses, statusLabel } from "@/lib/quoteStatus";
 import { formatCurrency } from "@/lib/formatCurrency";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import QuickFilter from "@/components/widgets/filters/QuickFilter.vue";
@@ -172,8 +192,20 @@ function normalize(str) {
 // conserva al volver del detalle con Atrás y se puede enlazar directo (ej.
 // "Ver todo" del widget de cotizaciones activas). Un valor desconocido en la
 // URL cae a "Todas". Se usa replace para no llenar el historial de filtros.
+//
+// "sin-comprobante" no es un status: son las Pagadas que aún no tienen
+// comprobante, la bandeja de trabajo del flujo Presupuesto → Comprobante.
+const PENDING_COMPROBANTE = "sin-comprobante";
+
+function isPendingComprobante(quote) {
+    return quote.status === "Pagada" && !quote.comprobante;
+}
+
 const statusFilter = computed({
-    get: () => (QUOTE_STATUSES.includes(route.query.estado) ? route.query.estado : "all"),
+    get: () =>
+        QUOTE_STATUSES.includes(route.query.estado) || route.query.estado === PENDING_COMPROBANTE
+            ? route.query.estado
+            : "all",
     set: (key) => {
         router.replace({
             query: { ...route.query, estado: key === "all" ? undefined : key },
@@ -194,21 +226,33 @@ watch(
     { immediate: true },
 );
 
+// `key` es el valor real (filtro y ?estado=); `label` solo el texto visible.
 const statusOptions = computed(() => [
-    { key: "all", label: "Todas", count: quotes.quotes.length },
+    { key: "all", label: "Todos", count: quotes.quotes.length },
     ...QUOTE_STATUSES.map((status) => ({
         key: status,
-        label: status,
+        label: statusLabel(status),
         count: quotes.quotes.filter((quote) => quote.status === status).length,
     })),
+    {
+        key: PENDING_COMPROBANTE,
+        label: "Sin comprobante",
+        count: quotes.quotes.filter(isPendingComprobante).length,
+    },
 ]);
+
+function matchesStatusFilter(quote) {
+    if (statusFilter.value === "all") return true;
+    if (statusFilter.value === PENDING_COMPROBANTE) return isPendingComprobante(quote);
+    return quote.status === statusFilter.value;
+}
 
 const filteredQuotes = computed(() => {
     const q = normalize(searchQuery.value);
 
     return quotes.quotes.filter(
         (quote) =>
-            (statusFilter.value === "all" || quote.status === statusFilter.value) &&
+            matchesStatusFilter(quote) &&
             (!q || normalize(quote.folio).includes(q) || normalize(quote.customer?.name).includes(q)),
     );
 });

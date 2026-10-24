@@ -73,7 +73,7 @@ export function missingProductsMessage(variantIds, simpleProductIds) {
     const plural = variantIds.length + simpleProductIds.length > 1;
     const subject = parts.join(" y ");
 
-    return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} de esta cotización ya no ${plural ? "están disponibles" : "está disponible"} en inventario. No se puede convertir a venta.`;
+    return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} de este presupuesto ya no ${plural ? "están disponibles" : "está disponible"} en inventario. No se puede convertir a venta.`;
 }
 
 // SaleResource no regresa el stock restante: se recalcula con el mismo criterio

@@ -141,7 +141,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
             loadSection(isCurrent, {
                 loading: activeQuotesLoading,
                 error: activeQuotesError,
-                message: 'No se pudieron cargar las cotizaciones activas.',
+                message: 'No se pudieron cargar los presupuestos activos.',
                 load: fetchActiveQuotes,
                 apply: (quotes) => { activeQuotes.value = quotes },
             }),

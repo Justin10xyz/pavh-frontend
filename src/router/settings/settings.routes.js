@@ -18,6 +18,12 @@ export default [
         meta: { layout: 'AppLayout', section: 'settings', title: 'Proveedores', requiresAuth: true },
     },
     {
+        path: '/configuracion/datos-negocio',
+        name: 'settings.businessSettings',
+        component: () => import('@/views/settings/BusinessSettingsView.vue'),
+        meta: { layout: 'AppLayout', section: 'settings', title: 'Datos del negocio', requiresAuth: true },
+    },
+    {
         path: '/configuracion/estilos',
         name: 'settings.floorStyles',
         component: () => import('@/views/settings/FloorStylesSettingsView.vue'),
