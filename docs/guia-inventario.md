@@ -100,11 +100,20 @@ El ícono de **lápiz** en la fila del producto abre el formulario de edición. 
 
 Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), el motivo aparece en un aviso rojo arriba del formulario.
 
+### Eliminar un piso
+
+El ícono de **basura**, junto al lápiz en la fila del producto, elimina el piso completo con todas sus medidas y colores. Antes de eliminarlo aparece un aviso para confirmar:
+
+- Si el piso aparece en cotizaciones o ventas, el aviso dice en cuántas. Aun así se puede eliminar: esas cotizaciones y ventas lo siguen mostrando con su nombre en su detalle.
+- Si no se pudo revisar el historial, el aviso lo dice y también se puede eliminar.
+
+Al confirmar, el piso desaparece del catálogo y aparece el aviso **Producto eliminado**. Esta acción no se puede deshacer. Por ahora solo aplica al **Catálogo de pisos**, no a **Otros productos**.
+
 **Eliminar un color ya guardado** (la **X** de su fila) pide confirmación y lo borra **en ese momento**: no espera a **Guardar cambios**, así que aunque después salgas con **Cancelar**, el color ya no regresa. Un producto no puede quedarse sin colores: si intentas eliminar el último que tiene guardado, el motivo aparece en rojo debajo de ese color.
 
 Cada medida necesita **al menos un color**: cuando una medida tiene uno solo, su **X** aparece apagada y, al pasar el cursor encima, dice *"Cada medida necesita al menos un color"*. Para cambiar ese color, edita su nombre en lugar de quitarlo, o agrega otro primero.
 
-Una medida que ya tiene colores guardados no muestra **Quitar medida**. Al abrirla, una nota bajo su encabezado explica cómo quitarla: primero se eliminan sus colores guardados con la **X** de cada uno y, como siempre debe quedar un color, hay que agregar uno nuevo antes de eliminar el último. Cuando ya no le quedan colores guardados, aparece **Quitar medida**.
+Una medida que ya tiene colores guardados muestra **Eliminar medida** en lugar de **Quitar medida**. Al presionarlo, un aviso dice cuántos colores se van a borrar (por ejemplo *"Esto eliminará los 4 colores de la medida 60X120"*). Al confirmar, la medida y todos sus colores se eliminan **en ese momento**, sin esperar a **Guardar cambios**, y desaparecen del formulario y del catálogo. Un piso siempre conserva al menos una medida: si es la única, no se elimina y el motivo aparece bajo el encabezado de la medida.
 
 ### Una medida abierta a la vez
 
@@ -324,3 +333,6 @@ Mejoras que se van agregando al módulo:
 | 2026-10-17 | **Editar piso**: la confirmación al eliminar un color aclara que se borra en ese momento, sin esperar a Guardar cambios. Si no se puede eliminar (es el último color del producto), el motivo aparece debajo de ese color en lugar de arriba del formulario. |
 | 2026-10-17 | **Nuevo piso / Editar piso**: la **X** apagada del único color de una medida ahora explica, al pasar el cursor, que cada medida necesita al menos un color. |
 | 2026-10-17 | **Editar piso**: las medidas con colores guardados explican, al abrirlas, cómo quitarlas (eliminar primero sus colores guardados). |
+| 2026-10-21 | **Nuevo piso / Editar piso**: **m² por caja** acepta hasta 3 decimales (por ejemplo *1.404*) en lugar de 2. |
+| 2026-10-21 | **Editar piso**: las medidas con colores guardados se pueden eliminar completas con **Eliminar medida**, sin borrar sus colores uno por uno. Si es la única medida del piso, no se elimina y el motivo aparece bajo la medida. |
+| 2026-10-21 | **Catálogo de pisos**: el ícono de basura en la fila del producto elimina el piso completo. El aviso de confirmación dice en cuántas cotizaciones y ventas aparece, pero no impide eliminarlo. |

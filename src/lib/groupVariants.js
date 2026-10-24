@@ -3,7 +3,7 @@ export function groupVariants(variants) {
 
     for (const variant of variants) {
         const categoryId = variant.commission_category?.id ?? null
-        const key = [variant.size, variant.pei, variant.ett, categoryId, variant.price_per_box].join('|')
+        const key = [variant.size, variant.pei, variant.ett, variant.face_count, categoryId, variant.price_per_box].join('|')
 
         if (!groups.has(key)) {
             groups.set(key, {
@@ -11,6 +11,7 @@ export function groupVariants(variants) {
                 size: variant.size,
                 pei: variant.pei,
                 ett: variant.ett,
+                face_count: variant.face_count,
                 commission_category: variant.commission_category,
                 price_per_box: variant.price_per_box,
                 price_per_m2: variant.price_per_m2,

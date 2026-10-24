@@ -270,7 +270,7 @@
 
         <ConfirmDialog :pt="{ mask: { class: 'bg-primary/50' } }">
             <template #container="{ message, acceptCallback, rejectCallback }">
-                <div class="bg-surface border border-border rounded-md p-5 w-[380px] max-w-[90vw]">
+                <div class="bg-surface border border-border rounded-md p-5 w-95 max-w-[90vw]">
                     <h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
                     <p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
                     <!-- Un solo diálogo para cancelar y marcar como pagado: el botón

@@ -35,6 +35,11 @@
                             >ETT {{ group.spec.ett }}</span
                             >
                             <span
+                                v-if="formatFaceCount(group.spec.face_count)"
+                                class="text-xs text-text-muted border border-border rounded px-1.5 py-0.5"
+                            >{{ formatFaceCount(group.spec.face_count) }}</span
+                            >
+                            <span
                                 v-if="group.spec.price_per_box !== null && group.spec.price_per_box !== ''"
                                 class="font-semibold text-primary tabular-nums"
                             >{{ formatCurrency(group.spec.price_per_box) }}/{{ soldByPiece ? "pieza" : "caja" }}</span
@@ -46,8 +51,8 @@
                         </span>
                     </button>
                 </h2>
-                <!-- Solo medidas sin variantes guardadas: quitar una guardada sería
-				     borrar variantes, fuera del alcance de este form. -->
+                <!-- Solo medidas sin variantes guardadas: se quita del form sin tocar
+				     el backend. -->
                 <button
                     v-if="removable"
                     type="button"
@@ -56,13 +61,21 @@
                 >
                     Quitar medida
                 </button>
-                <!-- En lugar de "Quitar medida" (ver canRemoveGroup en la vista). Solo con
-				     el panel abierto, para no repetirlo en cada medida cerrada. basis-full:
-				     baja a su propia línea; pl-6 lo alinea con el texto, después del chevron. -->
-                <p v-if="active && removalHint" class="basis-full pl-6 text-xs text-text-muted">
-                    Para quitar esta medida, primero elimina sus colores guardados con la X
-                    de cada uno. Como siempre debe quedar un color, agrega uno nuevo antes
-                    de eliminar el último.
+                <!-- En lugar de "Quitar medida" cuando ya tiene colores guardados: borra
+				     todos sus colores en backend (la vista confirma antes). -->
+                <button
+                    v-else-if="deletable"
+                    type="button"
+                    :disabled="deletingGroup"
+                    @click="emit('delete-group')"
+                    class="text-xs text-text-muted hover:text-danger underline rounded transition-colors cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                >
+                    {{ deletingGroup ? "Eliminando…" : "Eliminar medida" }}
+                </button>
+                <!-- 422 del backend (ej. única medida del producto). basis-full: baja a su
+				     propia línea; pl-6 lo alinea con el texto, después del chevron. -->
+                <p v-if="groupDeleteError" role="alert" class="basis-full pl-6 text-danger text-xs">
+                    {{ groupDeleteError }}
                 </p>
             </div>
         </AccordionHeader>
@@ -70,8 +83,8 @@
         <AccordionContent>
             <div class="px-5 sm:px-6 pb-5 sm:pb-6">
                 <!-- Grupo 1 — Medida y especificaciones técnicas. PEI/ETT no aplican
-		     a pisos por pieza (el backend los rechaza). -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+		     a pisos por pieza (el backend los rechaza); Caras sí. -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="space-y-1.5">
                         <FieldLabel :html-for="`size-${group.id}`" text="Medida" required />
                         <InputTextCustom
@@ -131,6 +144,23 @@
                         />
                         <p v-if="group.specErrors.ett" class="text-danger text-[12px] mt-1.5">
                             {{ group.specErrors.ett }}
+                        </p>
+                    </div>
+
+                    <!-- Patrones distintos en la caja; 0 = muy parejo, sin variación. -->
+                    <div class="space-y-1.5">
+                        <FieldLabel :html-for="`face_count-${group.id}`" text="Caras" />
+                        <InputNumberCustom
+                            :id="`face_count-${group.id}`"
+                            v-model="group.spec.face_count"
+                            :error="group.specErrors.face_count"
+                            :min="0"
+                            placeholder="Ej. 4"
+                            @input="group.specErrors.face_count = ''"
+                            :max-fraction-digits="0"
+                        />
+                        <p v-if="group.specErrors.face_count" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.face_count }}
                         </p>
                     </div>
                 </div>
@@ -219,9 +249,9 @@
                             v-model="group.spec.m2_per_box"
                             :error="group.specErrors.m2_per_box"
                             :min="0"
-                            placeholder="0.00"
+                            placeholder="0.000"
                             @input="group.specErrors.m2_per_box = ''"
-                            :max-fraction-digits="2"
+                            :max-fraction-digits="3"
                         />
                         <p v-if="group.specErrors.m2_per_box" class="text-danger text-[12px] mt-1.5">
                             {{ group.specErrors.m2_per_box }}
@@ -297,6 +327,7 @@ import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { PEI_LEVELS, composePei, peiNeighbors, splitPei } from "@/lib/productForm";
+import { formatFaceCount } from "@/lib/variantSpecs";
 import { commissionLabel } from "@/lib/commissionCategories";
 import VariantColorsTable from "./VariantColorsTable.vue";
 
@@ -307,19 +338,22 @@ const group = defineModel("group", { type: Object, required: true });
 
 defineProps({
     index: { type: Number, required: true },
-    // Pisos por pieza: oculta PEI/ETT, precio por m² y datos por caja.
+    // Pisos por pieza: oculta PEI/ETT, precio por m² y datos por caja (Caras se queda).
     soldByPiece: { type: Boolean, default: false },
     // { short, label } de variantStockUnit(): cajas o piezas.
     stockUnit: { type: Object, required: true },
     // Solo medidas sin variantes guardadas (lo decide la vista).
     removable: { type: Boolean, default: false },
-    // Medida con colores guardados (no removible por eso): muestra cómo quitarla.
-    removalHint: { type: Boolean, default: false },
+    // Medida con colores guardados: "Eliminar medida" los borra todos en backend.
+    deletable: { type: Boolean, default: false },
+    deletingGroup: { type: Boolean, default: false },
+    // Mensaje del DELETE de la medida rechazado con 422; va bajo el encabezado.
+    groupDeleteError: { type: String, default: null },
     deletingRowId: { type: String, default: null },
     deleteError: { type: Object, default: null },
 });
 
-const emit = defineEmits(["remove", "remove-color"]);
+const emit = defineEmits(["remove", "remove-color", "delete-group"]);
 
 const catalogs = useCatalogsStore();
 

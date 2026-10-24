@@ -41,6 +41,9 @@
                             <div class="text-text-muted text-xs">
                                 {{ item.product_variant?.color }} ·
                                 {{ item.product_variant?.size }}
+                                <template v-if="formatFaceCount(item.product_variant?.face_count)">
+                                    · {{ formatFaceCount(item.product_variant?.face_count) }}
+                                </template>
                             </div>
                         </td>
                         <td class="text-right text-text">
@@ -87,6 +90,7 @@
 import WholesaleBadge from "@/components/widgets/badges/WholesaleBadge.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatQuantity } from "@/lib/formatQuantity";
+import { formatFaceCount } from "@/lib/variantSpecs";
 import { isSoldByPiece } from "@/lib/unitTypes";
 
 // Líneas de un documento ya emitido (cotización, comprobante), de solo lectura.

@@ -66,10 +66,13 @@
                     :sold-by-piece="soldByPiece"
                     :stock-unit="stockUnit"
                     :removable="canRemoveGroup(group)"
-                    :removal-hint="needsSavedColorsRemoved(group)"
+                    :deletable="hasSavedColors(group)"
+                    :deleting-group="deletingGroupId === group.id"
+                    :group-delete-error="groupDeleteError?.groupId === group.id ? groupDeleteError.message : null"
                     :deleting-row-id="deletingRowId"
                     :delete-error="deleteError"
                     @remove="removeVariantGroup(group.id)"
+                    @delete-group="confirmDeleteVariantGroup(group)"
                     @remove-color="(row) => removeColorRow(group, row.id)"
                 />
             </Accordion>
@@ -156,6 +159,7 @@ import SaveShortcutHint from "@/components/widgets/labels/SaveShortcutHint.vue";
 import { useSaveShortcut } from "@/composables/useSaveShortcut";
 import { isSoldByPiece, variantStockUnit } from "@/lib/unitTypes";
 import {
+    applyVariantServerErrors,
     buildVariantPayload,
     createVariantGroup,
     groupHasErrors,
@@ -199,6 +203,7 @@ async function focusField(id) {
 
 const form = reactive({
     supplier_id: "",
+    floor_style_id: "",
     category_id: "",
     unit_type_id: "",
     name: "",
@@ -207,6 +212,7 @@ const form = reactive({
 
 const errors = reactive({
     supplier_id: "",
+    floor_style_id: "",
     category_id: "",
     unit_type_id: "",
     name: "",
@@ -244,20 +250,74 @@ function canRemoveGroup(group) {
     return variantGroups.value.length > 1 && group.colorRows.every((row) => !row.variantId);
 }
 
-// Lo único que impide quitarla son sus colores guardados (con una sola medida no
-// hay nada que explicar: el producto siempre conserva al menos una).
-function needsSavedColorsRemoved(group) {
-    return variantGroups.value.length > 1 && group.colorRows.some((row) => row.variantId);
+// Con colores guardados la medida se elimina en backend ("Eliminar medida"). Aunque
+// sea la única: el backend la rechaza con 422 y el mensaje se muestra en la medida.
+function hasSavedColors(group) {
+    return group.colorRows.some((row) => row.variantId);
 }
 
 function removeVariantGroup(groupId) {
     const group = variantGroups.value.find((g) => g.id === groupId);
     if (!group || !canRemoveGroup(group)) return;
+    dropVariantGroup(group);
+}
+
+// Quita la tarjeta del form; el foco pasa a la medida anterior (o a la nueva primera).
+function dropVariantGroup(group) {
     const index = variantGroups.value.indexOf(group);
-    variantGroups.value = variantGroups.value.filter((g) => g.id !== groupId);
+    variantGroups.value = variantGroups.value.filter((g) => g.id !== group.id);
+    if (!variantGroups.value.length) variantGroups.value.push(createVariantGroup());
     const next = variantGroups.value[Math.max(index - 1, 0)];
     openGroupId.value = next.id;
     focusField(`size-${next.id}`);
+}
+
+const deletingGroupId = ref(null);
+// { groupId, message } del último DELETE de medida rechazado con 422.
+const groupDeleteError = ref(null);
+
+// Acción separada del borrado color por color (que conserva el mínimo de un color):
+// borra de una vez todos los colores guardados de la medida.
+function confirmDeleteVariantGroup(group) {
+    const savedRows = group.colorRows.filter((row) => row.variantId);
+    if (!savedRows.length) return;
+
+    const count = savedRows.length;
+    const colors = count === 1 ? "el color" : `los ${count} colores`;
+    const size = group.spec.size ? ` ${group.spec.size}` : "";
+
+    confirm.require({
+        header: "Eliminar medida",
+        message: `Esto eliminará ${colors} de la medida${size}. Esta acción no se puede deshacer.\nLa medida se eliminará de inmediato, aunque no hayas guardado los demás cambios del formulario.`,
+        accept: () => deleteVariantGroup(group, savedRows),
+    });
+}
+
+async function deleteVariantGroup(group, savedRows) {
+    const productId = route.params.id;
+    const variantIds = savedRows.map((row) => row.variantId);
+
+    deletingGroupId.value = group.id;
+    generalError.value = null;
+    groupDeleteError.value = null;
+
+    try {
+        await axios.delete(`/api/products/${productId}/variants`, { data: { variant_ids: variantIds } });
+        inventory.removeVariants(productId, variantIds);
+        dropVariantGroup(group);
+    } catch (err) {
+        // 422 de negocio (ej. única medida del producto): va bajo el encabezado de la medida.
+        if (err.response?.status === 422) {
+            groupDeleteError.value = {
+                groupId: group.id,
+                message: err.response.data.message || "No se pudo eliminar esta medida.",
+            };
+        } else {
+            generalError.value = "No se pudo eliminar la medida. Intenta de nuevo.";
+        }
+    } finally {
+        deletingGroupId.value = null;
+    }
 }
 
 // El foco pasa al color de la fila que quedó en su lugar (o a la anterior si
@@ -322,6 +382,7 @@ async function deleteVariantRow(group, row) {
 
 function populateFormFromProduct(product) {
     form.supplier_id = product.supplier_id;
+    form.floor_style_id = product.floor_style_id ?? "";
     form.category_id = product.category_id;
     form.unit_type_id = product.unit_type_id;
     form.name = product.name;
@@ -369,6 +430,9 @@ const validateForm = () => {
 
 const submitting = ref(false);
 const generalError = ref(null);
+// Producto ya creado en un intento anterior que falló en las variantes: el
+// reintento lo actualiza en lugar de crear otro.
+const createdProductId = ref(null);
 
 const { modifierLabel, ariaKeyshortcuts } = useSaveShortcut(formRef, () => !submitting.value && !loadingProduct.value);
 
@@ -432,24 +496,28 @@ const handleSubmit = async () => {
 
     generalError.value = null;
     deleteError.value = null;
+    groupDeleteError.value = null;
     submitting.value = true;
-    let productId = isEditMode.value ? route.params.id : null;
+    let productId = isEditMode.value ? route.params.id : createdProductId.value;
     let productSaved = false;
 
     try {
         const productPayload = {
             supplier_id: form.supplier_id,
+            // Opcional: "" (Sin estilo) se manda como null para quitarlo en edición.
+            floor_style_id: form.floor_style_id || null,
             category_id: form.category_id,
             unit_type_id: form.unit_type_id,
             name: form.name,
             purchase_unit: form.purchase_unit,
         };
 
-        if (isEditMode.value) {
+        if (productId) {
             await axios.put(`/api/products/${productId}`, productPayload);
         } else {
             const { data } = await axios.post("/api/products", productPayload);
             productId = data.data.id;
+            createdProductId.value = productId;
         }
         productSaved = true;
 
@@ -460,9 +528,25 @@ const handleSubmit = async () => {
             variantGroups.value.flatMap((group) =>
                 group.colorRows.map((row) => {
                     const payload = buildVariantPayload(productId, group, row, soldByPiece.value);
-                    return row.variantId
+                    const request = row.variantId
                         ? axios.put(`/api/product-variants/${row.variantId}`, payload)
                         : axios.post("/api/product-variants", payload);
+                    // El 422 se marca bajo el campo de su grupo/fila; el error sigue
+                    // hacia el catch de abajo.
+                    return request.then(
+                        ({ data }) => {
+                            // Si otra variante falla, el reintento hace PUT de esta en
+                            // lugar de duplicarla, y su stock inicial no cuenta como ajuste.
+                            row.variantId = data.data.id;
+                            row.originalStock = data.data.stock_boxes;
+                        },
+                        (err) => {
+                            if (err.response?.status === 422) {
+                                applyVariantServerErrors(group, row, err.response.data.errors ?? {});
+                            }
+                            throw err;
+                        },
+                    );
                 }),
             ),
         );
@@ -478,7 +562,14 @@ const handleSubmit = async () => {
 
         router.push({ name: "inventory", query: inventory.listQuery });
     } catch (err) {
-        if (productSaved) {
+        const invalidGroup = productSaved ? variantGroups.value.find(groupHasErrors) : null;
+        if (invalidGroup) {
+            // Igual que la validación local: abre la medida y enfoca el campo marcado.
+            generalError.value = "El producto se guardó, pero una o más variantes tienen datos inválidos. Revisa los campos marcados.";
+            openGroupId.value = invalidGroup.id;
+            await nextTick();
+            focusFirstInvalidField(formRef.value);
+        } else if (productSaved) {
             console.error(err);
             generalError.value = isEditMode.value
                 ? "El producto se actualizó correctamente, pero ocurrió un error al guardar una o más variantes. Revísalo desde el inventario."
