@@ -11,14 +11,17 @@
                 <!-- Dos opciones: segmentado con radios nativos en vez de un Select.
 				     El lector anuncia "Forma de pago, grupo" (legend) y cada opción como
 				     radio con su posición; ←/→ cambian la opción y Tab entra solo al
-				     marcado. Sin aria-pressed: eso es de botones de alternar (QuickFilter). -->
+				     marcado. Sin aria-pressed: eso es de botones de alternar (QuickFilter).
+				     `relative` en cada label: el radio es sr-only (`position: absolute`) y
+				     sin ancestro posicionado escapa del <main> con scroll, alarga el body
+				     y al enfocarlo el navegador desplaza todo el layout. -->
                 <fieldset class="space-y-1.5">
                     <legend class="text-xs font-medium text-text-muted block mb-1.5">Forma de pago</legend>
                     <div class="grid grid-cols-2 gap-2">
                         <label
                             v-for="option in PAYMENT_TERMS"
                             :key="option.key"
-                            class="h-10 flex items-center justify-center text-sm bg-surface border rounded-md cursor-pointer transition-colors select-none has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-accent"
+                            class="relative h-10 flex items-center justify-center text-sm bg-surface border rounded-md cursor-pointer transition-colors select-none has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-accent"
                             :class="
                                 form.payment_terms === option.key
                                     ? 'border-accent text-text font-medium'
