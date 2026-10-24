@@ -102,6 +102,18 @@ export const useQuotesStore = defineStore("quotes", () => {
         return data.data;
     }
 
+    // DELETE /api/quotes/{id} (soft delete) responde 204, o 422 si está pagada o
+    // ya tiene venta/comprobante. Se quita del listado in-place, sin refetch.
+    async function deleteQuote(id) {
+        await axios.delete(`/api/quotes/${id}`);
+
+        quotes.value = quotes.value.filter((q) => String(q.id) !== String(id));
+
+        if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
+            currentQuote.value = null;
+        }
+    }
+
     // La conversión ocurre en POST /api/sales con quote_id (SaleFormView), cuya
     // respuesta no trae el quote completo: solo {id, folio}. El backend la marca
     // "Convertida" en la misma transacción, así que un POST exitoso basta para
@@ -157,6 +169,7 @@ export const useQuotesStore = defineStore("quotes", () => {
         createQuote,
         updateQuote,
         cancelQuote,
+        deleteQuote,
         markQuoteConverted,
         markQuotePaid,
         markQuoteComprobante,

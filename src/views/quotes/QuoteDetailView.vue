@@ -52,6 +52,19 @@
 
                 <div class="flex flex-col items-end gap-1.5">
                     <div class="flex flex-wrap items-center justify-end gap-3">
+                        <!-- Solo ícono en todos los tamaños: en Borrador queda junto a
+						     "Cancelar presupuesto" y dos botones rojos con texto se ven cargados. -->
+                        <button
+                            v-if="canDelete"
+                            type="button"
+                            :disabled="deleting"
+                            @click="requestDelete"
+                            :aria-label="deleting ? 'Eliminando…' : 'Eliminar presupuesto'"
+                            :title="deleting ? 'Eliminando…' : 'Eliminar presupuesto'"
+                            class="bg-surface border border-danger/40 hover:bg-danger/10 text-danger font-medium text-sm h-10 px-3 rounded-md transition-colors select-none cursor-pointer inline-flex items-center disabled:opacity-50 disabled:hover:bg-surface disabled:cursor-not-allowed"
+                        >
+                            <i class="ti ti-trash text-base" aria-hidden="true"></i>
+                        </button>
                         <!-- Editar/Cancelar/Convertir/Marcar como pagado solo existen en
 						     Borrador sin pagar: en otro caso se ocultan en vez de quedar
 						     deshabilitados (el tooltip que explicaba por qué no se ve en
@@ -136,6 +149,7 @@
                     </div>
                     <p v-if="pdfError" class="text-danger text-xs">{{ pdfError }}</p>
                     <p v-if="cancelError" class="text-danger text-xs">{{ cancelError }}</p>
+                    <p v-if="deleteError" role="alert" class="text-danger text-xs">{{ deleteError }}</p>
                     <p v-if="markPaidError" role="alert" class="text-danger text-xs">{{ markPaidError }}</p>
                 </div>
             </div>
@@ -273,9 +287,9 @@
                 <div class="bg-surface border border-border rounded-md p-5 w-95 max-w-[90vw]">
                     <h3 class="font-serif text-base text-primary mb-2">{{ message.header }}</h3>
                     <p class="text-sm text-text-muted mb-5">{{ message.message }}</p>
-                    <!-- Un solo diálogo para cancelar y marcar como pagado: el botón
-					     de confirmar sale de `acceptLabel` y `tone` (danger|primary).
-					     Ambas acciones son irreversibles, así que el foco cae en Volver. -->
+                    <!-- Un solo diálogo para cancelar, eliminar y marcar como pagado: el
+					     botón de confirmar sale de `acceptLabel` y `tone` (danger|primary).
+					     Ninguna se puede deshacer desde la app, así que el foco cae en Volver. -->
                     <div class="flex items-center justify-end gap-3">
                         <button
                             type="button"
@@ -330,6 +344,8 @@ const cancelling = ref(false);
 const cancelError = ref(null);
 const markingPaid = ref(false);
 const markPaidError = ref(null);
+const deleting = ref(false);
+const deleteError = ref(null);
 
 // Evita mostrar por un instante una cotización distinta si el store aún
 // trae la de una visita anterior.
@@ -359,6 +375,7 @@ watch(
         resetPdf();
         cancelError.value = null;
         markPaidError.value = null;
+        deleteError.value = null;
         if (id) quotes.fetchQuote(id);
     },
     { immediate: true },
@@ -375,6 +392,12 @@ const wholesaleCount = computed(
 
 // `comprobante` solo viene en GET /quotes/{id} (null si no se ha convertido).
 const canConvertToComprobante = computed(() => !!quote.value?.paid_at && !quote.value.comprobante);
+
+// Mismo guard que Quote::deletionBlockedMessage(), solo como UX. `sale` y
+// `comprobante` vienen de GET /quotes/{id}. Aplica a Borrador y Cancelada.
+const canDelete = computed(
+    () => !!quote.value && !quote.value.paid_at && !quote.value.sale && !quote.value.comprobante,
+);
 
 function convertToComprobante() {
     router.push({ name: "comprobantes.create", query: { quote_id: quote.value.id } });
@@ -468,6 +491,37 @@ async function cancelQuote() {
                 : "No se pudo cancelar el presupuesto. Intenta de nuevo.";
     } finally {
         cancelling.value = false;
+    }
+}
+
+function requestDelete() {
+    confirm.require({
+        header: "Eliminar presupuesto",
+        message: `¿Eliminar el presupuesto ${quote.value.folio}? Ya no aparecerá en el listado.`,
+        acceptLabel: "Eliminar presupuesto",
+        tone: "danger",
+        accept: deleteQuote,
+    });
+}
+
+// deleteQuote() deja currentQuote en null, así que el folio se toma antes.
+async function deleteQuote() {
+    const { id, folio } = quote.value;
+    deleting.value = true;
+    deleteError.value = null;
+
+    try {
+        await quotes.deleteQuote(id);
+        notify.success(`Presupuesto ${folio} eliminado`);
+        goBack();
+    } catch (err) {
+        console.error(err);
+        deleteError.value =
+            err.response?.status === 422
+                ? err.response.data.message
+                : "No se pudo eliminar el presupuesto. Intenta de nuevo.";
+    } finally {
+        deleting.value = false;
     }
 }
 
