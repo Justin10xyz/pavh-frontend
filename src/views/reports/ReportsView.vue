@@ -4,12 +4,44 @@
             <h1 class="font-serif text-xl text-primary">Reporte de comprobantes</h1>
         </div>
 
-        <div class="space-y-1 mb-4 max-w-56">
+        <div class="inline-flex gap-2 mb-3" role="group" aria-label="Tipo de periodo">
+            <button
+                v-for="option in MODE_OPTIONS"
+                :key="option.value"
+                type="button"
+                :aria-pressed="mode === option.value"
+                @click="mode = option.value"
+                :class="[
+                    'font-medium text-sm h-9 px-4 rounded-md border transition-colors select-none cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-accent',
+                    mode === option.value
+                        ? 'bg-primary border-primary text-white'
+                        : 'bg-surface border-border text-text-muted hover:bg-bg hover:text-text',
+                ]"
+            >
+                {{ option.label }}
+            </button>
+        </div>
+
+        <div v-if="mode === 'month'" class="space-y-1 mb-4 max-w-56">
             <FieldLabel html-for="report-period" text="Periodo" />
             <InputTextCustom id="report-period" v-model="period" type="month" />
         </div>
 
-        <div v-if="reports.loading" class="text-text-muted text-sm">Cargando reporte…</div>
+        <div v-else class="flex flex-wrap gap-3 mb-4">
+            <div class="space-y-1 w-44">
+                <FieldLabel html-for="report-from" text="Desde" />
+                <InputTextCustom id="report-from" v-model="rangeFrom" type="date" />
+            </div>
+            <div class="space-y-1 w-44">
+                <FieldLabel html-for="report-to" text="Hasta" />
+                <InputTextCustom id="report-to" v-model="rangeTo" type="date" :min="rangeFrom || undefined" />
+            </div>
+        </div>
+
+        <!-- Rango incompleto o al revés: no se consulta. summary/items se quedan
+		     en el store, solo no se muestran. -->
+        <div v-if="rangeMessage" class="text-text-muted text-sm" aria-live="polite">{{ rangeMessage }}</div>
+        <div v-else-if="reports.loading" class="text-text-muted text-sm">Cargando reporte…</div>
         <div v-else-if="reports.error" class="text-danger text-sm">{{ reports.error }}</div>
 
         <template v-else-if="reports.summary">
@@ -112,6 +144,19 @@
                             <span class="font-semibold text-primary tabular-nums">{{ formatCurrency(data.total) }}</span>
                         </template>
                     </Column>
+
+                    <Column header="" body-class="w-px">
+                        <template #body="{ data }">
+                            <RouterLink
+                                :to="{ name: 'comprobantes.show', params: { id: data.id } }"
+                                class="flex items-center p-1.5 lg:p-1 rounded text-text-muted hover:bg-bg hover:text-accent transition-colors cursor-pointer"
+                                aria-label="Ver comprobante"
+                                title="Ver comprobante"
+                            >
+                                <i class="ti ti-eye text-base"></i>
+                            </RouterLink>
+                        </template>
+                    </Column>
                 </DataTable>
             </div>
         </template>
@@ -165,7 +210,59 @@ const range = computed(() => {
     }
 })
 
-// Busy/error propios por botón; antes del watch, que los limpia al cambiar de mes.
+const MODE_OPTIONS = [
+    { value: 'month', label: 'Mes' },
+    { value: 'range', label: 'Rango personalizado' },
+]
+
+// Modo rango = ?from= y ?to= presentes en la URL, aunque estén vacíos (así se
+// mantiene el modo mientras el usuario captura una fecha). Cambiar de modo
+// limpia las claves del otro. Al entrar a rango se precarga el mes que estaba
+// seleccionado, para no empezar con el reporte en blanco.
+const mode = computed({
+    get: () => ('from' in route.query && 'to' in route.query ? 'range' : 'month'),
+    set: (value) => {
+        const rest = { ...route.query }
+        delete rest.periodo
+        delete rest.from
+        delete rest.to
+        router.replace({
+            query: value === 'range' ? { ...rest, from: range.value.from, to: range.value.to } : rest,
+        })
+    },
+})
+
+// '' en vez de undefined al borrar una fecha: undefined quitaría la clave de la
+// URL y sacaría al usuario del modo rango.
+const rangeFrom = computed({
+    get: () => route.query.from ?? '',
+    set: (value) => router.replace({ query: { ...route.query, from: value ?? '' } }),
+})
+
+const rangeTo = computed({
+    get: () => route.query.to ?? '',
+    set: (value) => router.replace({ query: { ...route.query, to: value ?? '' } }),
+})
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
+// "YYYY-MM-DD" se compara bien como string.
+const rangeMessage = computed(() => {
+    if (mode.value !== 'range') return null
+    if (!DATE_PATTERN.test(rangeFrom.value) || !DATE_PATTERN.test(rangeTo.value)) {
+        return 'Selecciona ambas fechas para generar el reporte.'
+    }
+    if (rangeTo.value < rangeFrom.value) return 'La fecha "Hasta" no puede ser anterior a "Desde".'
+    return null
+})
+
+// Rango que se consulta y descarga; null mientras el rango personalizado sea inválido.
+const activeRange = computed(() => {
+    if (mode.value === 'month') return range.value
+    return rangeMessage.value ? null : { from: rangeFrom.value, to: rangeTo.value }
+})
+
+// Busy/error propios por botón; antes del watch, que los limpia al cambiar de periodo.
 const pdfBusy = ref(false)
 const pdfError = ref(null)
 const csvBusy = ref(false)
@@ -174,7 +271,7 @@ const csvError = ref(null)
 // Se filtra por nombre de ruta: al navegar al detalle, `route` ya cambió antes
 // de que este componente se desmonte (mismo patrón que SalesView).
 watch(
-    () => (route.name === 'reports.comprobantes' ? range.value : null),
+    () => (route.name === 'reports.comprobantes' ? activeRange.value : null),
     (current) => {
         if (current === null) return
         pdfError.value = null
@@ -210,7 +307,7 @@ function saveBlob(blob, filename) {
 }
 
 async function downloadPdf() {
-    const { from, to } = range.value
+    const { from, to } = activeRange.value
     pdfBusy.value = true
     pdfError.value = null
 
@@ -226,7 +323,7 @@ async function downloadPdf() {
 }
 
 async function downloadCsv() {
-    const { from, to } = range.value
+    const { from, to } = activeRange.value
     csvBusy.value = true
     csvError.value = null
 
