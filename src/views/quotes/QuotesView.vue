@@ -105,15 +105,6 @@
                         </template>
                     </Column>
 
-                    <!-- Pago independiente del status (un pagado sigue en Borrador).
-					     Columna angosta: solo el badge o un guion. -->
-                    <Column header="Pagado" body-class="w-px whitespace-nowrap">
-                        <template #body="{ data }">
-                            <QuotePaidBadge v-if="data.paid_at" />
-                            <span v-else class="text-text-muted">—</span>
-                        </template>
-                    </Column>
-
                     <Column
                         header="Total"
                         header-class="text-right!"
@@ -151,7 +142,6 @@ import Column from "primevue/column";
 import { useQuotesStore } from "@/stores/quotes";
 import { useRoute, useRouter } from "vue-router";
 import { QUOTE_STATUSES, statusClasses, statusLabel } from "@/lib/quoteStatus";
-import QuotePaidBadge from "@/views/quotes/components/QuotePaidBadge.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import QuickFilter from "@/components/widgets/filters/QuickFilter.vue";

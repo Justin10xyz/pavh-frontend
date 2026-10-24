@@ -39,7 +39,6 @@
                             >
                                 {{ statusLabel(quote.status) }}
                             </span>
-                            <QuotePaidBadge v-if="quote.paid_at" />
                         </div>
                         <p class="text-sm text-text-muted mt-0.5">
                             Creado el {{ formatDateTime(quote.created_at) }}
@@ -66,7 +65,7 @@
                             <i class="ti ti-trash text-base" aria-hidden="true"></i>
                         </button>
                         <!-- Editar/Cancelar/Convertir/Marcar como pagado solo existen en
-						     Borrador sin pagar: en otro caso se ocultan en vez de quedar
+						     Borrador: en otro caso se ocultan en vez de quedar
 						     deshabilitados (el tooltip que explicaba por qué no se ve en
 						     touch ni en un botón disabled). -->
                         <template v-if="isEditable">
@@ -325,7 +324,6 @@ import { useSimpleProductsStore } from "@/stores/simpleProducts";
 import { simpleProductStockAfterSale, variantStockAfterSale } from "@/lib/saleForm";
 import DocumentItemsTable from "@/components/widgets/tables/DocumentItemsTable.vue";
 import { statusClasses, statusLabel } from "@/lib/quoteStatus";
-import QuotePaidBadge from "@/views/quotes/components/QuotePaidBadge.vue";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
 import { useNotify } from "@/composables/useNotify";
 import { formatCurrency } from "@/lib/formatCurrency";
@@ -381,9 +379,9 @@ watch(
     { immediate: true },
 );
 
-// Pagada sigue en Borrador, pero el backend ya bloquea editar, cancelar y
-// convertir a venta (y volver a marcarla): mismo guard aquí, solo como UX.
-const isEditable = computed(() => quote.value?.status === "Borrador" && !quote.value.paid_at);
+// Solo Borrador: al marcarla como pagada pasa a "Pagada" y el backend bloquea
+// editar, cancelar y convertir a venta. Mismo guard aquí, solo como UX.
+const isEditable = computed(() => quote.value?.status === "Borrador");
 
 // Líneas cobradas a precio de mayoreo (solo productos simples lo tienen).
 const wholesaleCount = computed(

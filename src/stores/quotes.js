@@ -127,13 +127,13 @@ export const useQuotesStore = defineStore("quotes", () => {
         }
     }
 
-    // PATCH /api/quotes/{id}/mark-paid (sin payload) descuenta stock y llena
-    // paid_at/paid_by; responde 422 si no es pagable. Solo se copian esos dos
-    // campos in-place, mismo criterio que markQuoteConverted(): el status no
-    // cambia y la respuesta no eager-loadea items.productVariant.product.
+    // PATCH /api/quotes/{id}/mark-paid (sin payload) descuenta stock, pasa el
+    // status a "Pagada" y llena paid_at/paid_by; responde 422 si no es pagable.
+    // Solo se copian esos tres campos in-place, mismo criterio que
+    // markQuoteConverted(): la respuesta no eager-loadea items.productVariant.product.
     async function markQuotePaid(id) {
         const { data } = await axios.patch(`/api/quotes/${id}/mark-paid`);
-        const paid = { paid_at: data.data.paid_at, paid_by: data.data.paid_by };
+        const paid = { status: data.data.status, paid_at: data.data.paid_at, paid_by: data.data.paid_by };
 
         const quote = quotes.value.find((q) => String(q.id) === String(id));
         if (quote) Object.assign(quote, paid);
