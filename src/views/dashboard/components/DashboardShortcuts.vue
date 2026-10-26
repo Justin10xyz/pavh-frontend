@@ -1,7 +1,7 @@
 <template>
     <section aria-labelledby="shortcuts-heading">
         <h2 id="shortcuts-heading" class="text-sm font-medium text-text-muted mb-2">Accesos directos</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <router-link
                 v-for="shortcut in shortcuts"
                 :key="shortcut.route"
@@ -20,7 +20,6 @@
 
 <script setup>
 const shortcuts = [
-    { route: 'pos.sales.create', label: 'Nueva venta', icon: 'ti-shopping-cart' },
     { route: 'quotes.create', label: 'Nuevo presupuesto', icon: 'ti-file-text' },
     { route: 'inventory', label: 'Inventario', icon: 'ti-package' },
 ]

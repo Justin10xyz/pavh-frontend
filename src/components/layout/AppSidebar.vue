@@ -83,7 +83,6 @@ const navLinks = [
         icon: "ti-receipt",
     },
     { name: "Reportes", to: { name: "reports.comprobantes" }, section: "reports", icon: "ti-report-money" },
-    { name: "Punto de venta", to: { name: "pos" }, section: "pos", icon: "ti-shopping-cart" },
     { name: "Clientes", to: { name: "customers" }, section: "customers", icon: "ti-users" },
 ];
 

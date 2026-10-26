@@ -2,34 +2,14 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from '@/lib/axios'
 import { useInventoryStore } from '@/stores/inventory'
-import { dateRangeFor } from '@/lib/dateRanges'
-
-// Mismos rangos que los filtros rápidos de SalesView.vue, para que los montos coincidan.
-function dashboardRanges() {
-    return {
-        today: dateRangeFor('today'),
-        week: dateRangeFor('week'),
-        month: dateRangeFor('month'),
-    }
-}
-
-// `total` llega como string decimal desde Laravel; se suma en centavos para no
-// arrastrar error de punto flotante.
-function sumTotals(sales) {
-    const cents = sales.reduce((acc, sale) => acc + Math.round(Number(sale.total) * 100), 0)
-    return cents / 100
-}
 
 export const useDashboardStore = defineStore('dashboard', () => {
     const inventory = useInventoryStore()
 
-    const salesSummary = ref({ today: 0, week: 0, month: 0 })
     const activeQuotes = ref([])
     const topProducts = ref([])
 
     // Loading/error por widget: cada sección puede fallar sin ocultar a las otras.
-    const salesLoading = ref(false)
-    const salesError = ref(null)
     const lowStockLoading = ref(false)
     const lowStockError = ref(null)
     const activeQuotesLoading = ref(false)
@@ -37,9 +17,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     const topProductsLoading = ref(false)
     const topProductsError = ref(null)
 
-    // Sin `initialized`: el dashboard se refresca en cada visita (mismo criterio
-    // que sales.js). Si se vuelve a llamar antes de que responda la anterior,
-    // solo la más reciente puede escribir en el estado.
+    // Sin `initialized`: el dashboard se refresca en cada visita. Si se vuelve a
+    // llamar antes de que responda la anterior, solo la más reciente puede
+    // escribir en el estado.
     let lastRequestId = 0
     // Contador propio: Productos más vendidos se vuelve a pedir al cambiar su
     // filtro de fecha, y eso no debe descartar las cargas en curso de los otros
@@ -47,7 +27,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     let lastTopProductsRequestId = 0
 
     // Derivado del store de Inventario (no copiado): así refleja también los
-    // ajustes de stock in-place que se hagan desde Inventario o POS.
+    // ajustes de stock in-place que se hagan desde Inventario o al pagar un
+    // presupuesto.
     const lowStockVariants = computed(() =>
         inventory.products.flatMap((product) =>
             (product.variants ?? [])
@@ -55,24 +36,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
                 .map((variant) => ({ ...variant, product: { id: product.id, name: product.name } }))
         )
     )
-
-    // Se usa axios directo en vez de sales.fetchSales(): ese método escribe en
-    // `sales.sales` (el listado de SalesView) y su contador de petición descartaría
-    // dos de las tres consultas paralelas.
-    async function fetchSalesTotal({ from, to }) {
-        const { data } = await axios.get('/api/sales', { params: { from, to } })
-        return sumTotals(data.data)
-    }
-
-    async function fetchSalesSummary() {
-        const ranges = dashboardRanges()
-        const [today, week, month] = await Promise.all([
-            fetchSalesTotal(ranges.today),
-            fetchSalesTotal(ranges.week),
-            fetchSalesTotal(ranges.month),
-        ])
-        return { today, week, month }
-    }
 
     // fetchProducts() no revisa `initialized`: vuelve a pedir el catálogo en cada
     // visita, así Stock bajo nunca se queda viejo. No lanza, deja el error en el
@@ -124,13 +87,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
         const isCurrent = () => requestId === lastRequestId
 
         await Promise.allSettled([
-            loadSection(isCurrent, {
-                loading: salesLoading,
-                error: salesError,
-                message: 'No se pudo cargar el resumen de ventas.',
-                load: fetchSalesSummary,
-                apply: (summary) => { salesSummary.value = summary },
-            }),
             // lowStockVariants es un computed sobre Inventario, no hay nada que asignar.
             loadSection(isCurrent, {
                 loading: lowStockLoading,
@@ -164,12 +120,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
 
     return {
-        salesSummary,
         lowStockVariants,
         activeQuotes,
         topProducts,
-        salesLoading,
-        salesError,
         lowStockLoading,
         lowStockError,
         activeQuotesLoading,
