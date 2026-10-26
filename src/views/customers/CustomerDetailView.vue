@@ -181,6 +181,60 @@
                         </DataTable>
                     </div>
                 </div>
+
+                <!-- Historial: comprobantes -->
+                <div class="bg-surface border border-border rounded-md overflow-hidden">
+                    <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 sm:px-6 pt-5 sm:pt-6 mb-4">
+                        <h2 class="text-xs font-medium uppercase tracking-wide text-text-muted">Comprobantes</h2>
+                        <p v-if="comprobantes.length > 0" class="text-sm text-text-muted">
+                            {{ comprobantes.length }} {{ comprobantes.length === 1 ? 'comprobante' : 'comprobantes' }}
+                        </p>
+                    </div>
+
+                    <p v-if="comprobantesLoading && comprobantes.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Cargando comprobantes…</p>
+                    <p v-else-if="comprobantesError" class="text-danger text-sm px-5 sm:px-6 pb-5 sm:pb-6">{{ comprobantesError }}</p>
+                    <p v-else-if="comprobantes.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Este cliente no tiene comprobantes.</p>
+
+                    <div v-else class="overflow-x-auto border-t border-border">
+                        <DataTable
+                            :value="comprobantes"
+                            dataKey="id"
+                            class="data-table"
+                            :row-class="() => 'cursor-pointer'"
+                            @row-click="({ originalEvent, data }) => openRow(originalEvent, { name: 'comprobantes.show', params: { id: data.id } })"
+                        >
+                            <Column header="Folio" header-class="pl-5 sm:pl-6" body-class="pl-5 sm:pl-6 whitespace-nowrap">
+                                <template #body="{ data }">
+                                    <RouterLink
+                                        :to="{ name: 'comprobantes.show', params: { id: data.id } }"
+                                        class="font-medium text-text hover:text-accent transition-colors"
+                                    >
+                                        {{ data.folio }}
+                                    </RouterLink>
+                                    <!-- Sin columna Fecha por debajo de sm: va debajo del folio -->
+                                    <span class="block sm:hidden text-xs text-text-muted">{{ formatDate(data.date) }}</span>
+                                </template>
+                            </Column>
+
+                            <!-- `date` es solo fecha (sin hora): formatDate, no formatDateTime -->
+                            <Column
+                                header="Fecha"
+                                header-class="hidden sm:table-cell"
+                                body-class="hidden sm:table-cell whitespace-nowrap"
+                            >
+                                <template #body="{ data }">
+                                    <span class="text-text-muted">{{ formatDate(data.date) }}</span>
+                                </template>
+                            </Column>
+
+                            <Column header="Total" header-class="text-right! pr-5 sm:pr-6" body-class="text-right whitespace-nowrap pr-5 sm:pr-6">
+                                <template #body="{ data }">
+                                    <span class="text-text tabular-nums">{{ formatCurrency(data.total) }}</span>
+                                </template>
+                            </Column>
+                        </DataTable>
+                    </div>
+                </div>
             </div>
         </template>
 
@@ -259,27 +313,28 @@ const quotesError = ref(null)
 
 // Si se navega a otro cliente antes de que responda la consulta anterior,
 // solo la respuesta más reciente puede escribir en el historial.
-let lastRequestId = 0
+let lastQuotesRequestId = 0
+let lastComprobantesRequestId = 0
 
-async function loadSection(requestId, { items, loading, error, message, load }) {
+async function loadSection(requestId, { items, loading, error, message, load, isLatest }) {
     loading.value = true
     error.value = null
 
     try {
         const result = await load()
-        if (requestId !== lastRequestId) return
+        if (!isLatest(requestId)) return
         items.value = result
     } catch (err) {
-        if (requestId !== lastRequestId) return
+        if (!isLatest(requestId)) return
         error.value = message
         console.error(err)
     } finally {
-        if (requestId === lastRequestId) loading.value = false
+        if (isLatest(requestId)) loading.value = false
     }
 }
 
 function fetchHistory(customerId) {
-    const requestId = ++lastRequestId
+    const requestId = ++lastQuotesRequestId
     quotes.value = []
 
     loadSection(requestId, {
@@ -287,10 +342,35 @@ function fetchHistory(customerId) {
         loading: quotesLoading,
         error: quotesError,
         message: 'No se pudieron cargar los presupuestos del cliente.',
+        isLatest: (id) => id === lastQuotesRequestId,
         // GET /api/quotes ya viene ordenado por created_at descendente (latest()).
         load: async () => {
             const { data } = await axios.get('/api/quotes', {
                 params: { customer_id: customerId, with: 'customer,quoteStatus' },
+            })
+            return data.data
+        },
+    })
+}
+
+const comprobantes = ref([])
+const comprobantesLoading = ref(false)
+const comprobantesError = ref(null)
+
+function fetchComprobantes(customerId) {
+    const requestId = ++lastComprobantesRequestId
+    comprobantes.value = []
+
+    loadSection(requestId, {
+        items: comprobantes,
+        loading: comprobantesLoading,
+        error: comprobantesError,
+        message: 'No se pudieron cargar los comprobantes del cliente.',
+        isLatest: (id) => id === lastComprobantesRequestId,
+        // GET /api/comprobantes ya viene ordenado por date descendente, con id como desempate.
+        load: async () => {
+            const { data } = await axios.get('/api/comprobantes', {
+                params: { customer_id: customerId },
             })
             return data.data
         },
@@ -315,6 +395,7 @@ watch(
         if (!id) return
         customers.fetchCustomer(id)
         fetchHistory(id)
+        fetchComprobantes(id)
     },
     { immediate: true }
 )
