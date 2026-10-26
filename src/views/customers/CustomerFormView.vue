@@ -70,7 +70,7 @@
                         <p v-if="errors.email" class="text-danger text-xs mt-1.5">{{ errors.email }}</p>
                     </div>
 
-                    <div class="space-y-1.5 sm:col-span-2">
+                    <div class="space-y-1.5">
                         <FieldLabel html-for="address" text="Domicilio" />
                         <div class="relative">
                             <i class="ti ti-map-pin absolute left-3 top-1/2 -translate-y-1/2 text-base text-text-muted pointer-events-none" aria-hidden="true"></i>
@@ -85,6 +85,21 @@
                             />
                         </div>
                         <p v-if="errors.address" class="text-danger text-xs mt-1.5">{{ errors.address }}</p>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <FieldLabel html-for="postal_code" text="C.P." />
+                        <InputTextCustom
+                            id="postal_code"
+                            v-model="form.postal_code"
+                            :error="errors.postal_code"
+                            autocomplete="off"
+                            inputmode="numeric"
+                            maxlength="10"
+                            placeholder="Ej. 64000"
+                            @input="errors.postal_code = ''"
+                        />
+                        <p v-if="errors.postal_code" class="text-danger text-xs mt-1.5">{{ errors.postal_code }}</p>
                     </div>
 
                     <div class="space-y-1.5">
@@ -198,6 +213,7 @@ const form = reactive({
     address: '',
     neighborhood: '',
     city: '',
+    postal_code: '',
 })
 
 const errors = reactive({
@@ -207,6 +223,7 @@ const errors = reactive({
     address: '',
     neighborhood: '',
     city: '',
+    postal_code: '',
 })
 
 const submitting = ref(false)
@@ -227,6 +244,7 @@ function serializeForm() {
         form.address.trim(),
         form.neighborhood.trim(),
         form.city.trim(),
+        form.postal_code.trim(),
     ])
 }
 
@@ -281,6 +299,7 @@ async function loadCustomer() {
     form.address = customer.address ?? ''
     form.neighborhood = customer.neighborhood ?? ''
     form.city = customer.city ?? ''
+    form.postal_code = customer.postal_code ?? ''
     savedSnapshot.value = serializeForm()
 }
 
@@ -312,6 +331,7 @@ async function handleSubmit() {
         address: form.address.trim() || null,
         neighborhood: form.neighborhood.trim() || null,
         city: form.city.trim() || null,
+        postal_code: form.postal_code.trim() || null,
     }
 
     try {
