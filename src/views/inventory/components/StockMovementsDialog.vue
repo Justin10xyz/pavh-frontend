@@ -103,19 +103,9 @@
                                     </template>
                                 </td>
                                 <td class="py-2 px-3 text-text">
-                                    <!-- Sin `sale_id` (venta eliminada) solo queda el folio, sin enlace. -->
-                                    <RouterLink
-                                        v-if="movement.source === 'sale' && movement.sale_id"
-                                        :to="{
-                                            name: 'pos.sales.show',
-                                            params: { id: movement.sale_id },
-                                        }"
-                                        class="font-mono text-[11px] text-accent hover:underline underline-offset-2"
-                                        :title="`Ver venta ${movement.sale_folio ?? ''}`"
-                                    >{{ movement.sale_folio ?? "Venta" }}</RouterLink
-                                    >
+                                    <!-- Ventas: solo el folio, sin enlace (el módulo de ventas ya no existe). -->
                                     <span
-                                        v-else-if="movement.source === 'sale'"
+                                        v-if="movement.source === 'sale'"
                                         class="font-mono text-[11px]"
                                     >{{ movement.sale_folio ?? "Venta" }}</span
                                     >

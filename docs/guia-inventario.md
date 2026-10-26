@@ -233,7 +233,7 @@ El ícono de **reloj (Ver historial de stock)** muestra todos los movimientos de
 | **Fecha** | Cuándo ocurrió el movimiento. |
 | **Tipo** | **Entrada**, **Salida** o **Desactivado**. |
 | **Cantidad** | Cuánto se agregó (+) o se quitó (−). |
-| **Origen** | **Stock inicial**, **Ajuste manual**, **Seguimiento desactivado** o el **folio de la venta**. El folio es un enlace: al darle clic se abre el detalle de esa venta. |
+| **Origen** | **Stock inicial**, **Ajuste manual**, **Seguimiento desactivado** o el **folio de la venta** (solo como referencia, sin enlace). |
 | **Stock resultante** | Cuánto quedó después del movimiento. |
 
 ---
@@ -336,3 +336,4 @@ Mejoras que se van agregando al módulo:
 | 2026-10-21 | **Nuevo piso / Editar piso**: **m² por caja** acepta hasta 3 decimales (por ejemplo *1.404*) en lugar de 2. |
 | 2026-10-21 | **Editar piso**: las medidas con colores guardados se pueden eliminar completas con **Eliminar medida**, sin borrar sus colores uno por uno. Si es la única medida del piso, no se elimina y el motivo aparece bajo la medida. |
 | 2026-10-21 | **Catálogo de pisos**: el ícono de basura en la fila del producto elimina el piso completo. El aviso de confirmación dice en cuántas cotizaciones y ventas aparece, pero no impide eliminarlo. |
+| 2026-10-26 | **Historial de stock**: el folio de la venta en la columna Origen ya no es un enlace; queda solo como referencia. |
