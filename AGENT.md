@@ -9,7 +9,7 @@ Para cualquier agente (Claude Code, Cursor, etc.) que trabaje en `pavh-backend` 
 - **Frontend: empezar por lo visible** — UI visible → router → config/servicios → estado (Pinia) → guards.
 - **No asumir librerías nuevas** sin que se pidan explícitamente, salvo las ya adoptadas (PrimeVue 4 unstyled, `barryvdh/laravel-dompdf`).
 - **No implementar roles/permisos** (decidido que no van en el roadmap) ni **borrado sin que se pida explícitamente**, aunque parezca el siguiente paso obvio.
-- **Un módulo nuevo no empieza hasta que el anterior esté funcionalmente cerrado** (ej. "Convertir a venta" se dejó deshabilitado hasta que existió POS, en vez de construirse a medias).
+- **Un módulo nuevo no empieza hasta que el anterior esté funcionalmente cerrado.**
 - **Un hallazgo real durante un paso (bug, hueco de validación) se corrige en un paso aparte y nombrado**, no se cuela en el paso en curso — salvo que sea en el mismo módulo recién tocado y el costo de dejarlo sea real. Un bug en un módulo ya cerrado se anota en `PROJECT.md` como pendiente, no se corrige de pasada.
 - Commits en inglés, Conventional Commits + gitmoji (sintaxis y ejemplos en `PROJECT.md`).
 
@@ -30,7 +30,7 @@ Para cualquier agente (Claude Code, Cursor, etc.) que trabaje en `pavh-backend` 
 
 - **Nombres de tablas y columnas en inglés** siempre; los valores de negocio visibles (labels, contenido de documentos) sí van en español.
 - **Sin Repository Pattern** — decisión deliberada. En su lugar: **Query Scopes** de Eloquent para filtros reusables, **Form Requests** para toda validación de entrada, **API Resources** para las respuestas, controladores delgados que delegan a scopes/modelo.
-- **`Controllers`/`Requests` organizados en subcarpetas por módulo** (`Inventory/`, `Quote/`, `Sale/`, `Customer/`), namespace reflejando la carpeta; `Store`/`Update` de un recurso viven juntos. Al mover un Form Request, correr la suite completa (`php artisan test`), no solo el módulo tocado.
+- **`Controllers`/`Requests` organizados en subcarpetas por módulo** (`Inventory/`, `Quote/`, `Customer/`), namespace reflejando la carpeta; `Store`/`Update` de un recurso viven juntos. Al mover un Form Request, correr la suite completa (`php artisan test`), no solo el módulo tocado.
 - **Catálogos de valores van en tablas propias**, no `enum` de MySQL ni strings hardcodeados — cada uno expone un `GET /api/{catalogo}` simple para selects. Ejemplos: `categories`, `unit_types`, `suppliers`, `commission_categories`. Pueden ganar `POST`/`PUT` propios sin dejar de ser catálogo.
 - **Identificadores generados por el sistema nunca se aceptan del cliente** (ej. `VariantCodeGenerator`, folios) — se excluyen explícitamente de los Form Requests.
 - **Acciones de negocio con efecto específico van en endpoint dedicado**, no en un update genérico (ej. `PATCH /product-variants/{id}/stock` en vez de editar `stock_boxes` vía `PUT`) — facilita agregar trazabilidad después.
@@ -41,15 +41,15 @@ Para cualquier agente (Claude Code, Cursor, etc.) que trabaje en `pavh-backend` 
 - **`SoftDeletes`** en cualquier modelo que pueda quedar referenciado desde otro módulo. Validaciones de unicidad sobre ese modelo usan `withTrashed()`.
 - **Un endpoint que reimprime un documento histórico carga sus relaciones con `withTrashed()`** — el documento debe seguir viéndose igual aunque una relación se haya dado de baja después.
 - Cambios de estructura sobre una tabla ya migrada van en **migración nueva**, nunca editando una ya ejecutada.
-- **Documentos con folio (`Quote`/`Sale`) usan secuencia independiente por tipo** (`COT-0001`, `V-0001`), server-side, nunca el `id` ni aceptada del cliente.
-- **Convertir un documento en otro con efectos reales NO muta y crea de una sola vez.** Patrón: un endpoint de solo lectura (`GET /quotes/{id}/convert`) prellena datos editables, y la confirmación pasa por el endpoint de creación normal del documento destino (`POST /sales`), con la referencia de origen en el payload.
-- **Entidades con ciclo de vida y reglas de edición distintas (borrador vs. concretado) van en tablas separadas**, no una tabla con `status` genérico (ver `Quote`/`Sale`). Se acepta duplicar estructura entre tablas de líneas relacionadas en vez de polimorfismo compartido.
+- **Documentos con folio (`Quote`/`Comprobante`) usan secuencia independiente por tipo** (`COT-0001`, `CF-0001`), server-side, nunca el `id` ni aceptada del cliente.
+- **Convertir un documento en otro con efectos reales NO muta y crea de una sola vez.** Patrón: un endpoint de solo lectura prellena datos editables (ej. generar un Comprobante a partir de un Presupuesto pagado), y la confirmación pasa por el endpoint de creación normal del documento destino, con la referencia de origen en el payload.
+- **Entidades con ciclo de vida y reglas de edición distintas (borrador vs. concretado) van en tablas separadas**, no una tabla con `status` genérico (ver `Quote`/`Comprobante`). Se acepta duplicar estructura entre tablas de líneas relacionadas en vez de polimorfismo compartido.
 - **Guards de negocio reusables entre endpoints van como método público en el modelo**, no duplicados por controlador (ej. `ProductVariant::hasSufficientStock()`, `Quote::conversionBlockedMessage()`). Cuando el guard es "rechazar todo lo que no sea el estado X", exprésalo así (negativo) en vez de enumerar estados inválidos.
 - **Se vende y se cobra en la unidad física de stock, no en la unidad del precio.** Variantes: cantidad real = `boxes` (entero), descuenta `stock_boxes`; el precio sigue en m² (`price_per_m2`), así que los m² de línea (`quantity`) los deriva el backend (`boxes × m2_per_box`) y nunca se aceptan del cliente. Si falta `m2_per_box`, 422 explícito — nunca asumir 1:1.
   - **Excepción — pisos por pieza** (`unit_type` "pieza"): `boxes` cuenta piezas, `quantity = boxes` sin derivar m², precio = `price_per_box`. El criterio vive en un solo lugar por capa: `Product::isSoldByPiece()`/`ProductVariant::isSoldByPiece()` (backend) y `src/lib/unitTypes.js` (frontend) — siempre comparando el **nombre** del `unit_type`, nunca un id.
 - **Eager loading con `?with=`**: usar la variante whitelist comma-separated (`?with=customer,quoteStatus`) para cualquier endpoint nuevo con más de una relación — valores fuera de whitelist se ignoran en silencio, nunca 422.
 - **Una relación anidada en un Resource se expone solo si está cargada, vía `whenLoaded`**, sin forzarla por defecto. `index` y `show` del mismo recurso con el mismo `?with=` deben cargar las mismas relaciones anidadas, o el dato desaparece en silencio en el que no la carga.
-- **Un servicio de documento compartido entre entidades (ej. PDF de `Sale`/`Quote`) recibe una estructura de datos neutral**, no un modelo Eloquent — ver `DocumentPdfGenerator`.
+- **Un partial de documento compartido entre plantillas PDF (ej. `sheet-styles.blade.php`/`items-table.blade.php`, usados por `QuotePdfGenerator` y `ComprobantePdfGenerator`) recibe datos ya preparados**, sin armar lógica de negocio dentro del blade.
 - **Un catálogo que no encaja en producto+variante usa su propia tabla paralela** (ej. `simple_products` para categorías `simple`), no se fuerza con columnas que no aplicarían.
 - **Cambiar un campo que determina la forma de registros dependientes se bloquea si ya existen dependientes** — guard clause que devuelve el mensaje o `null`, sin contar soft-deleted (ej. `productFormTypeChangeBlockedMessage()`, `unitTypeChangeBlockedMessage()`). Rechazo 422 con `message`, sin `errors`.
 - **Un catálogo referenciado por registros con soft delete se borra también con soft delete** (la FK de los dados de baja impide el borrado real). Al agregar `SoftDeletes` a un catálogo: relaciones hacia él con `withTrashed()`, `exists` con `->withoutTrashed()`, `unique` con `->withoutTrashed()`.
@@ -124,7 +124,7 @@ Dirección: **corporativo serio** (banca/legal), no startup. Consistencia > crea
 - Sidebar fijo `primary` (solo íconos `w-16` bajo `lg`, expandido con labels `w-50` desde `lg`, CSS puro mobile-first); topbar blanco con borde inferior; contenido sobre `bg`, cards `surface` con borde 1px — **sin `box-shadow` pesado** salvo paneles flotantes (`shadow-lg`). Border-radius pequeño (`rounded`/`rounded-md`), nunca `rounded-full` en botones. Indicador de item activo en sidebar: barra `accent` de 2-3px — único acento de color vivo fuera de success/danger/comisión.
 - **Unidades en `rem`** (utilidades con nombre de Tailwind: `p-4`, `h-10`, `rounded-md`, `text-sm`), nunca `px` arbitrario, salvo bordes de 1px. Altura estándar de controles: `h-10`.
 - **Breakpoints default de Tailwind v4** (`sm` 640px, `md` 768px, `lg` 1024px, `xl` 1280px), sin custom. **Mobile-first obligatorio**: clase sin prefijo = base, prefijos amplían hacia arriba, nunca `max-sm:` para encoger.
-- **Objetivo responsive**: herramienta de escritorio en primer lugar; POS debe ser usable desde tablet (`md`+). No es objetivo adaptar sidebar/topbar a ancho de teléfono (`< sm`) todavía.
+- **Objetivo responsive**: herramienta de escritorio en primer lugar. No es objetivo adaptar sidebar/topbar a ancho de teléfono (`< sm`) todavía.
 
 ### Componentes base ya definidos
 
@@ -137,12 +137,12 @@ Dirección: **corporativo serio** (banca/legal), no startup. Consistencia > crea
 - **Listas repetibles en un form**: tabla compacta (encabezado una vez, fila delgada por registro), labels `sm:sr-only` desde `sm`, botón "+ Agregar" y quitar por fila (deshabilitado si solo queda 1).
 - **Tablas de listado**: clase compartida `.data-table` (`@layer components`), nunca CSS de tabla duplicado con `:deep()`. Tablas anidadas dentro de una expansión llevan su propia clase.
 - **Tablas agrupadas con expansión** (patrón `InventoryView.vue`): `DataTable` con row-expansion nativo vía slots, agrupación con helper JS puro cuando depende de reglas de negocio; lo resumible va como badge en la fila padre.
-- **Listados simples con filtros rápidos** (`SalesView.vue`, `QuotesView.vue`): botones de filtro rápido (`QuickFilter.vue`) en vez de inputs de fecha libres; filtro que debe persistir vive en la URL (`router.replace`) y el store guarda el último query para que "Volver" lo respete. Toda la fila abre el detalle.
+- **Listados simples con filtros rápidos** (`QuotesView.vue`): botones de filtro rápido (`QuickFilter.vue`) en vez de inputs de fecha libres; filtro que debe persistir vive en la URL (`router.replace`) y el store guarda el último query para que "Volver" lo respete. Toda la fila abre el detalle.
 - **Vista de detalle de documento**: header con folio/status/fecha, card de datos generales, card de líneas con totales, acciones a la derecha (ocultas, no deshabilitadas, cuando no aplican por status). Acción destructiva separada por divisor; "Volver" en línea a la izquierda del título.
 - **Confirmación destructiva**: `ConfirmDialog` unstyled con slot `#container`; también para salir de un form con cambios sin guardar (`onBeforeRouteLeave`, y `onBeforeRouteUpdate` si el modo cambia por query en la misma ruta).
 - **Toast de éxito**: `useNotify()` → `AppToast.vue` único, montado en `App.vue`. Nunca para errores.
 - **Borrado que el backend puede bloquear**: consultar `delete-summary` antes de confirmar; si `blocked_message`, el diálogo solo informa (botón "Entendido"), sin ofrecer una confirmación que fallaría.
-- **Documentos imprimibles/compartibles**: PDF server-side vía `DocumentPdfGenerator`, no `window.print()`. Botón "Compartir" con Web Share API, oculto (no deshabilitado) si el navegador no lo soporta.
+- **Documentos imprimibles/compartibles**: PDF server-side (uno por tipo de documento — `QuotePdfGenerator`, `ComprobantePdfGenerator`), no `window.print()`. Botón "Compartir" con Web Share API, oculto (no deshabilitado) si el navegador no lo soporta.
 
 ## Checklist rápido antes de dar por terminada una tarea
 

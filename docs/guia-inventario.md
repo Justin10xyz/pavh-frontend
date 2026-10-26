@@ -23,7 +23,7 @@ En **Configuración → Categorías**, da clic en el ícono de **bote de basura*
 - Si la categoría **no tiene productos**, se pide confirmación antes de eliminarla.
 - Si **tiene productos**, no se puede eliminar. La ventana dice cuántos tiene; primero hay que editar esos productos y moverlos a otra categoría.
 
-Una categoría eliminada deja de aparecer en las listas, pero las ventas y cotizaciones anteriores no cambian. Después puedes crear otra con el mismo nombre y prefijo.
+Una categoría eliminada deja de aparecer en las listas, pero las cotizaciones anteriores no cambian. Después puedes crear otra con el mismo nombre y prefijo.
 
 ### Proveedores
 
@@ -40,7 +40,24 @@ En **Configuración → Proveedores**, da clic en el ícono de **bote de basura*
 - Si el proveedor **no tiene productos**, se pide confirmación antes de eliminarlo.
 - Si **tiene productos**, no se puede eliminar. La ventana dice cuántos tiene; primero hay que editar esos pisos y cambiarles el proveedor.
 
-Un proveedor eliminado deja de aparecer en las listas, pero las ventas y cotizaciones anteriores no cambian. Después puedes crear otro con el mismo nombre.
+Un proveedor eliminado deja de aparecer en las listas, pero las cotizaciones anteriores no cambian. Después puedes crear otro con el mismo nombre.
+
+### Estilo de piso
+
+Cada piso puede llevar un **estilo** (por ejemplo, Mármol, Piedra, Granito, Cemento, Mixto, Madera, Textil o Decorado). Es opcional: un piso sin estilo asignado simplemente no lo muestra.
+
+El estilo se elige en la lista **Estilo de piso** del formulario del piso, junto a Categoría. Si el que necesitas todavía no existe, da clic en el botón **+** junto a la lista: se abre la ventana **Nuevo estilo de piso** sin salir del formulario y, al guardarlo, queda seleccionado.
+
+Para ver todos los estilos, cambiarles el nombre o eliminarlos, ve a **Configuración → Estilos de piso**. No puede haber dos estilos con el mismo nombre.
+
+### Eliminar un estilo de piso
+
+En **Configuración → Estilos de piso**, da clic en el ícono de **bote de basura** del estilo:
+
+- Si el estilo **no tiene productos**, se pide confirmación antes de eliminarlo.
+- Si **tiene productos**, no se puede eliminar. La ventana dice cuántos tiene; primero hay que editar esos pisos y cambiarles el estilo.
+
+Un estilo eliminado deja de aparecer en las listas, pero las cotizaciones anteriores no cambian. Después puedes crear otro con el mismo nombre.
 
 ---
 
@@ -50,8 +67,8 @@ Un proveedor eliminado deja de aparecer en las listas, pero las ventas y cotizac
 
 Cada piso se muestra en tres niveles:
 
-1. **Producto (línea)**: el nombre del piso, con su categoría, proveedor y unidad de venta.
-2. **Medida**: cada tamaño del producto, con sus datos técnicos (PEI, ETT, [código de comisión](#códigos-de-comisión)), su precio por caja y por m², y cuántas piezas, m² y kilos trae cada caja. En los pisos que se venden por pieza solo se muestra el precio por pieza (ver [Pisos que se venden por pieza](#pisos-que-se-venden-por-pieza)).
+1. **Producto (línea)**: el nombre del piso, con su categoría, proveedor, estilo (si tiene) y unidad de venta.
+2. **Medida**: cada tamaño del producto, con sus datos técnicos (PEI, ETT, [número de caras](#número-de-caras), [código de comisión](#códigos-de-comisión)), su precio por caja y por m², y cuántas piezas, m² y kilos trae cada caja. En los pisos que se venden por pieza solo se muestra el precio por pieza (ver [Pisos que se venden por pieza](#pisos-que-se-venden-por-pieza)).
 3. **Color**: cada color de esa medida, con su código, su stock en cajas (o en piezas) y su estado.
 
 ### Abrir y cerrar productos y medidas
@@ -92,7 +109,15 @@ Cada medida puede llevar un **código de comisión**, que indica cuánta comisi�
 
 El código se elige al crear o editar el piso, en la lista **Categoría de comisión** de cada medida (ordenada de la comisión más alta a la más baja). Es opcional: una medida sin código no muestra nada.
 
-El mismo punto de color aparece en cada producto que agregas a una **cotización** o a una **venta**, junto al color y la medida, para saber cuánto descuento se puede dar antes de ajustar el precio. Como es un código de colores, el cliente no ve cuánto gana el vendedor aunque vea la pantalla.
+El mismo punto de color aparece en cada producto que agregas a una **cotización**, junto al color y la medida, para saber cuánto descuento se puede dar antes de ajustar el precio. Como es un código de colores, el cliente no ve cuánto gana el vendedor aunque vea la pantalla.
+
+### Número de caras
+
+Cada medida puede llevar un **número de caras**, que indica cuánta variación de color o diseño trae la caja entre pieza y pieza: entre más caras, más variedad; **0** o vacío significa que el piso es muy parejo, sin variación. En el catálogo aparece junto al PEI, el ETT y el código de comisión, en el encabezado de cada medida (por ejemplo, *"8 caras"* o *"Sin variación"*).
+
+A diferencia de PEI y ETT, el número de caras sí se captura y se muestra también en los pisos que se venden por pieza.
+
+El mismo dato aparece en cada producto que agregas a una **cotización**, junto al color y la medida — así se le puede decir al cliente cuánta variación trae su piso al armar la nota.
 
 ### Editar un producto
 
@@ -100,20 +125,28 @@ El ícono de **lápiz** en la fila del producto abre el formulario de edición. 
 
 Si algo no se puede guardar (por ejemplo, un cambio que el sistema no permite), el motivo aparece en un aviso rojo arriba del formulario.
 
-### Eliminar un piso
-
-El ícono de **basura**, junto al lápiz en la fila del producto, elimina el piso completo con todas sus medidas y colores. Antes de eliminarlo aparece un aviso para confirmar:
-
-- Si el piso aparece en cotizaciones o ventas, el aviso dice en cuántas. Aun así se puede eliminar: esas cotizaciones y ventas lo siguen mostrando con su nombre en su detalle.
-- Si no se pudo revisar el historial, el aviso lo dice y también se puede eliminar.
-
-Al confirmar, el piso desaparece del catálogo y aparece el aviso **Producto eliminado**. Esta acción no se puede deshacer. Por ahora solo aplica al **Catálogo de pisos**, no a **Otros productos**.
-
 **Eliminar un color ya guardado** (la **X** de su fila) pide confirmación y lo borra **en ese momento**: no espera a **Guardar cambios**, así que aunque después salgas con **Cancelar**, el color ya no regresa. Un producto no puede quedarse sin colores: si intentas eliminar el último que tiene guardado, el motivo aparece en rojo debajo de ese color.
 
 Cada medida necesita **al menos un color**: cuando una medida tiene uno solo, su **X** aparece apagada y, al pasar el cursor encima, dice *"Cada medida necesita al menos un color"*. Para cambiar ese color, edita su nombre en lugar de quitarlo, o agrega otro primero.
 
-Una medida que ya tiene colores guardados muestra **Eliminar medida** en lugar de **Quitar medida**. Al presionarlo, un aviso dice cuántos colores se van a borrar (por ejemplo *"Esto eliminará los 4 colores de la medida 60X120"*). Al confirmar, la medida y todos sus colores se eliminan **en ese momento**, sin esperar a **Guardar cambios**, y desaparecen del formulario y del catálogo. Un piso siempre conserva al menos una medida: si es la única, no se elimina y el motivo aparece bajo el encabezado de la medida.
+### Eliminar una medida completa
+
+Cuando el proveedor descontinúa una medida (por ejemplo, deja de surtir el 59X119 de una línea), ya no es necesario borrar sus colores uno por uno. Una medida que ya tiene colores guardados muestra, en su encabezado, el botón **Eliminar medida**:
+
+- Pide confirmación diciendo cuántos colores se van a borrar, y aclara que se eliminan **en ese momento**, sin esperar a **Guardar cambios** — igual que al eliminar un color suelto.
+- Si confirmas, esa medida y todos sus colores desaparecen del piso de inmediato.
+- Si es la **única medida** que le queda al piso, no se puede eliminar así: el sistema la rechaza con el aviso *"Es la única medida de este producto; borra el producto completo en su lugar."* (ver [Eliminar un piso](#eliminar-un-piso)).
+
+Una medida que **todavía no tiene colores guardados** (la agregaste con **+ Agregar medida** pero no has guardado) sigue mostrando **Quitar medida** en lugar de **Eliminar medida**, y se puede quitar sin confirmación porque no hay nada guardado que perder.
+
+### Eliminar un piso
+
+En la fila del piso, junto al lápiz de editar, hay un ícono de **bote de basura**. Al darle clic:
+
+- Si el piso **no tiene cotizaciones**, solo se pide confirmar que quieres borrarlo, con todas sus medidas y colores.
+- Si **sí tiene**, la ventana además dice en cuántas cotizaciones aparece — pero **no bloquea** el borrado: siempre se puede eliminar.
+
+Un piso eliminado desaparece del catálogo, pero las cotizaciones donde ya aparecía lo siguen mostrando por su nombre, con su medida y color, tanto en pantalla como en el PDF — igual que pasa hoy al eliminar un color o un proveedor. Después puedes crear otro piso con el mismo nombre.
 
 ### Una medida abierta a la vez
 
@@ -139,10 +172,11 @@ Algunos pisos, como mosaicos o decorados, no se venden por caja ni por m², sino
 - El precio se captura como **Precio por pieza**.
 - Desaparecen los datos que solo aplican a cajas: **PEI**, **ETT**, **Precio por m²**, **Piezas por caja**, **m² por caja**, **Kilos por caja** y **Cajas por tarima**.
 - El stock de cada color se cuenta en **piezas**.
+- El **número de caras** sigue capturándose igual que en los pisos por caja.
 
 En el catálogo, estos pisos muestran su precio como **"$85.50/pieza"** y su stock como **"12 pzas"**. Las ventanas de ajuste e historial de stock también hablan de piezas.
 
-En **cotizaciones y ventas** se captura directamente cuántas piezas lleva el cliente: no aparece el campo de **m² requeridos** y el total es piezas × precio por pieza. Al vender, se descuentan esas piezas del stock.
+En **cotizaciones** se captura directamente cuántas piezas lleva el cliente: no aparece el campo de **m² requeridos** y el total es piezas × precio por pieza. Al pagar el presupuesto, se descuentan esas piezas del stock.
 
 > La **Unidad** de un piso no se puede cambiar una vez que tiene colores registrados: la lista aparece deshabilitada con un aviso. Si un piso se registró con la unidad equivocada, hay que crearlo de nuevo con la unidad correcta.
 
@@ -152,7 +186,7 @@ El formulario del piso se puede llenar completo sin usar el mouse:
 
 - Al abrir **Nuevo piso**, el cursor ya está en **Proveedor**: se puede empezar a capturar de inmediato.
 - **Enter** avanza al siguiente campo, igual que **Tab** pero sin detenerse en los botones. **Shift + Tab** regresa al anterior. Enter ya no intenta guardar el piso a medio capturar.
-- En las listas (Proveedor, Categoría, Unidad, PEI…), escribir la primera letra abre la lista y salta a la opción que empieza con ella; las **flechas** recorren la lista y **Enter** elige. Con la lista cerrada, Enter pasa al siguiente campo.
+- En las listas (Proveedor, Categoría, Estilo de piso, Unidad, PEI…), escribir la primera letra abre la lista y salta a la opción que empieza con ella; las **flechas** recorren la lista y **Enter** elige. Con la lista cerrada, Enter pasa al siguiente campo.
 - Al pasar a un campo con Enter, su contenido queda seleccionado: lo que escribas lo reemplaza.
 - En los colores, **Enter** en **Stock mínimo** de la última fila agrega un color nuevo y deja el cursor en él, como en una hoja de cálculo. Si esa fila todavía no tiene color, Enter pasa al siguiente campo sin agregar filas vacías.
 - Al presionar **+ Agregar color**, el cursor pasa directo al campo **Color** de la fila nueva. Con **+ Agregar medida**, pasa a la **Medida** nueva.
@@ -172,6 +206,7 @@ Arriba de la tabla hay herramientas para encontrar productos rápido:
 - **Buscador**: en pisos busca por nombre de línea, color o código; en otros productos, por nombre o código. No importan los acentos ni las mayúsculas. Si buscas un color o un código, solo se muestran los colores que coinciden.
 - **Categoría**: muestra solo los productos de una categoría.
 - **Proveedor** (solo en pisos): muestra solo los pisos de un proveedor. La lista solo incluye proveedores que tienen pisos registrados.
+- **Estilo** (solo en pisos): muestra solo los pisos de un estilo. La lista solo incluye los estilos que tienen pisos registrados.
 - **Unidad de venta** (solo en pisos): muestra solo los pisos que se venden por m² o solo los que se venden por pieza.
 - **Mayoreo** (solo en otros productos): con **Con mayoreo** muestra solo los productos que tienen precio de mayoreo. En la tabla, esos productos muestran su precio de mayoreo en gris debajo del precio normal (*"Mayoreo $85.00"*).
 - **Limpiar filtros**: aparece cuando hay algún filtro activo y los quita todos de una vez.
@@ -204,7 +239,7 @@ En un producto que ya tiene seguimiento, el ícono **Ajustar stock** abre una ve
 
 Escribe la cantidad (mínimo 1) y da clic en **Aplicar**.
 
-> Las **ventas** descuentan el stock en automático. No es necesario quitarlo a mano.
+> Al marcar un **presupuesto como pagado**, el stock se descuenta en automático. No es necesario quitarlo a mano.
 
 ### Desactivar el seguimiento
 
@@ -220,7 +255,7 @@ Al editar un piso o un producto general, el campo **Stock actual** se puede modi
 
 Debajo del campo se ve el cambio que se hará (por ejemplo, *10 → 8 cj*). Al dar clic en **Guardar cambios** aparece un resumen de todos los cambios de stock para confirmarlos antes de guardar. Cada cambio queda en el historial igual que si se hiciera desde el inventario (*Ajuste manual*, *Stock inicial* o *Seguimiento desactivado*).
 
-> Si se registra una venta del mismo producto mientras el formulario está abierto, el ajuste se aplica sobre el stock real. Por ejemplo, si había 10, se vendió 1 y cambias el campo a 8, se quitan 2 y quedan 7. Para un conteo físico exacto, recarga el formulario antes de corregir el stock.
+> Si se paga un presupuesto del mismo producto mientras el formulario está abierto, el ajuste se aplica sobre el stock real. Por ejemplo, si había 10, se descontó 1 y cambias el campo a 8, se quitan 2 y quedan 7. Para un conteo físico exacto, recarga el formulario antes de corregir el stock.
 
 ---
 
@@ -233,7 +268,7 @@ El ícono de **reloj (Ver historial de stock)** muestra todos los movimientos de
 | **Fecha** | Cuándo ocurrió el movimiento. |
 | **Tipo** | **Entrada**, **Salida** o **Desactivado**. |
 | **Cantidad** | Cuánto se agregó (+) o se quitó (−). |
-| **Origen** | **Stock inicial**, **Ajuste manual**, **Seguimiento desactivado** o el **folio de la venta** (solo como referencia, sin enlace). |
+| **Origen** | **Stock inicial**, **Ajuste manual**, **Seguimiento desactivado** o el **folio del presupuesto** (al pagarlo). El folio es un enlace: al darle clic se abre el detalle de ese presupuesto. Movimientos antiguos de una venta (de cuando existía el Punto de Venta) se siguen mostrando, pero sin folio. |
 | **Stock resultante** | Cuánto quedó después del movimiento. |
 
 ---
@@ -256,7 +291,7 @@ A diferencia de los pisos, el código de estos productos **se captura a mano** e
 - No puede llevar espacios y **no se puede repetir**.
 - Se guarda siempre en mayúsculas.
 
-El código también sirve para buscar el producto en el inventario, en cotizaciones y en ventas.
+El código también sirve para buscar el producto en el inventario y en cotizaciones.
 
 ### Precio de mayoreo
 
@@ -266,16 +301,13 @@ Además de su **Precio** normal (menudeo), un producto puede tener un **precio d
 - Al editar un producto que ya tiene precio de mayoreo, el campo aparece abierto con su valor.
 - Para quitarlo, deja el campo vacío y guarda. El producto vuelve a tener un solo precio.
 
-El mayoreo **no se aplica solo** por la cantidad: lo decide el vendedor en cada producto de la cotización o la venta.
+El mayoreo **no se aplica solo** por la cantidad: lo decide el vendedor en cada producto de la cotización.
 
 - En las líneas de un producto con mayoreo aparece la casilla **Mayoreo** debajo del precio. Sin marcar, se cobra a menudeo. Debajo se ve el precio del otro tipo como referencia (por ejemplo, *"Mayoreo: $150.00"*).
 - Los productos sin precio de mayoreo se ven igual que siempre, sin casilla.
 - En **cotizaciones**, el precio sigue sin poder editarse: la casilla solo elige qué precio se usa.
-- En **ventas**, al marcar o desmarcar la casilla el precio se llena con el del tipo elegido, y todavía lo puedes cambiar a mano.
-- Al **convertir una cotización a venta**, cada producto conserva el tipo con el que se cotizó, con el precio que tenga hoy. Antes de registrar todavía puedes cambiar la casilla.
-- Si a un producto le quitaron el precio de mayoreo después de cotizarlo a mayoreo, la cotización ya no se puede convertir a venta y aparece un aviso con el producto. Al editar esa cotización, la línea vuelve a menudeo.
 
-En el detalle de la cotización o de la venta y en su PDF, los productos cobrados a mayoreo llevan la etiqueta **Mayoreo** junto al precio unitario.
+En el detalle de la cotización y en su PDF, los productos cobrados a mayoreo llevan la etiqueta **Mayoreo** junto al precio unitario.
 
 ### Capturar un producto con el teclado
 
@@ -294,6 +326,7 @@ Mejoras que se van agregando al módulo:
 
 | Fecha | Cambio |
 | --- | --- |
+| 2026-10-26 | **Ventas**: el módulo de Punto de Venta se eliminó por completo — el sistema ya solo maneja Presupuestos y Comprobantes. El stock ahora se descuenta al pagar un presupuesto, no al registrar una venta. Los movimientos de stock de ventas anteriores a este cambio se conservan en el historial, pero ya no llevan folio ni enlace. |
 | 2026-10-15 | **Catálogo de pisos**: ahora un clic en cualquier parte de la fila del producto abre o cierra sus medidas, no solo la flecha. |
 | 2026-10-15 | **Catálogo de pisos**: los productos y las medidas se abren y cierran con una animación suave en lugar de aparecer de golpe. |
 | 2026-10-15 | **Nuevo producto (pisos)**: la lista de categorías ya solo muestra las de tipo Pisos, no las de Otros productos. |
@@ -333,7 +366,14 @@ Mejoras que se van agregando al módulo:
 | 2026-10-17 | **Editar piso**: la confirmación al eliminar un color aclara que se borra en ese momento, sin esperar a Guardar cambios. Si no se puede eliminar (es el último color del producto), el motivo aparece debajo de ese color en lugar de arriba del formulario. |
 | 2026-10-17 | **Nuevo piso / Editar piso**: la **X** apagada del único color de una medida ahora explica, al pasar el cursor, que cada medida necesita al menos un color. |
 | 2026-10-17 | **Editar piso**: las medidas con colores guardados explican, al abrirlas, cómo quitarlas (eliminar primero sus colores guardados). |
-| 2026-10-21 | **Nuevo piso / Editar piso**: **m² por caja** acepta hasta 3 decimales (por ejemplo *1.404*) en lugar de 2. |
-| 2026-10-21 | **Editar piso**: las medidas con colores guardados se pueden eliminar completas con **Eliminar medida**, sin borrar sus colores uno por uno. Si es la única medida del piso, no se elimina y el motivo aparece bajo la medida. |
-| 2026-10-21 | **Catálogo de pisos**: el ícono de basura en la fila del producto elimina el piso completo. El aviso de confirmación dice en cuántas cotizaciones y ventas aparece, pero no impide eliminarlo. |
-| 2026-10-26 | **Historial de stock**: el folio de la venta en la columna Origen ya no es un enlace; queda solo como referencia. |
+| 2026-10-21 | **Configuración**: nueva pantalla **Estilos de piso** para agregar, editar y eliminar estilos (Mármol, Piedra, Granito, Cemento, Mixto, Madera, Textil, Decorado, u otros que se agreguen). Solo se pueden eliminar los que no tengan productos. |
+| 2026-10-21 | **Nuevo piso / Editar piso**: nuevo campo opcional **Estilo de piso**, junto a Categoría, con botón **+** para crear uno nuevo sin salir del formulario. No aplica a Otros productos. |
+| 2026-10-21 | **Catálogo de pisos**: nuevo filtro **Estilo**, y el estilo de cada piso (si tiene) se muestra en su fila, junto a categoría, proveedor y unidad de venta. |
+| 2026-10-21 | **Nuevo piso / Editar piso**: nuevo campo opcional **Caras**, que indica cuánta variación de color trae la caja (0 o vacío = muy parejo, sin variación). A diferencia de PEI y ETT, también se captura en los pisos por pieza. |
+| 2026-10-21 | **Catálogo de pisos**: el número de caras de cada medida se muestra junto al PEI, el ETT y el código de comisión. |
+| 2026-10-21 | **Cotizaciones y ventas**: cada piso agregado muestra su número de caras junto al color y la medida. |
+| 2026-10-21 | **Editar piso**: una medida con colores guardados ya se puede eliminar completa con el botón **Eliminar medida**, sin tener que quitar sus colores uno por uno. Se bloquea si es la única medida que le queda al piso. |
+| 2026-10-21 | **Catálogo de pisos**: nuevo ícono para eliminar un piso completo (todas sus medidas y colores) directamente desde su fila, avisando antes cuántas cotizaciones y ventas lo referencian. |
+| 2026-10-21 | **Cotizaciones y ventas**: una cotización o venta que incluye un piso o una medida ya eliminada sigue mostrando su nombre, medida y color normalmente, tanto en pantalla como en el PDF. |
+
+*Nota: las entradas anteriores al 2026-10-26 mencionan "ventas" tal como funcionaba el sistema en ese momento — se dejan tal cual como registro histórico. El módulo de Ventas (Punto de Venta) ya no existe; ver la entrada del 2026-10-26 arriba.*
