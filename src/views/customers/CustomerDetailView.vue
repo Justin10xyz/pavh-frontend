@@ -18,7 +18,7 @@
             <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div class="flex items-start gap-3">
                     <!-- Volver en línea con el título, igual que en los detalles de
-					     cotización y venta. Por debajo de lg solo la flecha. -->
+					     cotización y comprobante. Por debajo de lg solo la flecha. -->
                     <RouterLink
                         :to="{ name: 'customers' }"
                         aria-label="Volver a clientes"
@@ -181,61 +181,6 @@
                         </DataTable>
                     </div>
                 </div>
-
-                <!-- Historial: ventas -->
-                <div class="bg-surface border border-border rounded-md overflow-hidden">
-                    <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-5 sm:px-6 pt-5 sm:pt-6 mb-4">
-                        <h2 class="text-xs font-medium uppercase tracking-wide text-text-muted">Ventas</h2>
-                        <!-- Lo que el cliente ha comprado en total -->
-                        <p v-if="sales.length > 0" class="text-sm text-text-muted">
-                            {{ sales.length }} {{ sales.length === 1 ? 'venta' : 'ventas' }}
-                            <span aria-hidden="true">·</span>
-                            Total <span class="font-semibold text-primary tabular-nums">{{ formatCurrency(salesTotal) }}</span>
-                        </p>
-                    </div>
-
-                    <p v-if="salesLoading && sales.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Cargando ventas…</p>
-                    <p v-else-if="salesError" class="text-danger text-sm px-5 sm:px-6 pb-5 sm:pb-6">{{ salesError }}</p>
-                    <p v-else-if="sales.length === 0" class="text-text-muted text-sm px-5 sm:px-6 pb-5 sm:pb-6">Este cliente no tiene ventas.</p>
-
-                    <div v-else class="overflow-x-auto border-t border-border">
-                        <DataTable
-                            :value="sales"
-                            dataKey="id"
-                            class="data-table"
-                            :row-class="() => 'cursor-pointer'"
-                            @row-click="({ originalEvent, data }) => openRow(originalEvent, { name: 'pos.sales.show', params: { id: data.id } })"
-                        >
-                            <Column header="Folio" header-class="pl-5 sm:pl-6" body-class="pl-5 sm:pl-6 whitespace-nowrap">
-                                <template #body="{ data }">
-                                    <RouterLink
-                                        :to="{ name: 'pos.sales.show', params: { id: data.id } }"
-                                        class="font-medium text-text hover:text-accent transition-colors"
-                                    >
-                                        {{ data.folio }}
-                                    </RouterLink>
-                                    <span class="block sm:hidden text-xs text-text-muted">{{ formatDateTime(data.created_at) }}</span>
-                                </template>
-                            </Column>
-
-                            <Column
-                                header="Fecha"
-                                header-class="hidden sm:table-cell"
-                                body-class="hidden sm:table-cell whitespace-nowrap"
-                            >
-                                <template #body="{ data }">
-                                    <span class="text-text-muted">{{ formatDateTime(data.created_at) }}</span>
-                                </template>
-                            </Column>
-
-                            <Column header="Total" header-class="text-right! pr-5 sm:pr-6" body-class="text-right whitespace-nowrap pr-5 sm:pr-6">
-                                <template #body="{ data }">
-                                    <span class="text-text tabular-nums">{{ formatCurrency(data.total) }}</span>
-                                </template>
-                            </Column>
-                        </DataTable>
-                    </div>
-                </div>
             </div>
         </template>
 
@@ -303,19 +248,14 @@ const { busyId, deleteError, requestDelete } = useCustomerDelete({
     },
 })
 
-// `with=customer` aunque no se muestre: QuoteResource/SaleResource leen
-// `customer` siempre y sin eager load sería una consulta por fila.
+// `with=customer` aunque no se muestre: QuoteResource lee `customer` siempre
+// y sin eager load sería una consulta por fila.
 // Historial pedido directo por axios (mismo criterio que dashboard.js): pasar
-// por quotes.fetchQuotes()/sales.fetchSales() escribiría en los listados de
-// esas vistas y heredaría su gate de caché/contador. Cada sección tiene su
-// propio loading/error para que el fallo de una no oculte la otra.
+// por quotes.fetchQuotes() escribiría en el listado de esa vista y heredaría
+// su gate de caché/contador.
 const quotes = ref([])
 const quotesLoading = ref(false)
 const quotesError = ref(null)
-
-const sales = ref([])
-const salesLoading = ref(false)
-const salesError = ref(null)
 
 // Si se navega a otro cliente antes de que responda la consulta anterior,
 // solo la respuesta más reciente puede escribir en el historial.
@@ -341,15 +281,13 @@ async function loadSection(requestId, { items, loading, error, message, load }) 
 function fetchHistory(customerId) {
     const requestId = ++lastRequestId
     quotes.value = []
-    sales.value = []
 
     loadSection(requestId, {
         items: quotes,
         loading: quotesLoading,
         error: quotesError,
         message: 'No se pudieron cargar los presupuestos del cliente.',
-        // GET /api/quotes y GET /api/sales ya vienen ordenados por created_at
-        // descendente (latest()).
+        // GET /api/quotes ya viene ordenado por created_at descendente (latest()).
         load: async () => {
             const { data } = await axios.get('/api/quotes', {
                 params: { customer_id: customerId, with: 'customer,quoteStatus' },
@@ -357,24 +295,7 @@ function fetchHistory(customerId) {
             return data.data
         },
     })
-
-    loadSection(requestId, {
-        items: sales,
-        loading: salesLoading,
-        error: salesError,
-        message: 'No se pudieron cargar las ventas del cliente.',
-        load: async () => {
-            const { data } = await axios.get('/api/sales', {
-                params: { customer_id: customerId, with: 'customer' },
-            })
-            return data.data
-        },
-    })
 }
-
-const salesTotal = computed(() =>
-    sales.value.reduce((sum, sale) => sum + (Number(sale.total) || 0), 0)
-)
 
 // Toda la fila abre el documento. Los clicks sobre el folio (RouterLink) se
 // dejan a él, que ya soporta Ctrl/Cmd+click y click medio.
