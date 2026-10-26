@@ -112,23 +112,10 @@ export const useQuotesStore = defineStore("quotes", () => {
         }
     }
 
-    // La conversión ocurre en POST /api/sales con quote_id (SaleFormView), cuya
-    // respuesta no trae el quote completo: solo {id, folio}. El backend la marca
-    // "Convertida" en la misma transacción, así que un POST exitoso basta para
-    // actualizar el status in-place sin refetch del listado.
-    function markQuoteConverted(id) {
-        const quote = quotes.value.find((q) => String(q.id) === String(id));
-        if (quote) quote.status = "Convertida";
-
-        if (currentQuote.value && String(currentQuote.value.id) === String(id)) {
-            currentQuote.value.status = "Convertida";
-        }
-    }
-
     // PATCH /api/quotes/{id}/mark-paid (sin payload) descuenta stock, pasa el
     // status a "Pagada" y llena paid_at/paid_by; responde 422 si no es pagable.
-    // Solo se copian esos tres campos in-place, mismo criterio que
-    // markQuoteConverted(): la respuesta no eager-loadea items.productVariant.product.
+    // Solo se copian esos tres campos in-place: la respuesta no eager-loadea
+    // items.productVariant.product.
     async function markQuotePaid(id) {
         const { data } = await axios.patch(`/api/quotes/${id}/mark-paid`);
         const paid = { status: data.data.status, paid_at: data.data.paid_at, paid_by: data.data.paid_by };
@@ -171,7 +158,6 @@ export const useQuotesStore = defineStore("quotes", () => {
         updateQuote,
         cancelQuote,
         deleteQuote,
-        markQuoteConverted,
         markQuotePaid,
         markQuoteComprobante,
         currentQuote,
