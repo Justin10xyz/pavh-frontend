@@ -2,15 +2,9 @@
     <div class="p-2">
         <div class="mb-4">
             <h1 class="font-serif text-xl text-primary">Dashboard</h1>
-            <p class="text-sm text-text-muted mt-0.5">Resumen de ventas, inventario y presupuestos.</p>
+            <p class="text-sm text-text-muted mt-0.5">Resumen de inventario y presupuestos.</p>
         </div>
 
-        <SalesSummaryCards
-            :summary="dashboard.salesSummary"
-            :loading="dashboard.salesLoading"
-            :error="dashboard.salesError"
-            class="mb-6"
-        />
         <DashboardShortcuts class="mb-6" />
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -39,7 +33,6 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useDashboardStore } from '@/stores/dashboard'
 import { dateRangeFor } from '@/lib/dateRanges'
-import SalesSummaryCards from './components/SalesSummaryCards.vue'
 import DashboardShortcuts from './components/DashboardShortcuts.vue'
 import LowStockWidget from './components/LowStockWidget.vue'
 import ActiveQuotesWidget from './components/ActiveQuotesWidget.vue'
@@ -47,8 +40,7 @@ import TopProductsWidget from './components/TopProductsWidget.vue'
 
 const dashboard = useDashboardStore()
 
-// Vive en la vista (no en el store), igual que en SalesView: vuelve a "Este mes"
-// en cada visita.
+// Vive en la vista (no en el store): vuelve a "Este mes" en cada visita.
 const topProductsFilter = ref('month')
 
 function loadTopProducts() {
@@ -63,8 +55,7 @@ watch(topProductsFilter, loadTopProducts)
 function refreshOnVisible() {
     if (document.visibilityState !== 'visible') return
 
-    const dashboardLoading =
-        dashboard.salesLoading || dashboard.lowStockLoading || dashboard.activeQuotesLoading
+    const dashboardLoading = dashboard.lowStockLoading || dashboard.activeQuotesLoading
     if (!dashboardLoading) dashboard.fetchDashboardData()
     if (!dashboard.topProductsLoading) loadTopProducts()
 }
