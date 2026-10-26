@@ -64,7 +64,7 @@
                         >
                             <i class="ti ti-trash text-base" aria-hidden="true"></i>
                         </button>
-                        <!-- Editar/Cancelar/Convertir/Marcar como pagado solo existen en
+                        <!-- Editar/Cancelar/Marcar como pagado solo existen en
 						     Borrador: en otro caso se ocultan en vez de quedar
 						     deshabilitados (el tooltip que explicaba por qué no se ve en
 						     touch ni en un botón disabled). -->
@@ -116,25 +116,15 @@
                                 pdfBusy ? "Generando PDF…" : "Descargar PDF"
                             }}</span>
                         </button>
-                        <!-- Venta (POS) queda como flujo secundario: la acción principal
-						     del Presupuesto es marcarlo como pagado. -->
-                        <template v-if="isEditable">
-                            <button
-                                type="button"
-                                @click="convertToSale"
-                                class="bg-surface border border-border hover:bg-bg text-text font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer"
-                            >
-                                Convertir a venta
-                            </button>
-                            <button
-                                type="button"
-                                :disabled="markingPaid"
-                                @click="requestMarkPaid"
-                                class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
-                            >
-                                {{ markingPaid ? "Marcando…" : "Marcar como pagado" }}
-                            </button>
-                        </template>
+                        <button
+                            v-if="isEditable"
+                            type="button"
+                            :disabled="markingPaid"
+                            @click="requestMarkPaid"
+                            class="bg-primary hover:bg-primary-dark disabled:bg-primary/50 text-white font-medium text-sm h-10 px-4 rounded-md transition-colors select-none cursor-pointer disabled:cursor-not-allowed"
+                        >
+                            {{ markingPaid ? "Marcando…" : "Marcar como pagado" }}
+                        </button>
                         <!-- Pagada y sin comprobante: el guard real es
 						     Quote::comprobanteConversionBlockedMessage(). -->
                         <button
@@ -181,20 +171,6 @@
                                 </a>
                             </dd>
                             <dd v-else class="text-text-muted">Sin cliente</dd>
-                        </div>
-
-                        <!-- Solo en Convertida: `sale` viene de GET /quotes/{id} (null si no se ha convertido) -->
-                        <div v-if="quote.sale" class="space-y-1">
-                            <dt class="text-xs font-medium text-text-muted">Convertida en venta</dt>
-                            <dd>
-                                <RouterLink
-                                    :to="{ name: 'pos.sales.show', params: { id: quote.sale.id } }"
-                                    class="inline-flex items-center gap-1 font-medium text-accent hover:underline"
-                                >
-                                    {{ quote.sale.folio }}
-                                    <i class="ti ti-arrow-up-right text-sm" aria-hidden="true"></i>
-                                </RouterLink>
-                            </dd>
                         </div>
 
                         <!-- `comprobante` viene de GET /quotes/{id} (null si no se ha convertido) -->
@@ -380,7 +356,7 @@ watch(
 );
 
 // Solo Borrador: al marcarla como pagada pasa a "Pagada" y el backend bloquea
-// editar, cancelar y convertir a venta. Mismo guard aquí, solo como UX.
+// editar y cancelar. Mismo guard aquí, solo como UX.
 const isEditable = computed(() => quote.value?.status === "Borrador");
 
 // Líneas cobradas a precio de mayoreo (solo productos simples lo tienen).
@@ -405,14 +381,10 @@ function editQuote() {
     router.push({ name: "quotes.edit", params: { id: quote.value.id } });
 }
 
-function convertToSale() {
-    router.push({ name: "pos.sales.create", query: { quote_id: quote.value.id } });
-}
-
 function requestCancel() {
     confirm.require({
         header: "Cancelar presupuesto",
-        message: `¿Cancelar el presupuesto ${quote.value.folio}? Ya no se podrá editar ni convertir a venta. Esta acción no se puede deshacer.`,
+        message: `¿Cancelar el presupuesto ${quote.value.folio}? Ya no se podrá editar. Esta acción no se puede deshacer.`,
         acceptLabel: "Cancelar presupuesto",
         tone: "danger",
         accept: cancelQuote,
@@ -422,7 +394,7 @@ function requestCancel() {
 function requestMarkPaid() {
     confirm.require({
         header: "Marcar como pagado",
-        message: `¿Confirmar el pago de ${quote.value.folio}? Se descontará del inventario el stock de sus productos y ya no se podrá editar, cancelar ni convertir a venta. Esta acción no se puede deshacer.`,
+        message: `¿Confirmar el pago de ${quote.value.folio}? Se descontará del inventario el stock de sus productos y ya no se podrá editar ni cancelar. Esta acción no se puede deshacer.`,
         acceptLabel: "Marcar como pagado",
         tone: "primary",
         accept: markPaid,
@@ -451,7 +423,7 @@ async function markPaid() {
 }
 
 // El backend descontó stock: se refleja en los stores cacheados (si ya se
-// cargaron) con el mismo cálculo que usa POS al registrar una venta, para que
+// cargaron) con los helpers de @/lib/saleForm, para que
 // Inventario y los avisos de stock no muestren el stock anterior. `quantity`
 // llega como string decimal; el helper de simples la suma como número.
 function syncStock(items) {
