@@ -74,7 +74,7 @@
                         <p v-if="errors.address" class="text-danger text-xs mt-1.5">{{ errors.address }}</p>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="space-y-1.5">
                             <FieldLabel html-for="new_customer_neighborhood" text="Colonia" />
                             <InputTextCustom
@@ -99,6 +99,21 @@
                                 @input="errors.city = ''"
                             />
                             <p v-if="errors.city" class="text-danger text-xs mt-1.5">{{ errors.city }}</p>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <FieldLabel html-for="new_customer_postal_code" text="C.P." />
+                            <InputTextCustom
+                                id="new_customer_postal_code"
+                                v-model="form.postal_code"
+                                :error="errors.postal_code"
+                                autocomplete="off"
+                                inputmode="numeric"
+                                maxlength="10"
+                                placeholder="Ej. 64000"
+                                @input="errors.postal_code = ''"
+                            />
+                            <p v-if="errors.postal_code" class="text-danger text-xs mt-1.5">{{ errors.postal_code }}</p>
                         </div>
                     </div>
                 </div>
@@ -145,8 +160,8 @@ const props = defineProps({
 
 const customers = useCustomersStore()
 
-const form = reactive({ name: '', phone: '', email: '', address: '', neighborhood: '', city: '' })
-const errors = reactive({ name: '', phone: '', email: '', address: '', neighborhood: '', city: '' })
+const form = reactive({ name: '', phone: '', email: '', address: '', neighborhood: '', city: '', postal_code: '' })
+const errors = reactive({ name: '', phone: '', email: '', address: '', neighborhood: '', city: '', postal_code: '' })
 const submitting = ref(false)
 const generalError = ref(null)
 // El `id` cae directo al <input> de InputTextCustom.
@@ -162,12 +177,14 @@ function reset() {
     form.address = ''
     form.neighborhood = ''
     form.city = ''
+    form.postal_code = ''
     errors.name = ''
     errors.phone = ''
     errors.email = ''
     errors.address = ''
     errors.neighborhood = ''
     errors.city = ''
+    errors.postal_code = ''
     generalError.value = null
 }
 
@@ -186,6 +203,7 @@ async function handleSubmit() {
             address: form.address.trim() || null,
             neighborhood: form.neighborhood.trim() || null,
             city: form.city.trim() || null,
+            postal_code: form.postal_code.trim() || null,
         })
 
         emit('created', customer)
