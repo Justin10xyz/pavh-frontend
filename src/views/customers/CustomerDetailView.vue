@@ -95,11 +95,15 @@
                         </div>
 
                         <!-- Dirección: solo los campos capturados; si no hay ninguno,
-                             un solo "Sin dirección" en vez de tres vacíos. -->
+                             un solo "Sin dirección" en vez de cuatro vacíos. -->
                         <template v-if="hasAddress">
-                            <div v-if="customer.address" class="space-y-1 sm:col-span-2">
+                            <div v-if="customer.address" class="space-y-1" :class="{ 'sm:col-span-2': !customer.postal_code }">
                                 <dt class="text-xs font-medium text-text-muted">Domicilio</dt>
                                 <dd class="text-text break-words">{{ customer.address }}</dd>
+                            </div>
+                            <div v-if="customer.postal_code" class="space-y-1">
+                                <dt class="text-xs font-medium text-text-muted">C.P.</dt>
+                                <dd class="text-text break-words">{{ customer.postal_code }}</dd>
                             </div>
                             <div v-if="customer.neighborhood" class="space-y-1">
                                 <dt class="text-xs font-medium text-text-muted">Colonia</dt>
@@ -287,7 +291,7 @@ const customer = computed(() => {
 })
 
 const hasAddress = computed(() =>
-    !!(customer.value?.address || customer.value?.neighborhood || customer.value?.city)
+    !!(customer.value?.address || customer.value?.neighborhood || customer.value?.city || customer.value?.postal_code)
 )
 
 // customers.deleteCustomer() solo quita la fila del listado: limpiar el
