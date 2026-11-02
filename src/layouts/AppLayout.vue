@@ -6,7 +6,10 @@
         <div class="flex flex-col flex-1 min-w-0 h-full">
             <AppTopbar />
 
-            <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+            <!-- `relative`: ancla los descendientes `absolute` (p.ej. `sr-only`) al
+                 contenedor con scroll; sin él se posicionan contra el documento y
+                 estiran el <body>, provocando un segundo scroll con espacio en blanco. -->
+            <main class="relative flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
                 <slot />
             </main>
         </div>
