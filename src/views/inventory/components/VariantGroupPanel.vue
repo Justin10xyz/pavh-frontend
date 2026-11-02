@@ -45,7 +45,9 @@
                     </span>
                     <span v-if="!soldByPiece" class="text-text-muted">
                         {{ group.pieces_per_box }} pzas/caja ·
-                        {{ Number(group.m2_per_box).toFixed(2) }} m²/caja ·
+                        <!-- Sin redondear: m2_per_box tiene 3 decimales y debe verse
+						     igual que en el form (ej. 1.125, no 1.13). -->
+                        {{ Number(group.m2_per_box) }} m²/caja ·
                         {{ group.kilos_per_box }} kg/caja
                     </span>
                 </span>
