@@ -27,24 +27,6 @@
                 </div>
 
                 <div class="space-y-1.5 mb-4">
-                    <FieldLabel html-for="category_code_prefix" text="Prefijo de código" required />
-                    <InputTextCustom
-                        id="category_code_prefix"
-                        v-model="codePrefix"
-                        :error="errors.code_prefix"
-                        placeholder="Ej. POR"
-                        autocomplete="off"
-                        autocapitalize="characters"
-                        spellcheck="false"
-                        @input="onCodePrefixInput"
-                    />
-                    <p v-if="errors.code_prefix" class="text-danger text-xs mt-1.5">{{ errors.code_prefix }}</p>
-                    <p v-else-if="codePrefixChanged" class="text-xs text-text-muted mt-1.5">
-                        Los productos ya creados conservan su código actual ({{ category.code_prefix }}-…); solo los nuevos usarán {{ codePrefix.trim() }}.
-                    </p>
-                </div>
-
-                <div class="space-y-1.5 mb-4">
                     <FieldLabel html-for="category_product_form_type" text="Tipo de formulario de producto" required />
                     <SelectCustom
                         id="category_product_form_type"
@@ -54,13 +36,37 @@
                         option-label="label"
                         :disabled="!!fixedProductFormType"
                         :error="errors.product_form_type"
-                        @change="errors.product_form_type = ''"
+                        @change="errors.product_form_type = ''; errors.code_prefix = ''"
                     />
                     <p v-if="errors.product_form_type" class="text-danger text-xs mt-1.5">{{ errors.product_form_type }}</p>
                     <p v-else class="text-xs text-text-muted mt-1.5">
                         {{ productFormTypeDescription }}
                         <template v-if="isEditMode">No se puede cambiar si la categoría ya tiene productos.</template>
                     </p>
+                </div>
+
+                <!-- El prefijo solo sirve para autogenerar los códigos de variantes de
+                     pisos (VariantCodeGenerator); las categorías General no lo usan. -->
+                <div v-if="requiresCodePrefix" class="space-y-1.5 mb-4">
+                    <FieldLabel html-for="category_code_prefix" text="Prefijo de código" required />
+                    <InputTextCustom
+                        id="category_code_prefix"
+                        v-model="codePrefix"
+                        :error="errors.code_prefix"
+                        placeholder="Ej. PIS"
+                        maxlength="10"
+                        autocomplete="off"
+                        autocapitalize="characters"
+                        spellcheck="false"
+                        @input="onCodePrefixInput"
+                    />
+                    <p v-if="errors.code_prefix" class="text-danger text-xs mt-1.5">{{ errors.code_prefix }}</p>
+                    <template v-else>
+                        <p class="text-xs text-text-muted mt-1.5">Solo letras y guiones, máximo 10. No es el código de un producto.</p>
+                        <p v-if="codePrefixChanged" class="text-xs text-text-muted mt-1.5">
+                            Los productos ya creados conservan su código actual ({{ category.code_prefix }}-…); solo los nuevos usarán {{ codePrefix.trim() }}.
+                        </p>
+                    </template>
                 </div>
 
                 <!-- Abierto desde un formulario de producto solo se puede crear; editar,
@@ -143,8 +149,16 @@ const isEditMode = computed(() => !!props.category?.id)
 // El prefijo solo se usa al generar el código de una variante nueva
 // (VariantCodeGenerator), así que cambiarlo no toca los códigos existentes.
 const codePrefixChanged = computed(
-    () => isEditMode.value && codePrefix.value.trim() !== '' && codePrefix.value.trim() !== props.category.code_prefix
+    () =>
+        isEditMode.value &&
+        !!props.category.code_prefix &&
+        codePrefix.value.trim() !== '' &&
+        codePrefix.value.trim() !== props.category.code_prefix
 )
+
+// Solo las categorías de Pisos (variant) piden prefijo; mismo criterio que
+// Store/UpdateCategoryRequest.
+const requiresCodePrefix = computed(() => productFormType.value === 'variant')
 
 const productFormTypeDescription = computed(
     () => productFormTypeOptions.find((option) => option.value === productFormType.value)?.description ?? ''
@@ -189,7 +203,7 @@ function reset() {
 // explicación.
 function validateRequired() {
     errors.name = name.value.trim() ? '' : 'Este campo es requerido'
-    errors.code_prefix = codePrefix.value.trim() ? '' : 'Este campo es requerido'
+    errors.code_prefix = !requiresCodePrefix.value || codePrefix.value.trim() ? '' : 'Este campo es requerido'
     return !errors.name && !errors.code_prefix
 }
 
@@ -205,8 +219,12 @@ async function submitCategory() {
     try {
         const payload = {
             name: name.value.trim(),
-            code_prefix: codePrefix.value.trim(),
             product_form_type: productFormType.value,
+        }
+        // En General el campo no se muestra, así que tampoco se envía: si la
+        // categoría ya tenía prefijo, el backend lo conserva.
+        if (requiresCodePrefix.value) {
+            payload.code_prefix = codePrefix.value.trim()
         }
 
         let saved

@@ -63,9 +63,14 @@
 
                     <Column header="Prefijo" style="width: 9rem">
                         <template #body="{ data }">
-                            <span class="inline-block px-2 py-0.5 bg-bg border border-border rounded text-xs font-medium text-text-muted">
+                            <span
+                                v-if="data.code_prefix"
+                                class="inline-block px-2 py-0.5 bg-bg border border-border rounded text-xs font-medium text-text-muted"
+                            >
                                 {{ data.code_prefix }}
                             </span>
+                            <!-- Las categorías General pueden no tener prefijo. -->
+                            <span v-else class="text-text-muted" aria-label="Sin prefijo">—</span>
                         </template>
                     </Column>
 
