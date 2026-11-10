@@ -111,7 +111,8 @@
                             {{ errors.code }}
                         </p>
                         <p v-else class="text-text-muted text-[12px] mt-1.5">
-                            Opcional. Sin espacios; no se puede repetir.
+                            Opcional. El código completo de tu lista o del proveedor. Letras, números y puntos, hasta 50
+                            caracteres, sin espacios. No se puede repetir.
                         </p>
                     </div>
 
