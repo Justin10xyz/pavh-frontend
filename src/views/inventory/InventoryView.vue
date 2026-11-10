@@ -72,17 +72,27 @@
                 }}
             </div>
 
-            <InventoryTable
-                v-else
-                :products="filteredProducts"
-                :visibleVariantsByProduct="visibleVariantsByProduct"
-                :focus-product-id="focusProductId"
-                :deleting-product-id="busyId"
-                @edit-product="editProduct"
-                @delete-product="requestDelete"
-                @open-stock-dialog="openStockDialog"
-                @open-movements-dialog="openMovementsDialog"
-            />
+            <div v-else ref="tableTop" class="scroll-mt-4">
+                <InventoryTable
+                    :products="pagedProducts"
+                    :visibleVariantsByProduct="visibleVariantsByProduct"
+                    :focus-product-id="focusProductId"
+                    :deleting-product-id="busyId"
+                    @edit-product="editProduct"
+                    @delete-product="requestDelete"
+                    @open-stock-dialog="openStockDialog"
+                    @open-movements-dialog="openMovementsDialog"
+                />
+
+                <PaginatorCustom
+                    :page="currentPage"
+                    :rows="rowsPerPage"
+                    :total-records="filteredProducts.length"
+                    item-label="productos"
+                    @update:page="changePage"
+                    @update:rows="changeRowsPerPage"
+                />
+            </div>
         </template>
     </div>
 
@@ -143,6 +153,8 @@ import { useInventoryStore } from "@/stores/inventory";
 import { useProductDelete } from "@/composables/useProductDelete";
 import { useCatalogsStore } from "@/stores/catalogs";
 import { variantStockUnit } from "@/lib/unitTypes";
+import { paginationQuery, parsePageQuery, parseRowsQuery } from "@/lib/pagination";
+import PaginatorCustom from "@/components/widgets/PaginatorCustom.vue";
 
 import InventoryFilters from "./components/InventoryFilters.vue";
 import InventoryTable from "./components/InventoryTable.vue";
@@ -231,17 +243,29 @@ const selectedUnitType = ref("");
 // que la tabla no lo vuelva a expandir si se remonta.
 const focusProductId = ref(typeof route.query.producto === "string" ? Number(route.query.producto) : null);
 
+// Página y tamaño también viven en la URL (?pagina=3&por_pagina=50), mismo motivo
+// que la búsqueda: volver del form de producto a la misma página.
+const page = ref(parsePageQuery(route.query.pagina));
+const rowsPerPage = ref(parseRowsQuery(route.query.por_pagina));
+
 function floorsFilterQuery() {
     return {
         ...(searchQuery.value ? { buscar: searchQuery.value } : {}),
         ...(focusProductId.value ? { producto: String(focusProductId.value) } : {}),
+        ...paginationQuery(page.value, rowsPerPage.value),
     };
+}
+
+function syncFloorsQuery() {
+    // Solo aplican a Catálogo de pisos; en "Otros productos" la URL es solo la sección.
+    if (activeSection.value === "floors") router.replace({ query: floorsFilterQuery() });
 }
 
 watch([searchQuery, selectedCategory, selectedSupplier, selectedFloorStyle, selectedUnitType], () => {
     focusProductId.value = null;
-    // Solo aplican a Catálogo de pisos; en "Otros productos" la URL es solo la sección.
-    if (activeSection.value === "floors") router.replace({ query: floorsFilterQuery() });
+    // Con otros filtros, la página anterior ya no corresponde a lo que se ve.
+    page.value = 1;
+    syncFloorsQuery();
 });
 
 // Guardar/cancelar en el form de producto regresa al listado con el mismo
@@ -311,6 +335,44 @@ const visibleVariantsByProduct = computed(() => {
 
     return map;
 });
+
+// Pagination logic
+const pageCount = computed(() => Math.max(1, Math.ceil(filteredProducts.value.length / rowsPerPage.value)));
+
+// Con ?producto=<id> se muestra la página donde está ese producto, sin importar
+// ?pagina. Fuera de eso, la página se recorta al rango: la URL puede traer una
+// que ya no existe (ej. volver del form sin los filtros de selector, que no viven
+// en la URL, o tras borrar el último producto de la última página).
+const currentPage = computed(() => {
+    if (focusProductId.value) {
+        const index = filteredProducts.value.findIndex((p) => p.id === focusProductId.value);
+        if (index !== -1) return Math.floor(index / rowsPerPage.value) + 1;
+    }
+    return Math.min(page.value, pageCount.value);
+});
+
+const pagedProducts = computed(() => {
+    const start = (currentPage.value - 1) * rowsPerPage.value;
+    return filteredProducts.value.slice(start, start + rowsPerPage.value);
+});
+
+const tableTop = ref(null);
+
+// Cambiar de página o de tamaño cuenta como tocar un filtro: apaga ?producto=.
+function changePage(value) {
+    focusProductId.value = null;
+    page.value = value;
+    syncFloorsQuery();
+    // El paginador está abajo: sin esto, la página nueva se ve desde el final.
+    tableTop.value?.scrollIntoView({ block: "start" });
+}
+
+function changeRowsPerPage(value) {
+    focusProductId.value = null;
+    rowsPerPage.value = value;
+    page.value = 1;
+    syncFloorsQuery();
+}
 
 const filteredProducts = computed(() => {
     return inventory.products.filter((product) => {
