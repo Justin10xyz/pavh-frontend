@@ -47,3 +47,30 @@ export function quoteTotals({ subtotal, discount, shippingCost, downPayment }) {
 export function discountExceedsSubtotal(subtotal, discount) {
     return round2(Number(subtotal) - (Number(discount) || 0)) < 0
 }
+
+function isBlank(value) {
+    return value === null || value === undefined || value === ''
+}
+
+function clampPercent(value) {
+    return Math.min(100, Math.max(0, value))
+}
+
+// Descuento capturado en %: monto equivalente sobre el subtotal. Sin
+// porcentaje válido o sin subtotal no hay descuento (0). El % se limita a
+// 0–100, así que el monto nunca supera el subtotal.
+export function discountFromPercent(subtotal, percent) {
+    const base = Number(subtotal)
+    const pct = isBlank(percent) ? NaN : Number(percent)
+    if (Number.isNaN(pct) || !(base > 0)) return 0
+    return round2((base * clampPercent(pct)) / 100)
+}
+
+// Inverso, para mostrar en % un descuento guardado como monto (el backend solo
+// guarda el monto). null cuando no aplica: sin subtotal o sin descuento.
+export function percentFromDiscount(subtotal, discount) {
+    const base = Number(subtotal)
+    const amount = isBlank(discount) ? NaN : Number(discount)
+    if (Number.isNaN(amount) || !(base > 0)) return null
+    return clampPercent(round2((amount / base) * 100))
+}
