@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import axios from "@/lib/axios";
+import { sortInstallments } from "@/lib/quoteInstallments";
 
 export const useQuotesStore = defineStore("quotes", () => {
     const quotes = ref([]);
@@ -142,6 +143,39 @@ export const useQuotesStore = defineStore("quotes", () => {
         if (quote) quote.comprobante = comprobante;
     }
 
+    // Abonos: POST/DELETE responden el saldo ya recalculado (`quote`), que se
+    // copia in-place en el detalle y en el listado, sin refetch. El detalle
+    // además agrega o quita el abono de `installments`, en el orden del backend.
+    function applyInstallmentChange(totals, updateInstallments) {
+        const amounts = { installments_total: totals.installments_total, balance: totals.balance };
+
+        const quote = quotes.value.find((q) => String(q.id) === String(totals.id));
+        if (quote) Object.assign(quote, amounts);
+
+        if (currentQuote.value && String(currentQuote.value.id) === String(totals.id)) {
+            Object.assign(currentQuote.value, amounts, {
+                installments: updateInstallments(currentQuote.value.installments ?? []),
+            });
+        }
+    }
+
+    // 422 con `errors` (validación) o solo `message` (abono mayor que el saldo,
+    // cotización no abonable): lo maneja quien llama.
+    async function addQuoteInstallment(quoteId, payload) {
+        const { data } = await axios.post(`/api/quotes/${quoteId}/installments`, payload);
+        applyInstallmentChange(data.quote, (installments) => sortInstallments([...installments, data.data]));
+        return data.data;
+    }
+
+    // Anular = soft delete en el backend; aquí se quita de la lista.
+    async function voidQuoteInstallment(quoteId, installmentId) {
+        const { data } = await axios.delete(`/api/quotes/${quoteId}/installments/${installmentId}`);
+        applyInstallmentChange(data.quote, (installments) =>
+            installments.filter((installment) => installment.id !== installmentId),
+        );
+        return data.quote;
+    }
+
     async function fetchQuotePdf(id) {
         const response = await axios.get(`/api/quotes/${id}/pdf`, { responseType: "blob" });
         return response.data;
@@ -160,6 +194,8 @@ export const useQuotesStore = defineStore("quotes", () => {
         deleteQuote,
         markQuotePaid,
         markQuoteComprobante,
+        addQuoteInstallment,
+        voidQuoteInstallment,
         currentQuote,
         currentQuoteLoading,
         currentQuoteError,

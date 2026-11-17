@@ -235,6 +235,10 @@
                                 <span class="text-text-muted">Anticipo</span>
                                 <span class="text-text tabular-nums">-{{ formatCurrency(quote.down_payment) }}</span>
                             </div>
+                            <div v-if="Number(quote.installments_total) > 0" class="flex items-center justify-between text-sm">
+                                <span class="text-text-muted">Abonos</span>
+                                <span class="text-text tabular-nums">-{{ formatCurrency(quote.installments_total) }}</span>
+                            </div>
                             <!-- Puede ser negativo a propósito (anticipo mayor al total): con su signo. -->
                             <div class="flex items-center justify-between text-sm font-medium pt-1.5 border-t border-border">
                                 <span class="text-text">Saldo</span>
@@ -254,6 +258,8 @@
                         </div>
                     </div>
                 </div>
+
+                <QuoteInstallmentsCard :quote="quote" />
             </div>
         </template>
 
@@ -299,6 +305,7 @@ import { useInventoryStore } from "@/stores/inventory";
 import { useSimpleProductsStore } from "@/stores/simpleProducts";
 import { simpleProductStockAfterSale, variantStockAfterSale } from "@/lib/saleForm";
 import DocumentItemsTable from "@/components/widgets/tables/DocumentItemsTable.vue";
+import QuoteInstallmentsCard from "@/views/quotes/components/QuoteInstallmentsCard.vue";
 import { statusClasses, statusLabel } from "@/lib/quoteStatus";
 import { useDocumentPdf } from "@/composables/useDocumentPdf";
 import { useNotify } from "@/composables/useNotify";
