@@ -61,3 +61,30 @@ export function installmentPayload(form) {
         notes: notes || null,
     }
 }
+
+// --- Listado de cotizaciones (QuotesView) ---
+
+// El saldo solo tiene sentido mientras la cotización sigue abierta: pagada o
+// cancelada ya no se cobra (se muestra un guion).
+export function showsBalance(quote) {
+    return quote?.status === 'Borrador'
+}
+
+// Filtro "Con abonos": abierta y con al menos un abono vigente.
+export function hasInstallments(quote) {
+    return showsBalance(quote) && Number(quote.installments_total) > 0
+}
+
+// Filtro "Vencidos" y etiqueta "Vencido": abierta, a crédito, con saldo y con
+// el vencimiento ya pasado (el mismo día de vencimiento todavía no vence).
+// "YYYY-MM-DD" contra la fecha LOCAL de hoy como texto: new Date(string)
+// correría un día en México.
+export function isOverdue(quote, today = localToday()) {
+    return (
+        showsBalance(quote) &&
+        quote.payment_terms === 'credit' &&
+        Number(quote.balance) > 0 &&
+        !!quote.credit_due_date &&
+        quote.credit_due_date < today
+    )
+}
