@@ -60,7 +60,76 @@
                 </div>
                 <div v-else class="hidden sm:block" aria-hidden="true"></div>
 
-                <!-- Descuento, costo de envío y anticipo: mismo campo de monto opcional -->
+                <!-- Descuento: en monto o en % del subtotal. El selector usa radios
+				     nativos como "Forma de pago" (Enter/Tab entran solo al marcado, ver
+				     lib/formKeyboard.js). form.discount siempre guarda el monto; en
+				     modo % se calcula del porcentaje y no se edita a mano. -->
+                <div class="space-y-1.5">
+                    <FieldLabel html-for="discount" text="Descuento" />
+                    <div class="flex gap-2">
+                        <fieldset class="shrink-0">
+                            <legend class="sr-only">Capturar descuento en</legend>
+                            <div class="grid grid-cols-2 gap-1">
+                                <label
+                                    v-for="option in DISCOUNT_MODES"
+                                    :key="option.key"
+                                    class="relative w-10 h-10 flex items-center justify-center text-sm bg-surface border rounded-md cursor-pointer transition-colors select-none has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-accent"
+                                    :class="
+                                        discountMode === option.key
+                                            ? 'border-accent text-text font-medium'
+                                            : 'border-border text-text-muted hover:text-text'
+                                    "
+                                >
+                                    <input
+                                        :checked="discountMode === option.key"
+                                        type="radio"
+                                        name="discount_mode"
+                                        :value="option.key"
+                                        :aria-label="option.ariaLabel"
+                                        class="sr-only"
+                                        @change="setDiscountMode(option.key)"
+                                    />
+                                    <span aria-hidden="true">{{ option.label }}</span>
+                                </label>
+                            </div>
+                        </fieldset>
+                        <div class="flex-1 min-w-0">
+                            <InputNumberCustom
+                                v-if="discountMode === 'percent'"
+                                id="discount"
+                                key="discount-percent"
+                                v-model="discountPercent"
+                                :min="0"
+                                :max="100"
+                                :max-fraction-digits="2"
+                                suffix="%"
+                                placeholder="0%"
+                                :error="errors.discount"
+                                @update:model-value="errors.discount = ''"
+                            />
+                            <InputNumberCustom
+                                v-else
+                                id="discount"
+                                key="discount-amount"
+                                v-model="form.discount"
+                                :min="0"
+                                placeholder="$0.00"
+                                mode="currency"
+                                currency="MXN"
+                                :error="errors.discount"
+                                @update:model-value="errors.discount = ''"
+                            />
+                        </div>
+                    </div>
+                    <p v-if="discountMode === 'percent'" class="text-xs text-text-muted">
+                        Equivale a {{ formatCurrency(form.discount) }}
+                    </p>
+                    <p v-if="errors.discount" class="text-danger text-xs mt-1.5">
+                        {{ errors.discount }}
+                    </p>
+                </div>
+
+                <!-- Costo de envío y anticipo: mismo campo de monto opcional -->
                 <div v-for="field in AMOUNT_FIELDS" :key="field.key" class="space-y-1.5">
                     <FieldLabel :html-for="field.key" :text="field.label" />
                     <InputNumberCustom
@@ -135,12 +204,18 @@
 </template>
 
 <script setup>
+import { ref, watch } from "vue";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import InputNumberCustom from "@/components/widgets/InputNumberCustom.vue";
 import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatDateOnly } from "@/lib/dates";
-import { PAYMENT_TERMS, paymentTermsLabel } from "@/lib/quotePayment";
+import {
+    PAYMENT_TERMS,
+    discountFromPercent,
+    paymentTermsLabel,
+    percentFromDiscount,
+} from "@/lib/quotePayment";
 
 // Sección "Pago" de QuoteFormView: forma de pago, vencimiento, montos y el
 // preview de totales. Edita los campos de pago sobre el mismo `form` de la
@@ -151,15 +226,51 @@ import { PAYMENT_TERMS, paymentTermsLabel } from "@/lib/quotePayment";
 const form = defineModel("form", { type: Object, required: true });
 const errors = defineModel("errors", { type: Object, required: true });
 
-defineProps({
+const props = defineProps({
     subtotal: { type: Number, required: true },
     totals: { type: Object, required: true },
     // Líneas de producto simple a precio de mayoreo (la vista las cuenta).
     wholesaleCount: { type: Number, default: 0 },
 });
 
+// Modo de captura del descuento. Es solo de la UI: el backend guarda el monto,
+// así que siempre inicia en monto, también al editar.
+const DISCOUNT_MODES = [
+    { key: "amount", label: "$", ariaLabel: "Monto" },
+    { key: "percent", label: "%", ariaLabel: "Porcentaje" },
+];
+const discountMode = ref("amount");
+const discountPercent = ref(null);
+// Al pasar a % el porcentaje se deriva del monto y el monto no debe cambiar
+// (el redondeo de ida y vuelta lo movería unos centavos): se salta esa sync.
+let skipPercentSync = false;
+
+function setDiscountMode(mode) {
+    if (mode === discountMode.value) return;
+    discountMode.value = mode;
+    // %→$: form.discount ya tiene el monto calculado y se queda igual.
+    if (mode !== "percent") return;
+
+    const percent = percentFromDiscount(props.subtotal, form.value.discount);
+    // Si el % no cambia, el watch no corre y la bandera se quedaría puesta.
+    if (percent !== discountPercent.value) skipPercentSync = true;
+    discountPercent.value = percent;
+}
+
+// En modo %, el monto se recalcula al cambiar el porcentaje o el subtotal
+// (al editar líneas). Sin porcentaje el descuento queda en null (no aplica),
+// igual que un monto vacío, en vez de 0.
+watch([discountPercent, () => props.subtotal], () => {
+    if (skipPercentSync) {
+        skipPercentSync = false;
+        return;
+    }
+    if (discountMode.value !== "percent") return;
+    form.value.discount =
+        discountPercent.value === null ? null : discountFromPercent(props.subtotal, discountPercent.value);
+});
+
 const AMOUNT_FIELDS = [
-    { key: "discount", label: "Descuento" },
     { key: "shipping_cost", label: "Costo de envío" },
     { key: "down_payment", label: "Anticipo" },
 ];
