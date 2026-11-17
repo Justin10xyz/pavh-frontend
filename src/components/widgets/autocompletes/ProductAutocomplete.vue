@@ -38,9 +38,12 @@
             >
                 <template v-if="option.type === 'variant'">
                     <p class="text-sm text-text">{{ option.lineName }} — {{ option.color }} — {{ option.size }}</p>
+                    <!-- Pisos por pieza: sin precio por m² (null); su precio es
+                         price_per_box por pieza y el stock se cuenta en piezas. -->
                     <p class="text-xs text-text-muted mt-0.5">
-                        {{ formatCurrency(option.price_per_m2) }}/m² ·
-                        {{ option.stock_boxes === null ? 'Sin control de stock' : `Stock: ${option.stock_boxes} cajas` }}
+                        <template v-if="isPieceOption(option)">{{ formatCurrency(option.price_per_box) }}/pieza</template>
+                        <template v-else>{{ formatCurrency(option.price_per_m2) }}/m²</template> ·
+                        {{ option.stock_boxes === null ? 'Sin control de stock' : `Stock: ${option.stock_boxes} ${stockUnitLabel(option)}` }}
                     </p>
                 </template>
 
@@ -74,6 +77,7 @@ import { useInventoryStore } from '@/stores/inventory'
 import { useSimpleProductsStore } from '@/stores/simpleProducts'
 import { useCatalogsStore } from '@/stores/catalogs'
 import { formatCurrency } from '@/lib/formatCurrency'
+import { PIECE_UNIT_TYPE_NAME, pieceVariantIds, variantStockUnit } from '@/lib/unitTypes'
 import InputTextCustom from '@/components/widgets/InputTextCustom.vue'
 
 const props = defineProps({
@@ -133,6 +137,18 @@ const variantOptions = computed(() => {
     }
     return result
 })
+
+// La unidad vive en el producto, no en la variante (mismo criterio que
+// useLineProducts.isPieceLine). No se agrega a la opción: se emite tal cual.
+const pieceIds = computed(() => pieceVariantIds(inventory.products))
+function isPieceOption(option) {
+    return pieceIds.value.has(option.id)
+}
+
+// "piezas" en pisos por pieza, "cajas" en los demás.
+function stockUnitLabel(option) {
+    return variantStockUnit(isPieceOption(option) ? PIECE_UNIT_TYPE_NAME : null).label
+}
 
 // GET /api/simple-products no carga `category`; se resuelve contra el catálogo,
 // igual que en SimpleProductsSection.

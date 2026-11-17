@@ -205,6 +205,28 @@
                             {{ group.specErrors.price_per_m2 }}
                         </p>
                     </div>
+
+                    <!-- Pisos por pieza: m² que cubre una pieza, opcional. Ocupa el lugar
+		     del precio por m² (que no aplica) para quedar junto al precio por
+		     pieza, fuera de "Datos por caja", que en piezas se oculta. -->
+                    <div v-if="soldByPiece" class="space-y-1.5">
+                        <FieldLabel :html-for="`m2_per_piece-${group.id}`" text="m² por pieza" />
+                        <InputNumberCustom
+                            :id="`m2_per_piece-${group.id}`"
+                            v-model="group.spec.m2_per_piece"
+                            :error="group.specErrors.m2_per_piece"
+                            :min="0"
+                            placeholder="0.0000"
+                            @input="group.specErrors.m2_per_piece = ''"
+                            :max-fraction-digits="4"
+                        />
+                        <p v-if="group.specErrors.m2_per_piece" class="text-danger text-[12px] mt-1.5">
+                            {{ group.specErrors.m2_per_piece }}
+                        </p>
+                        <p class="text-xs text-text-muted">
+                            Opcional. Con este dato, al cotizar se pueden pedir m² y el sistema calcula las piezas.
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Grupo 2 — Datos por caja. No aplica a pisos por pieza: piezas, m²,
