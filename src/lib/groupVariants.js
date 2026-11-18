@@ -17,6 +17,7 @@ export function groupVariants(variants) {
                 price_per_m2: variant.price_per_m2,
                 pieces_per_box: variant.pieces_per_box,
                 m2_per_box: variant.m2_per_box,
+                m2_per_piece: variant.m2_per_piece,
                 kilos_per_box: variant.kilos_per_box,
                 boxes_per_pallet: variant.boxes_per_pallet,
                 variants: []

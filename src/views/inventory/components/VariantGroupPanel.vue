@@ -34,6 +34,11 @@
                         <span class="font-semibold text-primary tabular-nums"
                         >{{ formatCurrency(group.price_per_box) }}/pieza</span
                         >
+                        <!-- Opcional. Number() quita los ceros de relleno del decimal:4
+                             ("0.1950" → 0.195), igual que m2_per_box abajo. -->
+                        <span v-if="Number(group.m2_per_piece) > 0" class="text-text-muted tabular-nums"
+                        >{{ Number(group.m2_per_piece) }} m²/pieza</span
+                        >
                     </span>
                     <span v-else class="flex items-center gap-2 whitespace-nowrap">
                         <span class="font-semibold text-primary tabular-nums"

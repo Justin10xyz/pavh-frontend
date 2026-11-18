@@ -11,9 +11,10 @@ import { variantStockUnit } from "@/lib/unitTypes";
 // exclusivo product_variant_id / simple_product_id del backend.
 // `quantity` va en la unidad física de stock: cajas completas (variante), piezas
 // (variante por pieza) o unidades (simple). `requestedM2` es solo ayuda de
-// captura para variantes por caja; no se envía. `priceType` (retail|wholesale)
-// solo aplica a productos simples con mayoreo; ver linePriceType(). `fields`
-// agrega lo propio de cada documento (ej. `unit_price` en venta).
+// captura para variantes con m² por unidad (ver m2PerUnit()); no se envía.
+// `priceType` (retail|wholesale) solo aplica a productos simples con mayoreo;
+// ver linePriceType(). `fields` agrega lo propio de cada documento (ej.
+// `unit_price` en venta).
 export function createEmptyLine(fields = {}) {
     return {
         id: crypto.randomUUID(),
@@ -86,34 +87,47 @@ export function lineUnit(isPiece) {
     return variantStockUnit(isPiece ? "pieza" : null).short;
 }
 
-// La cantidad de una línea de variante por caja son sus cajas; estos son los m²
-// que cubren, sobre los que se cobra el precio por m². Null en variantes por
-// pieza (no derivan m²).
-export function coveredM2(line, isPiece) {
-    if (isPiece) return null;
-    return squareMetersForBoxes(line.quantity || 0, line.variant?.m2_per_box);
+// m² que cubre una unidad de venta de la variante: una pieza (m2_per_piece) en
+// pisos por pieza, una caja (m2_per_box) en los demás. Null si no hay dato
+// válido (> 0): nunca se asume 1:1. En piezas es opcional.
+export function m2PerUnit(variant, isPiece) {
+    const value = Number(isPiece ? variant?.m2_per_piece : variant?.m2_per_box);
+    return value > 0 ? value : null;
 }
 
-// Solo UX: las cajas se pueden bajar a mano por debajo de lo requerido, y se avisa.
+// La cantidad de una línea de variante son sus cajas o piezas; estos son los m²
+// que cubren. En pisos por caja, sobre ellos se cobra el precio por m²; en
+// pisos por pieza son solo informativos (se cobra por pieza). Null si la
+// variante no tiene m² por unidad (ej. una pieza sin m2_per_piece).
+export function coveredM2(line, isPiece) {
+    const perUnit = m2PerUnit(line.variant, isPiece);
+    if (perUnit === null) return null;
+    return squareMetersForBoxes(line.quantity || 0, perUnit);
+}
+
+// Solo UX: la cantidad se puede bajar a mano por debajo de lo requerido, y se avisa.
 export function coversRequested(line, isPiece) {
     if (!(line.requestedM2 > 0)) return true;
     const covered = coveredM2(line, isPiece);
     return covered === null || covered >= line.requestedM2;
 }
 
-// Los m² requeridos sugieren las cajas (hacia arriba); borrarlos no toca las
-// cajas ya capturadas.
-export function applyRequestedM2(line, value) {
+// Los m² requeridos sugieren las cajas o piezas (hacia arriba); borrarlos no
+// toca la cantidad ya capturada. `isPiece` con default false: los llamadores
+// que aún no lo pasan conservan el cálculo por caja.
+export function applyRequestedM2(line, value, isPiece = false) {
     line.requestedM2 = value;
-    const boxes = value > 0 ? boxesForSquareMeters(value, line.variant?.m2_per_box) : null;
-    if (boxes) line.quantity = boxes;
+    const perUnit = m2PerUnit(line.variant, isPiece);
+    const units = value > 0 && perUnit !== null ? boxesForSquareMeters(value, perUnit) : null;
+    if (units) line.quantity = units;
 }
 
 // Sin m2_per_box no se sabe qué cubren las cajas: el backend rechaza la línea
 // (nunca asume 1:1). Se avisa desde que se elige, no hasta guardar. No aplica a
-// variantes por pieza, que no derivan m². `action`: "cotizar", "vender".
+// variantes por pieza: su m2_per_piece es opcional y solo ayuda a capturar.
+// `action`: "cotizar", "vender".
 export function boxConversionError(line, isPiece, action) {
-    if (!line.variant || isPiece || Number(line.variant.m2_per_box) > 0) return "";
+    if (!line.variant || isPiece || m2PerUnit(line.variant, false) !== null) return "";
     return `Esta variante no tiene m² por caja configurado; no se puede ${action}.`;
 }
 

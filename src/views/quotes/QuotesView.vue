@@ -137,6 +137,28 @@
                         </template>
                     </Column>
 
+                    <!-- Solo en Borrador: pagada o cancelada ya no se cobra. "Vencido" debajo,
+					     para que la columna no se ensanche en móvil. -->
+                    <Column
+                        header="Saldo"
+                        header-class="text-right!"
+                        body-class="text-right whitespace-nowrap"
+                    >
+                        <template #body="{ data }">
+                            <div v-if="showsBalance(data)" class="flex flex-col items-end gap-1">
+                                <span class="text-text tabular-nums">{{ formatCurrency(data.balance) }}</span>
+                                <span
+                                    v-if="isOverdue(data, today)"
+                                    class="text-xs px-2 py-0.5 rounded bg-danger/10 text-danger font-semibold"
+                                    :title="`Venció el ${formatDateOnly(data.credit_due_date)}`"
+                                >
+                                    Vencido
+                                </span>
+                            </div>
+                            <span v-else class="text-text-muted"><span aria-hidden="true">—</span><span class="sr-only">No aplica</span></span>
+                        </template>
+                    </Column>
+
                     <Column header="" body-class="w-px">
                         <template #body="{ data }">
                             <RouterLink
@@ -165,7 +187,8 @@ import { QUOTE_STATUSES, statusClasses, statusLabel } from "@/lib/quoteStatus";
 import { formatCurrency } from "@/lib/formatCurrency";
 import InputTextCustom from "@/components/widgets/InputTextCustom.vue";
 import QuickFilter from "@/components/widgets/filters/QuickFilter.vue";
-import { formatDateTime } from "@/lib/dates";
+import { formatDateOnly, formatDateTime } from "@/lib/dates";
+import { hasInstallments, isOverdue, localToday, showsBalance } from "@/lib/quoteInstallments";
 
 const route = useRoute();
 const router = useRouter();
@@ -195,15 +218,29 @@ function normalize(str) {
 //
 // "sin-comprobante" no es un status: son las Pagadas que aún no tienen
 // comprobante, la bandeja de trabajo del flujo Presupuesto → Comprobante.
+// "con-abonos" y "vencidos" tampoco: son Borradores con abonos o con el
+// crédito vencido (lib/quoteInstallments.js), la bandeja de cobranza.
 const PENDING_COMPROBANTE = "sin-comprobante";
+const WITH_INSTALLMENTS = "con-abonos";
+const OVERDUE = "vencidos";
+
+// Fecha local de hoy ("YYYY-MM-DD") para "Vencido"; se toma al montar.
+const today = localToday();
 
 function isPendingComprobante(quote) {
     return quote.status === "Pagada" && !quote.comprobante;
 }
 
+// Filtros que no son un status, con su criterio.
+const SPECIAL_FILTERS = {
+    [PENDING_COMPROBANTE]: isPendingComprobante,
+    [WITH_INSTALLMENTS]: hasInstallments,
+    [OVERDUE]: (quote) => isOverdue(quote, today),
+};
+
 const statusFilter = computed({
     get: () =>
-        QUOTE_STATUSES.includes(route.query.estado) || route.query.estado === PENDING_COMPROBANTE
+        QUOTE_STATUSES.includes(route.query.estado) || Object.hasOwn(SPECIAL_FILTERS, route.query.estado)
             ? route.query.estado
             : "all",
     set: (key) => {
@@ -239,11 +276,22 @@ const statusOptions = computed(() => [
         label: "Sin comprobante",
         count: quotes.quotes.filter(isPendingComprobante).length,
     },
+    {
+        key: WITH_INSTALLMENTS,
+        label: "Con abonos",
+        count: quotes.quotes.filter(hasInstallments).length,
+    },
+    {
+        key: OVERDUE,
+        label: "Vencidos",
+        count: quotes.quotes.filter(SPECIAL_FILTERS[OVERDUE]).length,
+    },
 ]);
 
 function matchesStatusFilter(quote) {
     if (statusFilter.value === "all") return true;
-    if (statusFilter.value === PENDING_COMPROBANTE) return isPendingComprobante(quote);
+    const special = SPECIAL_FILTERS[statusFilter.value];
+    if (special) return special(quote);
     return quote.status === statusFilter.value;
 }
 

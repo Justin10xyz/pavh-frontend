@@ -110,11 +110,12 @@
                             </p>
                         </div>
 
-                        <!-- m² que pide el cliente (opcional, solo variantes por caja): sugieren
-                             las cajas con ceil. No se envían al backend: la cantidad real son las
-                             cajas, que se pueden ajustar después (ej. una de más por merma). Las
-                             variantes por pieza no tienen m²: se captura la cantidad directa. -->
-                        <div v-if="row.variant && !isPieceLine(row)" class="space-y-1.5 sm:space-y-0">
+                        <!-- m² que pide el cliente (opcional): sugieren las cajas, o las piezas
+                             en pisos por pieza con m² por pieza, con ceil. No se envían al
+                             backend: la cantidad real son las cajas/piezas, que se pueden
+                             ajustar después (ej. una de más por merma). Una pieza sin m² por
+                             pieza no muestra el campo: se captura la cantidad directa. -->
+                        <div v-if="showsRequestedM2(row)" class="space-y-1.5 sm:space-y-0">
                             <FieldLabel
                                 :html-for="`requested-${row.id}`"
                                 text="m² requeridos"
@@ -127,14 +128,15 @@
                                 placeholder="Opcional"
                                 suffix=" m²"
                                 :max-fraction-digits="2"
-                                :disabled="!row.variant.m2_per_box"
-                                @update:model-value="(value) => applyRequestedM2(row, value)"
+                                :disabled="m2PerUnit(row) === null"
+                                @update:model-value="(value) => applyRequestedM2(row, value, isPieceLine(row))"
                             />
                         </div>
                         <div v-else class="hidden sm:block" aria-hidden="true"></div>
 
-                        <!-- Cantidad en la unidad física de stock: cajas completas (variante) o
-                             unidades (simple). En variantes, debajo los m² que cubren esas cajas. -->
+                        <!-- Cantidad en la unidad física de stock: cajas completas, piezas
+                             (variante por pieza) o unidades (simple). En variantes con m² por
+                             unidad, debajo los m² que cubren esas cajas/piezas. -->
                         <div class="space-y-1.5 sm:space-y-0">
                             <FieldLabel
                                 :html-for="`quantity-${row.id}`"
@@ -337,12 +339,12 @@ function changeLine(row) {
 }
 
 // Sin mouse: tras elegir un producto el foco pasa a su cantidad. En una variante
-// nueva va a "m² requeridos" (el cliente suele pedir en m² y de ahí salen las
-// cajas); en una fusión, a las cajas/unidades que acaban de sumar uno.
+// nueva con m² por unidad va a "m² requeridos" (el cliente suele pedir en m² y
+// de ahí salen las cajas o piezas); en una fusión, a la cantidad que acaba de
+// sumar uno.
 async function focusLineQuantity(row, { merged = false } = {}) {
     await nextTick();
-    const field =
-        !merged && row.variant && Number(row.variant.m2_per_box) > 0 ? "requested" : "quantity";
+    const field = !merged && row.variant && m2PerUnit(row) !== null ? "requested" : "quantity";
     const input = document.getElementById(`${field}-${row.id}`);
     input?.focus();
     input?.select();
@@ -370,12 +372,14 @@ function selectProductForRow(row, option) {
     // Un producto nuevo empieza en menudeo; el mayoreo siempre lo elige el vendedor.
     row.priceType = "retail";
 
-    // Cajas y unidades son enteras: al "Cambiar" se conserva la cantidad. Los m²
-    // requeridos solo aplican a variantes; con otra variante (otro m² por caja)
-    // se recalculan las cajas.
+    // Cajas, piezas y unidades son enteras: al "Cambiar" se conserva la cantidad.
+    // Los m² requeridos solo aplican a variantes que muestran el campo; con otra
+    // variante (otro m² por caja o por pieza) se recalcula la cantidad. Si el
+    // campo no se muestra (simple, o pieza sin m² por pieza) se limpian, para que
+    // un valor oculto no recalcule la cantidad en un cambio posterior.
     row.quantity = row.quantity > 0 ? row.quantity : 1;
-    if (isSimple || isPieceLine(row)) row.requestedM2 = null;
-    else if (row.requestedM2 > 0) applyRequestedM2(row, row.requestedM2);
+    if (!showsRequestedM2(row)) row.requestedM2 = null;
+    else if (row.requestedM2 > 0) applyRequestedM2(row, row.requestedM2, isPieceLine(row));
 
     emit("select", row);
 
@@ -394,6 +398,17 @@ function otherPrice(row) {
 
 function lineUnit(row) {
     return documentLines.lineUnit(isPieceLine(row));
+}
+
+// m² por caja (pisos por caja) o por pieza (pisos por pieza); null sin dato.
+function m2PerUnit(row) {
+    return documentLines.m2PerUnit(row.variant, isPieceLine(row));
+}
+
+// Pisos por caja: siempre (deshabilitado sin m2_per_box, que además se avisa).
+// Pisos por pieza: solo con m2_per_piece, que es opcional.
+function showsRequestedM2(row) {
+    return !!row.variant && (!isPieceLine(row) || m2PerUnit(row) !== null);
 }
 
 function coveredM2(row) {

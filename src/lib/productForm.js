@@ -87,6 +87,7 @@ const SPEC_FIELDS = [
     "price_per_m2",
     "pieces_per_box",
     "m2_per_box",
+    "m2_per_piece",
 ];
 
 export function createVariantGroup({ spec = {}, colorRows = [createColorRow()] } = {}) {
@@ -104,6 +105,7 @@ export function createVariantGroup({ spec = {}, colorRows = [createColorRow()] }
             price_per_m2: null,
             pieces_per_box: null,
             m2_per_box: null,
+            m2_per_piece: null,
             ...spec,
         },
         specErrors: Object.fromEntries(SPEC_FIELDS.map((field) => [field, ""])),
@@ -132,6 +134,7 @@ export function variantGroupsFromProduct(product) {
                 price_per_m2: group.price_per_m2,
                 pieces_per_box: group.pieces_per_box,
                 m2_per_box: group.m2_per_box,
+                m2_per_piece: group.m2_per_piece ?? null,
             },
             colorRows: group.variants.map((v) =>
                 createColorRow({
@@ -162,9 +165,16 @@ export function validateVariantGroups(groups, soldByPiece) {
         : REQUIRED_VARIANT_FIELDS;
 
     for (const group of groups) {
-        // Errores que quedaron de antes de cambiar la Unidad a pieza, en campos ya ocultos.
+        // Errores que quedaron de antes de cambiar la Unidad, en campos ya ocultos.
         if (soldByPiece) {
             for (const field of PIECE_EXCLUDED_VARIANT_FIELDS) group.specErrors[field] = "";
+        }
+        group.specErrors.m2_per_piece = "";
+
+        // m² por pieza: opcional y solo en pisos por pieza; si trae valor, > 0.
+        if (soldByPiece && !isEmpty(group.spec.m2_per_piece) && !(Number(group.spec.m2_per_piece) > 0)) {
+            group.specErrors.m2_per_piece = "Debe ser mayor que 0";
+            isValid = false;
         }
 
         for (const field of variantFields) {
@@ -238,8 +248,11 @@ export function buildVariantPayload(productId, group, row, soldByPiece) {
     if (!row.variantId) payload.stock_boxes = row.stock_boxes;
 
     // Pisos por pieza: los campos que no aplican ni siquiera viajan como null.
+    // m2_per_piece sí viaja, también vacío (null), para poder quitar el dato al
+    // editar (PUT). En otra unidad no viaja: el backend lo prohíbe.
     if (soldByPiece) {
         for (const field of PIECE_EXCLUDED_VARIANT_FIELDS) delete payload[field];
+        payload.m2_per_piece = isEmpty(spec.m2_per_piece) ? null : spec.m2_per_piece;
     }
 
     return payload;
