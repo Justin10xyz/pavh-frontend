@@ -48,8 +48,14 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-                        <FieldLabel html-for="customer_id" text="Cliente" />
-                        <CustomerSearch id="customer_id" v-model="form.customer_id" />
+                        <FieldLabel html-for="customer_id" text="Cliente" required />
+                        <CustomerSearch
+                            id="customer_id"
+                            v-model="form.customer_id"
+                            :error="errors.customer_id"
+                            @update:model-value="errors.customer_id = ''"
+                        />
+                        <p v-if="errors.customer_id" class="text-danger text-xs mt-1.5">{{ errors.customer_id }}</p>
                     </div>
 
                     <div class="space-y-1.5 sm:col-span-2">
@@ -188,7 +194,7 @@ import FieldLabel from "@/components/widgets/labels/FieldLabel.vue";
 import QuoteLinePrice from "@/views/quotes/components/QuoteLinePrice.vue";
 import QuotePaymentSection from "@/views/quotes/components/QuotePaymentSection.vue";
 import { discountExceedsSubtotal, paymentPayload, quoteTotals } from "@/lib/quotePayment";
-import { quoteItemToLine } from "@/lib/quoteForm";
+import { customerError, quoteItemToLine } from "@/lib/quoteForm";
 import { advanceOnEnter, focusFirstInvalidField } from "@/lib/formKeyboard";
 import { useSaveShortcut } from "@/composables/useSaveShortcut";
 import SaveShortcutHint from "@/components/widgets/labels/SaveShortcutHint.vue";
@@ -272,8 +278,9 @@ const form = reactive({
     credit_due_date: "",
 });
 
-// Errores de los campos de pago (validación local de la fecha y 422 del backend).
+// Errores por campo: cliente y pago (validación local y 422 del backend).
 const errors = reactive({
+    customer_id: "",
     discount: "",
     shipping_cost: "",
     down_payment: "",
@@ -409,29 +416,27 @@ const handleSubmit = async () => {
     for (const field of Object.keys(errors)) errors[field] = "";
     submitAttempted.value = true;
 
-    // Una línea con producto pero sin cantidad bloquea el guardado (antes se
-    // descartaba en silencio). Las líneas sin producto sí se ignoran: son filas
-    // agregadas con "+ Agregar producto" que no se llegaron a usar.
-    if (lines.value.some((l) => quantityError(l))) {
-        generalError.value = "Hay productos sin cantidad. Captúrala o quita la línea.";
-        return;
-    }
-
-    if (lines.value.some((l) => boxConversionError(l))) {
-        generalError.value =
-            "Hay variantes sin m² por caja configurado. Quítalas o corrígelas en Inventario.";
-        return;
-    }
-
-    const validLines = lines.value.filter(hasProduct);
-    if (validLines.length === 0) {
-        generalError.value = "Agrega al menos un producto con cantidad mayor a cero.";
-        return;
-    }
-
+    // Se marcan todos los errores a la vez; el foco va al primero en pantalla.
+    errors.customer_id = customerError(form.customer_id);
     // Con crédito el backend exige el vencimiento (required_if).
     if (form.payment_terms === "credit" && !form.credit_due_date) {
         errors.credit_due_date = "Este campo es requerido";
+    }
+
+    // Una línea con producto pero sin cantidad bloquea el guardado (antes se
+    // descartaba en silencio). Las líneas sin producto sí se ignoran: son filas
+    // agregadas con "+ Agregar producto" que no se llegaron a usar.
+    const validLines = lines.value.filter(hasProduct);
+    if (lines.value.some((l) => quantityError(l))) {
+        generalError.value = "Hay productos sin cantidad. Captúrala o quita la línea.";
+    } else if (lines.value.some((l) => boxConversionError(l))) {
+        generalError.value =
+            "Hay variantes sin m² por caja configurado. Quítalas o corrígelas en Inventario.";
+    } else if (validLines.length === 0) {
+        generalError.value = "Agrega al menos un producto con cantidad mayor a cero.";
+    }
+
+    if (generalError.value || errors.customer_id || errors.credit_due_date) {
         focusFirstInvalidField(formRef.value);
         return;
     }
@@ -469,7 +474,7 @@ const handleSubmit = async () => {
     }
 };
 
-// Lleva al campo los errores 422 que corresponden a uno de pago. Devuelve true
+// Lleva al campo los errores 422 que tienen uno (cliente o pago). Devuelve true
 // si todos quedaron bajo su campo; si no, el `message` va al error general
 // (ej. errores de líneas, que no tienen campo propio aquí).
 function applyServerErrors(data) {
