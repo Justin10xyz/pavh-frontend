@@ -1,7 +1,7 @@
 <template>
     <div class="flex items-start gap-2">
         <div class="relative flex-1 min-w-0">
-            <!-- Cliente elegido: clic en el nombre para cambiarlo, × para dejar "Sin cliente".
+            <!-- Cliente elegido: clic en el nombre para cambiarlo, × para quitarlo y buscar otro.
 			     Nombre y contacto en renglones separados (antes compartían uno de altura
 			     fija y ambos se truncaban); el contacto pasa a otro renglón si no cabe. -->
             <div
@@ -56,6 +56,7 @@
                     :aria-activedescendant="dropdownOpen && results[activeIndex] ? optionId(activeIndex) : undefined"
                     :placeholder="loading ? 'Cargando clientes…' : 'Buscar por nombre, teléfono o correo…'"
                     :disabled="loading"
+                    :error="error"
                     class="pl-8"
                     @focus="openDropdown"
                     @input="openDropdown"
@@ -138,6 +139,12 @@ defineOptions({ inheritAttrs: false })
 
 // '' = sin cliente.
 const customerId = defineModel({ type: [String, Number], default: '' })
+
+defineProps({
+    // Error de validación del campo (borde rojo y aria-invalid en el buscador).
+    // Con un cliente ya elegido no aplica: se muestra su nombre.
+    error: { type: String, default: '' },
+})
 
 const attrs = useAttrs()
 

@@ -26,3 +26,14 @@ export function quoteItemToLine(item) {
         priceType: item.price_type ?? "retail",
     };
 }
+
+// Todo presupuesto lleva cliente (StoreQuoteRequest/UpdateQuoteRequest). Mismo
+// texto que el 422 del backend. Devuelve '' si hay cliente; el modelo de
+// CustomerSearch usa '' para "sin elegir".
+export const CUSTOMER_REQUIRED_MESSAGE = "Selecciona un cliente para el presupuesto.";
+
+export function customerError(customerId) {
+    return customerId === "" || customerId === null || customerId === undefined
+        ? CUSTOMER_REQUIRED_MESSAGE
+        : "";
+}
